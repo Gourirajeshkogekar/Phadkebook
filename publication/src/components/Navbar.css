@@ -1,0 +1,97 @@
+.navbar {
+  grid-area: nav;
+  background-color: #2c3e50; /* Dark background for navbar */
+  color: #ecf0f1; /* Light text color for contrast */
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0px 2px 15px rgba(0, 0, 0, 0.2); /* Slightly more shadow for depth */
+  flex-wrap: wrap; /* Allow items to wrap on smaller screens */
+}
+
+.navbar-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.navbar-title {
+  font-weight: 600;
+  margin: 0;
+  font-family: 'Arial', sans-serif; 
+  font-weight: bold; 
+  font-style: italic; 
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2); /* Stronger text shadow for emphasis */
+  text-transform: capitalize; 
+  line-height: 1.5; 
+  color: #ecf0f1; /* Set text color to white */
+  padding: 5px 15px;
+  transition: all 0.3s ease;
+}
+
+
+.navbar-title:hover {
+  color: #ecf0f1; /* White text on hover for contrast */
+  transform: scale(1.05); /* Slightly enlarges the title */
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+}
+
+.user-name {
+  margin-left: 10px;
+  font-weight: 600;
+  color: #ecf0f1; /* White color for the user's name */
+}
+
+.guest-info {
+  display: flex;
+  align-items: center;
+}
+
+.guest-name {
+  margin-left: 10px;
+  color: #ecf0f1; /* White color for the guest text */
+}
+
+/* Avatar Styling */
+.MuiAvatar-root {
+  background-color: #f8a828 !important; /* Use !important to force this style */
+  color: white !important; /* White text color for initials */
+  font-weight: bold;
+  font-size: 1.2rem;
+  width: 40px;
+  height: 40px;
+}
+
+
+/* Media query for tablets and smaller screens */
+@media (max-width: 768px) {
+  .navbar {
+    padding: 8px; 
+    margin-left: 105px;
+  }
+
+  .navbar-title {
+    font-size: 20px;
+    width: 250px;
+  }
+}
+
+/* Media query for mobile devices */
+@media (max-width: 480px) {
+  .navbar {
+    flex-direction: column; /* Stack items vertically */
+    align-items: flex-start; /* Align items to the start */
+    padding: 6px;
+  }
+
+  .navbar-title {
+    font-size: 18px;
+    margin-bottom: 10px; /* Add space below the title */
+  }
+}

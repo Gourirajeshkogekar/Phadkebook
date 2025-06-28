@@ -1,0 +1,161 @@
+.account-master {
+}
+
+.account-master h1{
+  font-weight: 600;
+  text-align: center;
+}
+
+.acctable-container{
+  /* background-color: #3c7291; */
+    height: 320px;
+    overflow-y: auto;
+    overflow-x: auto;
+}
+
+.accounttable-master {
+  display: flex;
+  flex-direction: column;
+}
+
+.accounttable1-master {
+  /* width: 100%; */
+  /* background-color: #3c7291; */
+  padding: 10px;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px #a4a6a6;
+}
+
+.accounttable1-master h2 {
+  margin-bottom: 10px; 
+  text-align: center;
+}
+
+.account-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  padding: 5px; 
+  gap: 20px;
+  
+}
+
+.address-fields{
+  display: flex;
+  justify-content: left;
+  margin-bottom: 20px;
+}
+
+.account-control {
+  padding: 10px;
+  border-radius: 4px;
+  border: 1px solid rgb(223, 222, 222);
+  margin: 10px 0;
+  width: 150px;
+  margin-bottom: 5px;
+}
+
+.account-label {
+  font-weight: 500;
+
+  
+}
+
+.account-modal {
+  margin-top: 30px;
+  margin-left: 50px;
+  background-color: white;
+  overflow-y: auto;
+  height: 550px;
+  width: 90%;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  padding: 10px;
+}
+
+.acc-btn-container {
+
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+}
+
+.error-text{
+  font-size: 12px;
+}
+
+
+
+
+.account-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+}
+
+
+
+
+
+
+
+@media (max-width: 768px) {
+
+  .account-master{
+    width: 50%;
+  }
+
+
+  .account-master h1{
+    font-weight: 400;
+    text-align: left;
+  }
+
+
+  .accounttable-master{
+    /* width: 100%; */
+  }
+
+  .accounttable1-master{
+    width: 70%;
+  }
+  
+  .account-modal{
+    width: 60%;
+    margin-left: 50px;
+    height:80vh;
+  }
+
+
+    .account-form {
+      grid-template-columns: 1fr;
+      width: 300px;
+      height: 70vh; 
+      overflow-x: auto;
+    }
+  .account-control {
+    padding: 8px;
+    margin: 8px 0;
+  }
+
+  .account-label {
+    font-size: 14px;
+  }
+
+
+  .address-fields{
+    display: flex;
+    flex-direction: column;
+   
+  }
+
+  .acc-btn-container {
+    flex-direction: column;
+    gap: 5px;
+  }
+}

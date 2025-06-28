@@ -1,0 +1,204 @@
+.receiptvoucher-container {
+  /* padding: 10px; */
+
+
+
+}
+
+.receiptvoucher-container h1{
+  font-weight: 600;
+  text-align: center;
+}
+
+.receiptvouchertable-container {
+  height: 300px;
+  overflow-y: auto;
+  overflow-x: auto;
+}
+
+.receiptvouchertable-master {
+  display: flex;
+  flex-direction: column;
+}
+
+.receiptvouchertable1-master {
+  /* width: 90%;
+  background-color: #3c7291; */
+  /* width: 70%; */
+  padding: 10px;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px #a4a6a6;
+}
+
+.receiptvouchertable1-master h2 {
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+
+.receiptvouchertable-container {
+  border-radius: 8px; /* Rounded corners */
+  padding: 16px; /* Padding around the table */
+  /* background-color: #f4f4f4;  */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Optional shadow for a 3D effect */
+}
+
+
+.receiptvoucher-table {
+  margin-top: 20px;
+  height: 230px;
+  overflow-y: auto;
+  overflow-x: auto;
+  width: 100%;
+  border-collapse: collapse;
+  background-color: #ffffff;
+}
+
+.receiptvoucher-table table {
+  width: 100%;
+  
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.receiptvoucher-table th, .receiptvoucher-table td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+}
+
+.receiptvoucher-table th {
+  background-color: #f4f4f4;
+  font-weight: 600;
+}
+
+.receiptvoucher-table input {
+  width: 100%;
+  padding: 8px;
+  box-sizing: border-box;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.receiptvoucher-table tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+.receiptvoucher-table tr:hover {
+  background-color: #f1f1f1;
+}
+
+.receiptvoucher-table-container {
+  overflow-x: auto;
+}
+
+
+
+
+.receiptvoucher-form {
+  display: grid;
+  /* margin-top: 20px; */
+grid-template-columns: 1fr 1fr 1fr 1fr;
+  margin: 1px;
+  gap: 5px;
+  margin-top: 20px;
+}
+
+.receiptvoucher-control {
+  padding: 10px;
+    border-radius: 4px;
+    border: 1px solid rgb(223, 222, 222);
+    margin-top: 10px;
+    width: 150px;
+    margin-bottom: 5px;
+}
+
+.receiptvoucher-label {
+  font-weight: 500;
+}
+
+.receiptvoucher-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+}
+
+
+.receiptvoucher-modal {
+
+
+  margin-top: 30px;
+  margin-left: 150px;
+  background-color: white;
+  overflow-y: auto;
+  height: 570px;
+  width: 80%;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  padding: 10px;
+}
+
+
+.receiptvoucher-btn-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;margin-top: 20px;
+}
+
+
+
+@media (max-width: 768px) {
+
+  .receiptvoucher-container {
+      width: 50%;
+  }
+
+  .receiptvoucher-container h1{
+      font-weight: 400;
+      text-align: left;
+  }
+
+  .receiptvouchertable-container {
+      /* width: 100%; */
+  }
+
+  .receiptvouchertable-master {
+      width: 45%;
+
+  }
+
+  .receiptvouchertable1-master {}
+
+  .receiptvoucher-modal {
+      max-width: 60%;
+      margin-left: 50px;
+  }
+
+
+  .receiptvoucher-form {
+      grid-template-columns: 1fr;
+
+      height: 30vh;
+      overflow-x: auto;
+  }
+
+  .receiptvoucher-control {
+      padding: 8px;
+      margin: 8px 0;
+  }
+
+  .receiptvoucher-label {
+      font-size: 14px;
+  }
+
+  .receiptvoucher-btn-container {
+      flex-direction: column;
+      gap: 5px;
+  }
+}

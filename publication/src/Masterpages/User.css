@@ -1,0 +1,165 @@
+
+
+.user-container {
+
+
+  
+}
+
+.user-container h1{
+  font-weight: 600;
+  text-align: center;
+}
+
+.usetable-container{
+    height: 400px;
+    overflow-y: auto;
+    overflow-x: auto;
+}
+
+.usertable-container {
+  display: flex;
+  flex-direction: column;
+}
+
+.usertable1-container {
+ 
+  padding: 10px;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px #a4a6a6;
+}
+
+.usertable1-container h2 {
+  margin-bottom: 10px; 
+  text-align: center;
+}
+
+.user-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  padding: 5px; 
+  gap: 20px;
+  
+}
+
+
+
+.user-control {
+  padding: 10px;
+  border-radius: 4px;
+  border: 1px solid rgb(223, 222, 222);
+  margin: 10px 0;
+  width: 150px;
+  margin-bottom: 5px;
+}
+
+.user-label {
+  font-weight: 500;
+
+  
+}
+
+
+
+.user-btn-container {
+
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+}
+
+.error-text{
+  font-size: 12px;
+}
+
+
+
+
+.user-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+}
+
+
+.user-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: white;
+    max-width: 60%;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    padding: 20px;
+    z-index: 1000;
+  }
+
+
+
+  .user-btn-container{
+    margin-top: 30px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+  }
+
+
+
+
+
+
+@media (max-width: 768px) {
+
+  .user-container{
+    width: 50%;
+  }
+
+
+  .user-container h1{
+    font-weight: 400;
+    text-align: left;
+  }
+
+
+  .usertable-container{
+    width: 60%;
+  }
+
+  .usertable1-master{}
+  
+  .user-modal{
+    width: 60%;
+    margin-left: 20px;
+  }
+
+
+    .user-form {
+      grid-template-columns: 1fr;
+      height: 40vh; 
+      overflow-x: auto;
+    }
+  .user-control {
+    padding: 8px;
+    margin: 8px 0;
+  }
+
+  .user-label {
+    font-size: 14px;
+  }
+
+
+ 
+
+  .user-btn-container {
+    flex-direction: column;
+    gap: 5px;
+  }
+}

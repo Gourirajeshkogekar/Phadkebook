@@ -1,0 +1,204 @@
+.paymentvoucher-container {
+  /* padding: 10px; */
+
+
+
+}
+
+.paymentvoucher-container h1{
+  font-weight: 600;
+  text-align: center;
+}
+
+.paymentvouchertable-container {
+  height: 300px;
+  overflow-y: auto;
+  overflow-x: auto;
+}
+
+.paymentvouchertable-master {
+  display: flex;
+  flex-direction: column;
+}
+
+.paymentvouchertable1-master {
+  /* width: 90%;
+  background-color: #3c7291; */
+  /* width: 70%; */
+  padding: 5px;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px #a4a6a6;
+}
+
+.paymentvouchertable1-master h2 {
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+
+.paymentvouchertable-container {
+  border-radius: 8px; /* Rounded corners */
+  padding: 5px; /* Padding around the table */
+  /* background-color: #f4f4f4;  */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Optional shadow for a 3D effect */
+}
+
+
+.paymentvoucher-table {
+  margin-top: 10px;
+  height: 300px;
+  overflow-y: auto;
+  overflow-x: auto;
+  width: 100%;
+  border-collapse: collapse;
+  background-color: #ffffff;
+}
+
+.paymentvoucher-table table {
+  width: 100%;
+  
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.paymentvoucher-table th, .paymentvoucher-table td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+}
+
+.paymentvoucher-table th {
+  background-color: #f4f4f4;
+  font-weight: 600;
+}
+
+.paymentvoucher-table input {
+  width: 100%;
+  padding: 8px;
+  box-sizing: border-box;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.paymentvoucher-table tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+.paymentvoucher-table tr:hover {
+  background-color: #f1f1f1;
+}
+
+.paymentvoucher-table-container {
+  overflow-x: auto;
+}
+
+
+
+
+.paymentvoucher-form {
+  display: grid;
+  /* margin-top: 20px; */
+grid-template-columns: 1fr 1fr 1fr 1fr;
+  margin: 1px;
+  gap: 5px;
+  margin-top: 20px;
+}
+
+.paymentvoucher-control {
+  padding: 10px;
+    border-radius: 4px;
+    border: 1px solid rgb(223, 222, 222);
+    margin-top: 10px;
+    width: 10px;
+    margin-bottom: 5px;
+}
+
+.paymentvoucher-label {
+  font-weight: 500;
+}
+
+.paymentvoucher-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+}
+
+
+.paymentvoucher-modal {
+
+
+  margin-top: 30px;
+  margin-left: 150px;
+  background-color: white;
+  overflow-y: auto;
+  height: 570px;
+  width: 80%;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  padding: 10px;
+}
+
+
+.paymentvoucher-btn-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;margin-top: 20px;
+}
+
+
+
+@media (max-width: 768px) {
+
+  .paymentvoucher-container {
+      width: 50%;
+  }
+
+  .paymentvoucher-container h1{
+      font-weight: 400;
+      text-align: left;
+  }
+
+  .paymentvouchertable-container {
+      /* width: 100%; */
+  }
+
+  .paymentvouchertable-master {
+      width: 45%;
+
+  }
+
+  .paymentvouchertable1-master {}
+
+  .paymentvoucher-modal {
+      max-width: 60%;
+      margin-left: 50px;
+  }
+
+
+  .paymentvoucher-form {
+      grid-template-columns: 1fr;
+
+      height: 30vh;
+      overflow-x: auto;
+  }
+
+  .paymentvoucher-control {
+      padding: 8px;
+      margin: 8px 0;
+  }
+
+  .paymentvoucher-label {
+      font-size: 14px;
+  }
+
+  .paymentvoucher-btn-container {
+      flex-direction: column;
+      gap: 5px;
+  }
+}

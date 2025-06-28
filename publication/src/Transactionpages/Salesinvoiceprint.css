@@ -1,0 +1,59 @@
+.salesinvoiceprint-container {
+  width: 90%;
+  padding: 10px;
+  border: 1px solid #0a60bd;  /* Blue border for the main container */
+  margin: 0;
+  background-color: #f0f4f7;  /* Light grayish-blue background */
+  font-size: 12px ;
+}
+
+
+.salesinvoiceprint-btn-container {
+  position: fixed;   /* Make the buttons fixed */
+  bottom: 20px;       /* Distance from the bottom of the viewport */
+  left: 85%;          /* Center the buttons horizontally */
+  transform: translateX(-50%); /* Adjust the position to be truly centered */
+  display: flex;
+  justify-content: center;
+  z-index: 999;  
+}
+
+.salesinvoiceprint-button,
+.salesinvoicecancel-button {
+  display: inline-block;
+  margin: 5px;
+  background-color: #0a60bd;  /* Blue background for buttons */
+  color: white;
+  padding: 8px 16px;
+  border-radius: 4px;
+}
+
+.salesinvoicecancel-button {
+  background-color: #e74c3c;  /* Red color for Cancel button */
+}
+
+
+.page-number{
+  display: none;
+}
+
+
+
+/* Print Styling */
+@media print {
+  @page {
+    size: A4;
+  }
+
+  
+
+  
+
+  .inputinvoiceprint-control {
+    border: none;
+  }
+
+  .salesinvoiceprint-btn-container {
+    display: none;
+  }
+}

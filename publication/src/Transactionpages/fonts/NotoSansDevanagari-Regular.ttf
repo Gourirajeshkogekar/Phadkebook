@@ -1,0 +1,5 @@
+// ✅ Register font with correct path (only .ttf files)
+Font.register({
+  family: "NotoSansDevanagari-Regular.ttf",
+    src: "/fonts/NotoSansDevanagari-Regular.ttf", // Make sure the path is correct!
+});

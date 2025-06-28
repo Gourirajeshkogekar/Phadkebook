@@ -1,0 +1,170 @@
+.professor-container {
+   
+}
+
+
+/* Style for the loading container */
+.loadingprofessor-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    height: 100vh; /* Full viewport height */
+    text-align: center;
+  }
+  .loadingprofessor-container p {
+    margin-top: 10px;
+    font-size: 25px;
+    font-weight: bold; 
+font-style: italic; 
+text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2); 
+text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2); /* Adds a soft shadow */
+text-transform: uppercase; /* Makes all text uppercase */
+text-transform: capitalize; /* Capitalizes the first letter of each word */
+line-height: 1.5; /* Increases line height */
+background: linear-gradient(90deg, #0a60bd, #006989);
+-webkit-background-clip: text; /* Ensures the gradient is clipped to text */
+color: transparent; /* Make the text color transparent to show the background */
+padding: 5px 15px; /* Adds padding around the text */
+  }
+
+
+.professor-container h1{
+    font-weight: 600;
+    text-align: center;
+}
+
+.proftable-container {
+   
+    /* background-color: #3c7291; */
+    height: 320px;
+    overflow-y: auto;
+    overflow-x: auto;
+}
+
+.professortable-master {
+    display: flex;
+    flex-direction: column;
+}
+
+.professortable1-master {
+    /* width: 90%;
+    background-color: #3c7291; */
+    padding: 10px;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px #a4a6a6;
+}
+
+.professortable1-master h2 {
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+.professor-form {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    margin: 1px;
+    margin-top: 20px;
+    gap: 20px;height: 400px; overflow-y: auto;
+
+
+}
+
+.professor-control {
+    padding: 10px;
+  border-radius: 4px;
+  border: 1px solid rgb(223, 222, 222);
+  margin: 10px 0;
+  width: 150px;
+  margin-bottom: 5px;
+}
+
+.professor-label {
+    font-weight: 500;
+}
+
+.professor-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+  }
+
+  
+.professor-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: white;
+    max-width: 90%;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    padding: 20px;
+    z-index: 1000;
+}
+
+.prof-btn-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;   
+    margin-top: 20px;
+}
+
+
+
+@media (max-width: 768px) {
+
+    .professor-container {
+        width: 50%;
+    }
+
+    .professor-container h1{
+        font-weight: 400;
+        text-align: left;
+    }
+
+    .proftable-container{
+        width: 100%;
+    }
+
+    .professortable-master {
+        width: 65%;
+
+    }
+
+    .professortable1-master {
+        width: 100%;
+    }
+
+    .professor-modal {
+        max-width: 60%;
+        margin-left: 50px;
+    }
+
+
+    .professor-form {
+        grid-template-columns: 1fr;
+        
+        height: 50vh;
+        overflow-x: auto;
+    }
+
+    .professor-control {
+        padding: 8px;
+        margin: 8px 0;
+    }
+
+    .professor-label {
+        font-size: 14px;
+    }
+
+    .prof-btn-container {
+        flex-direction: column;
+        gap: 5px;
+    }
+}

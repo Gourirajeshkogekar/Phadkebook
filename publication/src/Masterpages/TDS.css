@@ -1,0 +1,134 @@
+.mastertds-master {
+    /* padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px; */
+  }
+
+  .mastertds-master h1{
+    font-weight: 600;
+    text-align: center;
+  }
+  
+  .mastertdstable-container{
+    /* background-color: #3c7291; */
+      height: 400px;
+      overflow-y: auto;
+      overflow-x: auto;
+  }
+  
+  .mastertdstable-master {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .mastertdstable1-master {
+    /* width: 100%;
+    background-color: #3c7291; */
+    padding: 10px;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px #a4a6a6;
+  }
+  
+  .mastertdstable1-master h2 {
+    margin-bottom: 10px; 
+    text-align: center;
+  }
+  
+  .mastertds-form {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    margin: 1px;
+    margin-top: 20px;
+     gap: 20px
+  }
+  
+  .mastertds-control {
+    padding: 10px;
+    border-radius: 4px;
+    border: 1px solid rgb(223, 222, 222);
+    margin: 10px 0;
+    width: 150px;
+    margin-bottom: 5px;
+  }
+  
+  .mastertds-label {
+    font-weight: 500;
+  }
+  
+  .mastertds-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+  }
+
+  
+.mastertds-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: white;
+    max-width: 70%;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    padding: 20px;
+    z-index: 1000;
+}
+  .mastertds-btn-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    margin-top: 20px;
+  }
+  
+  
+  
+  @media (max-width: 768px) {
+  
+    .mastertds-master{
+      width: 60%;
+    }
+
+    .mastertds-master h1{
+      font-weight: 400;
+      text-align: left;
+    }
+    .mastertdstable-master{
+      width: 50%;
+      
+    }
+  
+    .mastertdstable1-master{
+     
+    }
+    
+    .mastertds-modal{
+      width: 50%;margin-left: 50px;
+    }
+  
+  
+      .mastertds-form {
+        grid-template-columns: 1fr;
+        height: 70vh;
+        overflow-x: auto;
+      }
+    .mastertds-control {
+      padding: 8px;
+      margin: 8px 0;
+    }
+  
+    .mastertds-label {
+      font-size: 14px;
+    }
+  
+    .mastertds-btn-container {
+      flex-direction: column;
+      gap: 5px;
+    }
+  }

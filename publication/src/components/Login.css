@@ -1,0 +1,216 @@
+/* 
+.login-background{
+  width: 1500px;
+  
+  background-image: url('book.jpg'); 
+}
+
+
+
+.login-container {
+    width: 100%;
+    max-width: 400px;
+    margin: 50px auto;
+    padding: 20px;
+margin-top: 100px;
+
+ background-color: #fff;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    position: relative;
+    background-size: cover;
+    background-position: center; 
+    
+  }
+  
+  .login-container h4{
+    text-align: center;
+    color: #0a60bd;
+    font-size: 28px;
+    font-weight: 600;
+    margin-bottom: 20px;
+  }
+  
+  .login-form {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 30px;
+  }
+
+  .login-label {
+    font-weight: 500;
+    text-align: left;
+    width: 100%;
+  }
+  
+  .login-control {
+    padding: 10px;
+    font-size: 14px;
+    border-radius: 5px;
+    
+    width: 60%;
+  }
+  
+  .login-control:focus {
+    border: 1px solid #0a60bd;
+    outline: none;
+  }
+
+
+  .error-text {
+    color: red;
+    font-size: 12px;
+    margin-top: 5px;
+  }
+  
+  .login-btn-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 30px;
+  }
+  
+  .login-btn {
+    width: 40%;
+    padding:10px;
+    font-size: 14px;
+    font-weight: 400;
+    border-radius: 5px;
+    transition: background-color 0.3s;
+  }
+  
+ 
+  @media (max-width: 480px) {
+    .login-container {
+      width: 90%;
+    }
+    h1 {
+      font-size: 24px;
+    }
+  }
+   */
+
+
+   /* Container */
+
+/* Full-page background with a gradient */
+.login-background {
+  width: 100%;
+  height: 100vh;
+  background: linear-gradient(to right, #2c3e50, #4ca1af); /* Dark blue gradient */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+}
+
+/* Semi-transparent overlay for better readability */
+.login-background::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.4); /* Dark overlay */
+}
+
+/* Centered login container */
+.login-container {
+  width: 100%;
+  max-width: 420px;
+  background-color: rgba(255, 255, 255, 0.95); /* Light background */
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+  border-radius: 12px;
+  padding: 30px;
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Title Styling */
+.login-container h5 {
+  font-size: 22px;
+  font-weight: bold;
+  color: #0a60bd;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+/* Form Styles */
+.login-form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+/* Input Label */
+.login-label {
+  font-weight: 600;
+  font-size: 14px;
+  color: #333;
+}
+
+/* Input Fields */
+.login-control {
+  width: 100%;
+  padding: 12px;
+  font-size: 16px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  transition: border 0.3s ease-in-out;
+}
+
+/* Focus effect */
+.login-control:focus {
+  border: 2px solid #0a60bd;
+  outline: none;
+}
+
+/* Error Text */
+.error-text {
+  color: red;
+  font-size: 12px;
+}
+
+/* Remember Me Checkbox */
+.login-checkbox-container {
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+  color: #444;
+  gap: 5px;
+}
+
+/* Login Button */
+.login-btn-container {
+  display: flex;
+  justify-content: center;
+}
+
+.login-btn {
+  width: 50%;
+  padding: 12px;
+  font-size: 16px;
+  font-weight: bold;
+  border-radius: 8px;
+  background-color: #0a60bd;
+  color: white;
+  transition: background-color 0.3s ease-in-out;
+}
+
+.login-btn:hover {
+  background-color: #084d81;
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+  .login-container {
+    width: 90%;
+    padding: 20px;
+  }
+}

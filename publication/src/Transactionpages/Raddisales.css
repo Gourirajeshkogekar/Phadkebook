@@ -1,0 +1,202 @@
+.raddisales-container {
+    /* padding: 10px; */
+  }
+  
+  .raddisales-container h1{
+    font-weight: 600;
+    text-align: center;
+  }
+  
+  .raddisalestable-container {
+    height: 350px;
+    overflow-y: auto;
+    overflow-x: auto;
+  }
+  
+  .raddisalestable-master {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .raddisalestable1-master {
+    /* width: 90%;
+    background-color: #3c7291; */
+    /* width: 70%; */
+    padding: 10px;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px #a4a6a6;
+  }
+  
+  .raddisalestable1-master h2 {
+    margin-bottom: 10px;
+    text-align: center;
+  }
+  
+  
+  .raddisalestable-container {
+    border-radius: 8px; /* Rounded corners */
+    padding: 16px; /* Padding around the table */
+    /* background-color: #f4f4f4;  */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Optional shadow for a 3D effect */
+  }
+  
+  
+  .raddisales-table {
+    margin-top: 20px;
+    height: 250px;
+    overflow-y: auto;
+    overflow-x: auto;
+    width: 100%;
+    border-collapse: collapse;
+    background-color: #ffffff;
+  }
+  
+  .raddisales-table table {
+    width: 100%;
+    
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .raddisales-table th, .raddisales-table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+  }
+  
+  .raddisales-table th {
+    background-color: #f4f4f4;
+    font-weight: 600;
+  }
+  
+  .raddisales-table input {
+    width: 100%;
+    padding: 8px;
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+  
+  .raddisales-table tr:nth-child(even) {
+    background-color: #f9f9f9;
+  }
+  
+  .raddisales-table tr:hover {
+    background-color: #f1f1f1;
+  }
+  
+  .raddisales-table-container {
+    overflow-x: auto;
+  }
+  
+  
+  
+  
+  .raddisales-form {
+    display: grid;
+    gap: 20px;
+    grid-template-columns: 1fr 1fr ;
+    margin-top: 30px;
+  }
+  
+  .raddisales-control {
+    padding: 10px;
+      border-radius: 4px;
+      border: 1px solid rgb(223, 222, 222);
+      margin: 10px;
+      width: 150px;
+      margin-bottom: 5px;
+  }
+  
+  .raddisales-label {
+    font-weight: 500;
+  }
+  
+  .raddisales-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+  }
+  
+  
+  .raddisales-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: white;
+    max-width: 30%;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    padding: 20px;
+    z-index: 1000;
+  }
+  
+  
+  .raddisales-btn-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;margin-top: 20px;
+  }
+  
+  
+  
+  @media (max-width: 768px) {
+  
+    .raddisales-container {
+        width: 60%;
+    }
+  
+    .raddisales-container h1{
+        font-weight: 400;
+        text-align: left; 
+    }
+  
+    .raddisalestable-container {
+        width: 65%;
+  
+    }
+  
+    .raddisalestable-master {
+        width: 60%;
+  
+  
+    }
+  
+    .raddisalestable1-master {
+  
+    }
+  
+    .raddisales-modal {
+        max-width: 60%;
+        margin-left: 50px;
+    }
+  
+  
+    .raddisales-form {
+        grid-template-columns: 1fr;
+  
+        height: 30vh;
+        overflow-x: auto;
+    }
+  
+    .raddisales-control {
+        padding: 8px;
+        margin: 8px 0;
+    }
+  
+    .raddisales-label {
+        font-size: 14px;
+    }
+  
+    .raddisales-btn-container {
+        flex-direction: column;
+        gap: 5px;
+    }
+  }

@@ -1,0 +1,829 @@
+const handlePrint = async () => {
+  try {
+    const response = await axios.get(
+      `https://publication.microtechsolutions.net.in/php/getstockbook.php?fromdate=${fromdate.format(
+        "YYYY-MM-DD"
+      )}&todate=${todate.format("YYYY-MM-DD")}`
+    );
+
+    const data = response.data.data || [];
+    if (data.length === 0) {
+      alert("No data found!");
+      return;
+    }
+
+    const pdf = new jsPDF("p", "mm", "a4");
+    const pageWidth = pdf.internal.pageSize.getWidth();
+
+    const sanitizeText = (text) => {
+      if (typeof text !== "string") return "";
+      return text.replace(/[^ -~\u0900-\u097F]+/g, "").trim();
+    };
+
+    const groupedData = data.reduce((acc, row, idx) => {
+      const key =
+        row.BookCode || row.BookName || row.BookNameMarathi || `Book-${idx}`;
+      if (!acc[key]) {
+        acc[key] = {
+          bookName: sanitizeText(
+            row.BookName || row.BookNameMarathi || "N/A"
+          ),
+          records: [],
+        };
+      }
+      acc[key].records.push(row);
+      return acc;
+    }, {});
+
+    const addMainHeading = () => {
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(12);
+      pdf.text("Phadke Prakashan, Kolhapur", pageWidth / 2, 12, {
+        align: "center",
+      });
+      pdf.setFontSize(10);
+      pdf.setFont("helvetica", "normal");
+      pdf.text(
+        `Stock Book | From ${fromdate.format("YYYY-MM-DD")} To ${todate.format(
+          "YYYY-MM-DD"
+        )}`,
+        pageWidth / 2,
+        18,
+        { align: "center" }
+      );
+      pdf.text(`Page ${pdf.internal.getNumberOfPages()}`, pageWidth - 20, 10);
+    };
+
+    addMainHeading();
+
+    let currentY = 30;
+
+    for (const [bookCode, bookData] of Object.entries(groupedData)) {
+      const { bookName, records } = bookData;
+
+      const tableRows = records.map((row, i) => [
+        i + 1,
+        dayjs(row.InvertDate?.date).format("YYYY-MM-DD") || "",
+        row.InvertNo || row.ChallanNo,
+        row.AccountName || "",
+        row.inwardtotal || 0,
+        row.outwardtotal || 0,
+        row.Balance !== undefined ? row.Balance : 0,
+      ]);
+
+      const totalInward = records.reduce(
+        (sum, r) => sum + Number(r.inwardtotal || 0),
+        0
+      );
+      const totalOutward = records.reduce(
+        (sum, r) => sum + Number(r.outwardtotal || 0),
+        0
+      );
+      const totalBalance = records.reduce(
+        (sum, r) => sum + Number(r.Balance || 0),
+        0
+      );
+
+      tableRows.push([
+        "",
+        "",
+        "",
+        "Total",
+        totalInward,
+        totalOutward,
+        totalBalance,
+      ]);
+
+      const estimatedTableHeight = 10 + tableRows.length * 6;
+
+      if (currentY + estimatedTableHeight > pdf.internal.pageSize.getHeight()) {
+        pdf.addPage();
+        currentY = 20;
+        addMainHeading();
+      }
+
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(11);
+      pdf.text(`Book Code: ${bookCode}`, 14, currentY);
+      currentY += 7;
+      pdf.text(`Book Name: ${sanitizeText(bookName)}`, 14, currentY);
+      currentY += 4;
+
+      autoTable(pdf, {
+        startY: currentY,
+        margin: { top: 25 },
+        head: [[
+          "Sr.No", "Date", "Ref No", "Particulars", "Inward", "Outward", "Balance"
+        ]],
+        body: tableRows,
+        theme: "grid",
+        rowPageBreak: "avoid",
+        headStyles: {
+          fillColor: [41, 128, 185],
+          textColor: 255,
+          fontStyle: "bold",
+          halign: "center",
+        },
+        styles: {
+          fontSize: 8,
+          halign: "center",
+          cellPadding: { top: 2, bottom: 2 },
+        },
+        willDrawCell: (data) => {
+          if (data.row.index === tableRows.length - 1) {
+            pdf.setFont("helvetica", "bold");
+          } else {
+            pdf.setFont("helvetica", "normal");
+          }
+        },
+        didDrawPage: () => {
+          addMainHeading();
+        },
+      });
+
+      currentY = pdf.lastAutoTable.finalY + 10;
+    }
+
+    const blob = pdf.output("blob");
+    const blobUrl = URL.createObjectURL(blob);
+    window.open(blobUrl, "_blank");
+  } catch (err) {
+    console.error("Error generating PDF:", err);
+    alert("Failed to generate PDF.");
+  }
+};
+
+
+
+
+const handlePrint = async () => {
+    try {
+      const response = await axios.get(
+        `https://publication.microtechsolutions.net.in/php/getstockdaybook.php?fromdate=${fromdate.format(
+          "YYYY-MM-DD"
+        )}&todate=${todate.format("YYYY-MM-DD")}`
+      );
+
+      const data = response.data.data || {};
+      const transactionTypes = [
+        "inwardchallan",
+        "saleschallan",
+        "canvassorinvoice",
+        "salesinvoice",
+        "salesreturn",
+        "paperoutward",
+      ];
+
+      // ✅ Field mappings for each transaction type
+      const fieldMap = {
+        inwardchallan: {
+          date: "InvertDate",
+          refNo: "InvertNo",
+          party: "AccountName",
+          book1: "BookNameMarathi",
+          book2: "BookName",
+          inward: "inwardchallantotal",
+          outward: null,
+        },
+        saleschallan: {
+          date: "ChallanDate",
+          refNo: "ChallanNo",
+          party: "AccountName",
+          book1: "BookNameMarathi",
+          book2: "BookName",
+          inward: null,
+          outward: "saleschallantotal",
+        },
+        canvassorinvoice: {
+          date: "InvoiceDate",
+          refNo: "InvoiceNo",
+          party: "AccountName",
+          book1: "BookNameMarathi",
+          book2: "BookName",
+          inward: null,
+          outward: "canvassortotal",
+        },
+        salesinvoice: {
+          date: "InvoiceDate",
+          refNo: "InvoiceNo",
+          party: "AccountName",
+          book1: "BookNameMarathi",
+          book2: "BookName",
+          inward: null,
+          outward: "salesiinvoicetotal",
+        },
+        salesreturn: {
+          date: "Date",
+          refNo: "NoteNo",
+          party: "AccountName",
+          book1: "BookNameMarathi",
+          book2: "BookName",
+          inward: "salesreturntotal",
+          outward: null,
+        },
+        paperoutward: {
+          date: "ChallanDate",
+          refNo: "ChallanNo",
+          party: "AccountName",
+          paper: "PaperSizeName",
+          inward: null,
+          outward: "PaperOutwardtotal",
+        },
+      };
+
+      const pdf = new jsPDF("p", "mm", "a4");
+      const pageWidth = pdf.internal.pageSize.getWidth();
+
+      const sanitizeText = (text) =>
+        typeof text === "string"
+          ? text.replace(/[^ -~\u0900-\u097F]+/g, "").trim()
+          : "";
+
+      const addMainHeading = (title) => {
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(12);
+        pdf.text("Phadke Prakashan, Kolhapur", pageWidth / 2, 12, {
+          align: "center",
+        });
+
+        pdf.setFontSize(10);
+        pdf.setFont("helvetica", "bold");
+        pdf.text(
+          `Stock Day Book Report | From ${fromdate.format(
+            "YYYY-MM-DD"
+          )} To ${todate.format("YYYY-MM-DD")}`,
+          pageWidth / 2,
+          18,
+          { align: "center" }
+        );
+        pdf.text(`Page ${pdf.internal.getNumberOfPages()}`, pageWidth - 20, 10);
+      };
+
+      let isFirstPage = true;
+
+      for (const type of transactionTypes) {
+        const records = data[type] || [];
+        const fields = fieldMap[type];
+
+        if (!isFirstPage) {
+          pdf.addPage();
+        } else {
+          isFirstPage = false;
+        }
+
+        addMainHeading(type.toUpperCase());
+
+        let currentY = 30;
+
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(11);
+        pdf.text(`Transaction: ${type.toUpperCase()}`, 14, currentY);
+        currentY += 7;
+
+        if (records.length === 0) {
+          pdf.setFont("helvetica", "normal");
+          pdf.setFontSize(10);
+          pdf.text(
+            "No data available for this transaction type.",
+            14,
+            currentY + 10
+          );
+          continue;
+        }
+
+        const tableRows = records.map((row, index) => {
+          const date = row[fields.date]
+            ? dayjs(row[fields.date]).format("YYYY-MM-DD")
+            : "-";
+
+          const inward = fields.inward ? Number(row[fields.inward]) : 0;
+          const outward = fields.outward ? Number(row[fields.outward]) : 0;
+
+          return [
+            index + 1,
+            "-",
+            date,
+            row[fields.refNo] || "-",
+            sanitizeText(row[fields.party] || "-"),
+            sanitizeText(
+              row[fields.book1] || row[fields.book2] || row[fields.paper] || "-"
+            ),
+
+            inward,
+            outward,
+          ];
+        });
+
+        const totalInward = tableRows.reduce((sum, row) => sum + row[6], 0);
+        const totalOutward = tableRows.reduce((sum, row) => sum + row[7], 0);
+        tableRows.push([
+          "",
+          "",
+          "",
+          "",
+          "",
+          "TOTAL",
+          totalInward,
+          totalOutward,
+        ]);
+
+        autoTable(pdf, {
+          startY: currentY,
+          margin: { top: 35 },
+          head: [
+            [
+              "Sr.No",
+              "Ref No",
+              "Date",
+              "Our Ref No",
+              "Name of the Party",
+              "Particulars",
+              "Inward",
+              "Outward",
+            ],
+          ],
+          body: tableRows,
+          theme: "grid",
+          styles: {
+            fontSize: 8,
+            halign: "center",
+            valign: "middle",
+            cellPadding: { top: 2, bottom: 2, left: 1, right: 1 },
+            overflow: "linebreak",
+          },
+          headStyles: {
+            fillColor: [0, 102, 204],
+            textColor: 255,
+            fontStyle: "bold",
+          },
+          columnStyles: {
+            1: { cellWidth: 15 }, // Ref No - smaller width
+            2: { cellWidth: 25 }, // Date
+            4: { cellWidth: 40 }, // Party Name
+            5: { cellWidth: 40 }, // Book / Paper name
+          },
+          willDrawCell: (data) => {
+            if (data.row.index === tableRows.length - 1) {
+              pdf.setFont("helvetica", "bold");
+            } else {
+              pdf.setFont("helvetica", "normal");
+            }
+          },
+        });
+      }
+
+      const blob = pdf.output("blob");
+      const blobUrl = URL.createObjectURL(blob);
+      window.open(blobUrl, "_blank");
+    } catch (err) {
+      console.error("Error generating PDF:", err);
+      toast.error("Failed to generate PDF.");
+    }
+  };
+
+
+  import React, { useState, useRef, useEffect } from "react";
+import {
+  Box,
+  Button,
+  TextField,
+  Typography,
+  Autocomplete,
+} from "@mui/material";
+import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
+import axios from "axios";
+import dayjs from "dayjs";
+import autoTable from "jspdf-autotable";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
+const Stockdaybookreport = () => {
+  const [fromdate, setFromDate] = useState(dayjs());
+  const [todate, setToDate] = useState(dayjs());
+  const [bookName, setBookName] = useState("");
+  const [selectedBookLabel, setSelectedBookLabel] = useState("");
+  const [bookOptions, setBookOptions] = useState([]);
+  const [previewImage, setPreviewImage] = useState(null);
+  const [showPreview, setShowPreview] = useState(false);
+  const [bookReportData, setBookreportdata] = useState([]);
+  const hiddenReportRef = useRef();
+
+  useEffect(() => {
+    fetchBooks();
+  }, []);
+
+  const fetchBooks = async () => {
+    try {
+      const response = await axios.get(
+        "https://publication.microtechsolutions.net.in/php/Bookget.php"
+      );
+      const options = response.data.map((book) => ({
+        value: book.Id,
+        label: book.BookName || book.BookNameMarathi,
+        code: book.BookCode,
+      }));
+      setBookOptions(options);
+    } catch (error) {
+      toast.error("Error fetching books:", error);
+    }
+  };
+
+  const handlePrint = async () => {
+    try {
+      const response = await axios.get(
+        `https://publication.microtechsolutions.net.in/php/getstockdaybook.php?fromdate=${fromdate.format(
+          "YYYY-MM-DD"
+        )}&todate=${todate.format("YYYY-MM-DD")}`
+      );
+
+      const data = response.data.data || {};
+      const transactionTypes = [
+        "inwardchallan",
+        "saleschallan",
+        "canvassorinvoice",
+        "salesinvoice",
+        "salesreturn",
+        "paperoutward",
+      ];
+
+      // ✅ Field mappings for each transaction type
+      const fieldMap = {
+        inwardchallan: {
+          date: "InvertDate",
+          refNo: "InvertNo",
+          party: "AccountName",
+          book1: "BookNameMarathi",
+          book2: "BookName",
+          inward: "inwardchallantotal",
+          outward: null,
+        },
+        saleschallan: {
+          date: "ChallanDate",
+          refNo: "ChallanNo",
+          party: "AccountName",
+          book1: "BookNameMarathi",
+          book2: "BookName",
+          inward: null,
+          outward: "saleschallantotal",
+        },
+        canvassorinvoice: {
+          date: "InvoiceDate",
+          refNo: "InvoiceNo",
+          party: "AccountName",
+          book1: "BookNameMarathi",
+          book2: "BookName",
+          inward: null,
+          outward: "canvassortotal",
+        },
+        salesinvoice: {
+          date: "InvoiceDate",
+          refNo: "InvoiceNo",
+          party: "AccountName",
+          book1: "BookNameMarathi",
+          book2: "BookName",
+          inward: null,
+          outward: "salesiinvoicetotal",
+        },
+        salesreturn: {
+          date: "Date",
+          refNo: "NoteNo",
+          party: "AccountName",
+          book1: "BookNameMarathi",
+          book2: "BookName",
+          inward: "salesreturntotal",
+          outward: null,
+        },
+        paperoutward: {
+          date: "ChallanDate",
+          refNo: "ChallanNo",
+          party: "AccountName",
+          paper: "PaperSizeName",
+          inward: null,
+          outward: "PaperOutwardtotal",
+        },
+      };
+
+      const pdf = new jsPDF("p", "mm", "a4");
+      const pageWidth = pdf.internal.pageSize.getWidth();
+
+      const sanitizeText = (text) =>
+        typeof text === "string"
+          ? text.replace(/[^ -~\u0900-\u097F]+/g, "").trim()
+          : "";
+
+      const addMainHeading = (title) => {
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(12);
+        pdf.text("Phadke Prakashan, Kolhapur", pageWidth / 2, 12, {
+          align: "center",
+        });
+
+        pdf.setFontSize(10);
+        pdf.setFont("helvetica", "bold");
+        pdf.text(
+          `Stock Day Book Report | From ${fromdate.format(
+            "YYYY-MM-DD"
+          )} To ${todate.format("YYYY-MM-DD")}`,
+          pageWidth / 2,
+          18,
+          { align: "center" }
+        );
+        pdf.text(`Page ${pdf.internal.getNumberOfPages()}`, pageWidth - 20, 10);
+      };
+
+      let isFirstPage = true;
+
+      for (const type of transactionTypes) {
+        const records = data[type] || [];
+        const fields = fieldMap[type];
+
+        if (!isFirstPage) {
+          pdf.addPage();
+        } else {
+          isFirstPage = false;
+        }
+
+        addMainHeading(type.toUpperCase());
+
+        let currentY = 30;
+
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(11);
+        pdf.text(`Transaction: ${type.toUpperCase()}`, 14, currentY);
+        currentY += 7;
+
+        if (records.length === 0) {
+          pdf.setFont("helvetica", "normal");
+          pdf.setFontSize(10);
+          pdf.text(
+            "No data available for this transaction type.",
+            14,
+            currentY + 10
+          );
+          continue;
+        }
+
+        const tableRows = records.map((row, index) => {
+          const date = row[fields.date]
+            ? dayjs(row[fields.date]).format("YYYY-MM-DD")
+            : "-";
+
+          const inward = fields.inward ? Number(row[fields.inward]) : 0;
+          const outward = fields.outward ? Number(row[fields.outward]) : 0;
+
+          return [
+            index + 1,
+            "-",
+            date,
+            row[fields.refNo] || "-",
+            sanitizeText(row[fields.party] || "-"),
+            sanitizeText(
+              row[fields.book1] || row[fields.book2] || row[fields.paper] || "-"
+            ),
+
+            inward,
+            outward,
+          ];
+        });
+
+        const totalInward = tableRows.reduce((sum, row) => sum + row[6], 0);
+        const totalOutward = tableRows.reduce((sum, row) => sum + row[7], 0);
+        tableRows.push([
+          "",
+          "",
+          "",
+          "",
+          "",
+          "TOTAL",
+          totalInward,
+          totalOutward,
+        ]);
+
+        autoTable(pdf, {
+          startY: currentY,
+          margin: { top: 35 },
+          head: [
+            [
+              "Sr.No",
+              "Ref No",
+              "Date",
+              "Our Ref No",
+              "Name of the Party",
+              "Particulars",
+              "Inward",
+              "Outward",
+            ],
+          ],
+          body: tableRows,
+          theme: "grid",
+          styles: {
+            fontSize: 8,
+            halign: "center",
+            valign: "middle",
+            cellPadding: { top: 2, bottom: 2, left: 1, right: 1 },
+            overflow: "linebreak",
+          },
+          headStyles: {
+            fillColor: [0, 102, 204],
+            textColor: 255,
+            fontStyle: "bold",
+          },
+          columnStyles: {
+            1: { cellWidth: 15 }, // Ref No - smaller width
+            2: { cellWidth: 25 }, // Date
+            4: { cellWidth: 40 }, // Party Name
+            5: { cellWidth: 40 }, // Book / Paper name
+          },
+          willDrawCell: (data) => {
+            if (data.row.index === tableRows.length - 1) {
+              pdf.setFont("helvetica", "bold");
+            } else {
+              pdf.setFont("helvetica", "normal");
+            }
+          },
+        });
+      }
+
+      const blob = pdf.output("blob");
+      const blobUrl = URL.createObjectURL(blob);
+      window.open(blobUrl, "_blank");
+    } catch (err) {
+      console.error("Error generating PDF:", err);
+      toast.error("Failed to generate PDF.");
+    }
+  };
+
+ 
+
+  return (
+    <Box p={3}>
+      <Typography
+        variant="h4"
+        mb={3}
+        sx={{
+          textAlign: "center",
+          background: "linear-gradient(to right, #007cf0, #00dfd8)",
+          WebkitBackgroundClip: "text",
+          WebkitTextFillColor: "transparent",
+          textShadow: "2px 2px 4px rgba(0,0,0,0.2)",
+          fontWeight: "bold",
+        }}>
+        Stock Day Book Report
+      </Typography>
+
+      <LocalizationProvider dateAdapter={AdapterDayjs}>
+        <Box display="flex" gap={2} flexWrap="wrap" mb={3}>
+          <DatePicker
+            label="From Date"
+            value={fromdate}
+            onChange={(newValue) => setFromDate(newValue)}
+          />
+          <DatePicker
+            label="To Date"
+            value={todate}
+            onChange={(newValue) => setToDate(newValue)}
+          />
+        </Box>
+      </LocalizationProvider>
+
+      <Button
+        variant="contained"
+        color="primary"
+        onClick={handlePrint}
+        sx={{ mt: 2 }}>
+        Generate PDF
+      </Button>
+
+      {/* Hidden content for PDF rendering */}
+      <Box
+        ref={hiddenReportRef}
+        sx={{
+          display: "none",
+          p: 3,
+          width: "600px",
+          backgroundColor: "#fff",
+          fontSize: "13px",
+          textAlign: "center",
+        }}>
+        <Typography variant="h6">Phadke Book House</Typography>
+        <Typography sx={{ fontWeight: "bold" }}>
+          Stock Day Book Report
+        </Typography>
+        <p style={{ fontSize: "12px" }}>
+          <strong>Book:</strong> {selectedBookLabel} &nbsp;&nbsp;&nbsp;
+          <strong>From:</strong> {fromdate.format("YYYY-MM-DD")}{" "}
+          &nbsp;&nbsp;&nbsp;
+          <strong>To:</strong> {todate.format("YYYY-MM-DD")}
+        </p>
+        <Box mt={3}>
+          <table
+            style={{
+              width: "100%",
+              borderCollapse: "collapse",
+              border: "1px solid #000",
+              fontSize: "11px",
+            }}>
+            <thead>
+              <tr style={{ backgroundColor: "#1976d2", color: "#fff" }}>
+                <th>Sr.No</th>
+
+                <th
+                  style={{
+                    padding: "10px",
+                    border: "1px solid #ccc",
+                    textAlign: "center",
+                  }}>
+                  Party Ref No
+                </th>
+                <th
+                  style={{
+                    padding: "10px",
+                    border: "1px solid #ccc",
+                    textAlign: "center",
+                  }}>
+                  Party Date
+                </th>
+                <th
+                  style={{
+                    padding: "10px",
+                    border: "1px solid #ccc",
+                    textAlign: "center",
+                  }}>
+                  Our Ref No
+                </th>
+                <th
+                  style={{
+                    padding: "10px",
+                    border: "1px solid #ccc",
+                    textAlign: "right",
+                  }}>
+                  Name Of the Party
+                </th>
+
+                <th
+                  style={{
+                    padding: "10px",
+                    border: "1px solid #ccc",
+                    textAlign: "right",
+                  }}>
+                  Particulars
+                </th>
+
+                <th
+                  style={{
+                    padding: "10px",
+                    border: "1px solid #ccc",
+                    textAlign: "right",
+                  }}>
+                  Inward
+                </th>
+
+                <th
+                  style={{
+                    padding: "10px",
+                    border: "1px solid #ccc",
+                    textAlign: "right",
+                  }}>
+                  Outward
+                </th>
+              </tr>
+            </thead>
+          </table>
+        </Box>
+      </Box>
+
+      {/* Preview Section */}
+      {showPreview && previewImage && (
+        <Box
+          mt={4}
+          p={2}
+          border="1px solid #ccc"
+          borderRadius={2}
+          sx={{ maxWidth: 620 }}>
+          <Typography variant="h6" mb={2}>
+            PDF Preview
+          </Typography>
+          <img
+            src={previewImage}
+            alt="PDF Preview"
+            style={{ width: "100%", border: "1px solid #000" }}
+          />
+          {/* <Button
+            variant="contained"
+            color="secondary"
+            sx={{ mt: 2 }}
+            onClick={handleDownload}>
+            Download PDF
+          </Button> */}
+        </Box>
+      )}
+
+      <ToastContainer />
+    </Box>
+  );
+};
+
+export default Stockdaybookreport;

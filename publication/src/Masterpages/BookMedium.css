@@ -1,0 +1,155 @@
+.bookmedium-container {
+   
+}
+
+.bookmedium-container h1{
+    text-align: center;
+    font-weight: 600;
+}
+
+.bookmediumtable-container{
+    /* background-color: #3c7291; */
+        height: 400px;
+        overflow-y: auto;
+        overflow-x: auto;
+}
+
+.bookmediumtable-master {
+    display: flex;
+    flex-direction: column;
+}
+
+.bookmediumtable1-master {
+    /* width: 100%; */
+    /* background-color: #3c7291; */
+    padding: 10px;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px #a4a6a6;
+}
+
+.bookmediumtable1-master h2 {
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+.bookmedium-form {
+    display: grid; 
+    gap: 20px;
+    grid-template-columns: 1fr 1fr 1fr ;
+    margin-top: 20px;
+
+   
+}
+
+.bookmedium-control {
+    padding: 10px;
+    border-radius: 4px;
+    border: 1px solid rgb(223, 222, 222);
+    margin: 10px 0;
+    width: 150px;margin-bottom: 5px;
+}
+
+.bookmedium-label {
+    font-weight: 500;
+}
+
+
+
+.bookmedium-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+  }
+
+  
+.bookmedium-modal {
+    position: fixed;
+    top: 40%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: white;
+    max-width: 40%;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    padding: 20px;
+    z-index: 1000;
+}
+
+.bookmedium-btn-container {
+    margin-top: 30px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+}
+
+/* .bookmediumtable-container{
+    border: 1px solid black; 
+    background-color: #6693ad;
+     color:whitesmoke;
+    margin-bottom: 40px;
+} */
+
+.required{
+    color: red;
+}
+
+.error-text{
+    color:red; font-weight: 400;
+}
+
+
+
+
+
+
+@media (max-width: 768px) {
+
+    .bookmedium-container {
+        width: 35%;
+    }
+
+    .bookmedium-container h1{
+        text-align: left;
+        font-weight: 400;
+        width: 200px;
+    }
+
+    .bookmediumtable-master {
+        width: 100%;
+
+    }
+
+    .bookmediumtable1-master {}
+
+    .bookmedium-modal {
+        max-width: 60%;
+        margin-left: 50px;
+        margin-top: 20px;
+    }
+
+
+    .bookmedium-form {
+        grid-template-columns: 1fr;
+        height: 40vh;
+        overflow-y: auto;
+    }
+
+    .bookmedium-control {
+        padding: 8px;
+        margin: 8px 0;
+    }
+
+    .bookmedium-label {
+        font-size: 14px;
+    }
+
+    .bookmedium-btn-container {
+        flex-direction: column;
+        gap: 5px;
+    }
+}

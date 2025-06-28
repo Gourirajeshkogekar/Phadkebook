@@ -1,0 +1,115 @@
+
+
+
+
+   .receiptvoucherprint-container {
+  font-family: 'Times New Roman', Times, serif; 
+ }
+  
+  .receiptvoucherprintheader {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    background-color: #e6f3ff;
+    padding: 20px;
+    border-radius: 8px;
+  }
+  
+  .receiptvoucherprintleft-header,
+  .receiptvoucherprintright-header {
+    font-size: 14px;
+    color: #007acc;
+  }
+  
+  .receiptvoucherprintleft-header p {
+    margin: 0;
+  }
+  
+  .receiptvoucherprintright-header {
+    text-align: right;
+  }
+  
+  .receiptvoucherprintmain-content {
+    margin-top: 5px;
+    font-size: 16px;
+    color: #333333;
+    line-height: 1.5;
+    /* background-color: #608BC1; */
+  }
+  
+  .receiptvoucherprintmain-content p {
+    margin: 10px 0;
+  }
+  
+  .receiptvoucherprintfooter {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 40px;
+    background-color: #e6f3ff;
+    padding: 20px;
+    border-radius: 8px;
+  }
+  
+  .left-receiptvoucherprintfooter {
+    font-size: 14px;
+    color: #333333;
+  }
+  
+  .right-receiptvoucherprintfooter {
+    margin-top: 100px;
+    text-align: right;
+    font-size: 14px;
+    color: #333333;
+  }
+  
+  .receiptvoucherprint-btn-container {
+    position: fixed;
+      /* Make the buttons fixed */
+      bottom: 20px;
+      /* Distance from the bottom of the viewport */
+      left: 85%;
+      /* Center the buttons horizontally */
+      transform: translateX(-50%);
+      /* Adjust the position to be truly centered */
+      display: flex;
+      justify-content: center;
+      z-index: 999;
+  }
+  
+  .receiptvoucherprint-button,
+  .receiptvouchercancel-button {
+display: inline-block;
+  margin: 5px;
+  background-color: #0a60bd;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 4px;
+  }
+  
+  .receiptvoucherprint-button {
+    background-color: #007acc;
+    color: white;
+    border: none;
+  }
+  
+  .receiptvoucherprint-button:hover {
+    background-color: #005a8e;
+    cursor: pointer;
+  }
+  
+  .receiptvoucherprint-button:disabled {
+    background-color: #005a8e;
+    cursor: not-allowed;
+  }
+  
+  .receiptvouchercancel-button {
+    background-color: #e74c3c;
+    color: white;
+    border: none;
+  }
+  
+  .receiptvouchercancel-button:hover {
+    background-color: #c0392b;
+    cursor: pointer;
+  }
+  

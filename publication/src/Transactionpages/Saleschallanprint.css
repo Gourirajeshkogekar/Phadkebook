@@ -1,0 +1,116 @@
+ .saleschallanprint-container {
+   font-family: 'Times New Roman', Times, serif;
+ }
+
+
+
+
+
+
+
+
+
+
+
+
+
+ .saleschallan-btn-container {
+  position: fixed;
+    /* Make the buttons fixed */
+    bottom: 20px;
+    /* Distance from the bottom of the viewport */
+    left: 85%;
+    /* Center the buttons horizontally */
+    transform: translateX(-50%);
+    /* Adjust the position to be truly centered */
+    display: flex;
+    justify-content: center;
+    z-index: 999;
+ }
+
+
+ .saleschallanprint-button,
+ .saleschallancancel-button {
+   display: inline-block;
+   margin: 5px;
+   background-color: #0a60bd;
+   color: white;
+   padding: 8px 16px;
+   border-radius: 4px;
+ }
+
+
+ .page-number {
+   display: none;
+ }
+
+
+
+ /* @media print {
+  @page {
+    size: A4 portrait;
+    margin: 0; 
+  }
+
+  .saleschallanprint-container {
+    width: 210mm;
+    height: 148.5mm; 
+    overflow: hidden; 
+    margin-left: 15mm;
+  }
+} */
+
+
+ @media print {
+
+   .no-print {
+     display: none !important;
+   }
+
+   @page {
+    size: A4 portrait;   }
+
+
+
+
+
+
+   .page-number {
+     display: block;
+     position: absolute;
+     bottom: 10mm;
+     right: 10mm;
+     font-size: 10px;
+     font-weight: bold;
+     text-align: right;
+   }
+
+
+
+
+
+
+
+
+
+
+
+
+   .saleschallan-btn-container {
+     display: none;
+   }
+
+
+   .sidebar,
+   .navbar {
+     display: none !important;
+   }
+
+
+
+
+
+   .page-break {
+     page-break-before: always;
+   }
+ }

@@ -1,0 +1,164 @@
+/* Container padding */
+.royaltyprint-container {
+  padding: 20px;
+  border: 1px solid #0a60bd;  /* Blue border for the main container */
+  margin: 0;
+  background-color: #f0f4f7;  /* Light grayish-blue background */
+  height: 85vh; /* Set fixed height */
+  overflow-y: auto; /* Make content scrollable if it exceeds the height */
+}
+
+/* Heading Style */
+h1 {
+  text-align: center;
+  font-weight: 600;
+}
+
+/* Header Section */
+.headerroyaltyprint-section {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.leftroyaltyprint-header, .rightroyaltyprint-header {
+  display: flex;
+  flex-direction: column;
+  font-size: 15px;
+  color: #333333; /* Dark text for easy readability */
+}
+
+.leftroyaltyprint-header div {
+  margin-bottom: 5px; /* Space between Accounting Year and Author/S */
+}
+
+/* Accounting Year and Author/S with border */
+.leftroyaltyprint-header .accounting-year {
+  border-bottom: 3px solid #0056b3; /* Deep blue border below 'Accounting Year' */
+  padding-bottom: 5px;
+  margin-bottom: 10px; /* Space between the border and next element */
+}
+
+/* Right Header */
+.rightroyaltyprint-header {
+  text-align: right;
+}
+
+/* Table Styling */
+.royaltyprint-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+  background-color: #ffffff; /* White background for the table */
+}
+
+.royaltyprint-table th, .royaltyprint-table td {
+  border: 1px solid #e0e0e0; /* Light gray border */
+  padding: 8px;
+  text-align: center;
+  color: #333333; /* Dark text for table content */
+}
+
+.royaltyprint-table th {
+  background-color: #f2f2f2; /* Light gray background for headers */
+  color: #0056b3; /* Deep blue text for headers */
+  font-weight: bold;
+}
+
+/* Distribution of Royalty Styling */
+.royalty-distribution {
+  text-align: left;
+  height: 100px;
+  font-weight: bold;
+  font-size: 16px;
+  border-top: 2px solid #ddd;
+  background-color: #e9f7f1; /* Light green background */
+  color: #0056b3; /* Deep blue text for emphasis */
+}
+
+/* Footer Section */
+.footerroyaltyprint-section {
+  text-align: right;
+}
+
+.footerroyaltyprint-section p {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* Styling for the "Total" Row */
+.royaltyprint-table td[colspan="5"] {
+  text-align: left;
+  padding-left: 20px;
+  padding-top: 20px;
+  padding-bottom: 20px;
+  font-size: 16px;
+  color: #2d6a4f; /* Rich green for the total */
+}
+
+.royaltyprint-table td[colspan="4"] {
+  text-align: right;
+  font-weight: bold;
+  color: #333333; /* Dark text for the "Total:" label */
+}
+
+/* Last row style */
+.royaltyprint-table tbody tr:last-child {
+  font-weight: bold;
+  background-color: #f9f9f9; /* Light background for the last row */
+}
+
+/* Print Button Container */
+.royaltyprint-btn-container {
+  position: fixed; /* Make the buttons fixed */
+  bottom: 20px; /* Distance from the bottom of the viewport */
+  left: 60%; /* Center the buttons horizontally */
+  transform: translateX(-50%); /* Adjust the position to be truly centered */
+  display: flex;
+  justify-content: center;
+  z-index: 999;
+}
+
+/* Button Styling */
+.royaltyprint-button,
+.royaltycancel-button {
+  display: inline-block;
+  margin: 5px;
+  background-color: #0a60bd; /* Blue background for buttons */
+  color: white;
+  padding: 8px 16px;
+  border-radius: 4px;
+}
+
+.royaltycancel-button {
+  background-color: #e74c3c;
+}
+
+/* Print Styling */
+@media print {
+  @page {
+    size: A4;
+    margin: 10mm;
+  }
+
+  /* Disable overflow during printing */
+  .royaltyprint-container {
+    overflow: visible; /* Make sure the full content is printed */
+    height: auto; /* Allow content to stretch beyond the fixed height for printing */
+    page-break-before: always; /* Ensure the content starts at the top of the page */
+  }
+
+  .royaltyprint-btn-container {
+    display: none;
+  }
+
+  /* Prevent page breaks within the content */
+  .royaltyprint-container, .royaltyprint-table {
+    page-break-inside: avoid; /* Prevent breaks inside the container/table */
+  }
+
+  /* Force a page break for the table header and footer if needed */
+  .royaltyprint-table thead, .royaltyprint-table tfoot {
+    page-break-before: always; /* Ensure headers and footers are on a new page */
+  }
+}

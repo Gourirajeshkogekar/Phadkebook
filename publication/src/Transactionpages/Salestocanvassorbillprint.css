@@ -1,0 +1,183 @@
+
+
+
+/* Primary Color (Blue) */
+.convassorbillprint-container {
+    width: 90%;
+    padding: 10px;
+    border: 1px solid #0a60bd;  /* Blue border for the main container */
+    margin-top: 0;
+      background-color: #f0f4f7;  /* Light grayish-blue background */
+    font-size: 12px ;
+  }
+
+
+.convassorbillprintheader-section{
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0px;
+}
+  
+
+  
+  .convassorbillprintto-section {
+    flex: 1;
+    font-weight: 600;
+    color: #0a60bd; 
+    font-size: 15px;width: 200px;
+  }
+
+  .convassorbillprint-textarea{
+    /* width: 40%; */
+    /* height: 80px; */
+    border: 1px solid #ddd;
+    padding: 10px;
+    border-radius: 5px;
+    margin-top: 0;
+  }
+  
+  .convassorbillprintaddress-section {
+    text-align: right;
+    flex: 2;
+    font-weight: 600;
+    color: #0a60bd;  /* Blue color for section headers */
+  }
+  
+  .convassorbillprint-details {
+    text-align: right;  
+    flex: 4;
+    color: #1a1a1a;  /* Dark gray text for invoice details */
+  }
+
+  .convassorbillprint-details .debitadvice{
+    color: #0a60bd;
+    border-bottom: 2px solid black;
+    display: inline-block;  /* Makes the width fit the content */
+    text-align: center;  /* Centers the text */
+    width: 250px;  /* Adjusts the width based on the content */
+    margin: 0 auto;  /* Optional: centers the element within its parent */
+  }
+  
+  
+  .inputconvassorbillprint-fields {
+    width: 900px;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+  }
+  
+  
+  /* .convassorbillprint-control{
+    padding: 5px;
+    border-radius: 4px;
+    border: 1px solid rgb(223, 222, 222);
+    margin-top: 10px;
+    width: 150px;
+    margin-bottom: 5px;
+  }
+  
+  .convassorbillprint-label{
+    font-weight: 550;
+  } */
+
+  .convassorbillprint-control {
+    padding: 5px;
+    border-radius: 4px;
+    border: 1px solid rgb(223, 222, 222);  /* Light border for input fields */
+    margin-top: 10px;
+    width: 150px;
+    margin-bottom: 5px;
+  }
+  
+  .convassorbillprint-label {
+    font-weight: 550;
+    color: #0a60bd;  /* Blue label color */
+  }
+  
+  /* Table Styling */
+  .tableconvassorbillprint-section table {
+    width: 75%;
+    border-collapse: collapse;
+    page-break-before: always;
+  }
+  
+  .tableconvassorbillprint-section th,
+  .tableconvassorbillprint-section td {
+    padding: 10px;
+    border: 1px solid #ddd;  /* Light gray border for table */
+    text-align: center;
+    color: #1a1a1a;  
+  }
+  
+  .tableconvassorbillprint-section tr:nth-child(even) {
+    background-color: #f9f9f9;  /* Very light gray background for even rows */
+  }
+  
+  .tableconvassorbillprint-section tr:last-child td {
+    font-weight: 300;
+    color: #0a60bd;  /* Blue color for the last row (total, etc.) */
+  }
+  
+  /* Footer Styling */
+  .footerconvassorbillprint {
+    margin-top: 20px;
+    text-align: center;
+    font-size: 14px; font-weight: 600;
+    color: #0a60bd; 
+  }
+  
+  /* Buttons */
+  .convassorbillprint-btn-container {
+    position: fixed;   /* Make the buttons fixed */
+    bottom: 20px;       /* Distance from the bottom of the viewport */
+    left: 85%;          /* Center the buttons horizontally */
+    transform: translateX(-50%); /* Adjust the position to be truly centered */
+    display: flex;
+    justify-content: center;
+    z-index: 999;  
+  }
+  
+  .convassorbillprint-button,
+  .convassorbillcancel-button {
+    display: inline-block;
+    margin: 5px;
+    background-color: #0a60bd;  /* Blue background for buttons */
+    color: white;
+    padding: 8px 16px;
+    border-radius: 4px;
+  }
+  
+  .convassorbillcancel-button {
+    background-color: #e74c3c;  /* Red color for Cancel button */
+  }
+  
+  
+  
+  /* Print Styling */
+  @media print {
+    @page {
+      size: A4;
+      margin: 20mm;
+    }
+  
+    .convassorbillprint-container {
+      padding: 0;
+      margin: 0;
+      height: auto;
+      overflow: visible;
+    }
+  
+    .convassorbillprint-control {
+      border: none;
+    }
+  
+    .footerconvassorbillprint {
+      position: absolute;
+      bottom: 20mm;
+      width: 100%;
+    }
+  
+    .convassorbillprint-btn-container {
+      display: none;
+    }
+  }
+  
