@@ -327,7 +327,7 @@ function Company() {
       EmailId: EmailId,
       Website: Website,
       CreatedBy: userId,
-      UpdatedBy: userId,
+      // UpdatedBy: userId,
     };
 
     // Determine the URL based on whether we're editing or adding

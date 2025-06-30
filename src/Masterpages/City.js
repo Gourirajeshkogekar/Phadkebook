@@ -177,7 +177,6 @@ function City() {
       CityCode: CityCode,
       StateCode: StateCode,
       CreatedBy: userId,
-      UpdatedBy: userId,
     };
 
     const url = isEditing
