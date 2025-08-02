@@ -27,6 +27,7 @@ import { Tooltip } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { ReactTransliterate } from "react-transliterate";
 import "react-transliterate/dist/index.css";
+import dayjs from "dayjs";
 
 function Book() {
   const [userId, setUserId] = useState("");
@@ -109,7 +110,11 @@ function Book() {
   const [MRP, setMRP] = useState("");
   const [BookPages, setBookPages] = useState("");
   const [BookForms, setBookForms] = useState("");
-  const [FillingDate, setFilingDate] = useState("");
+  const [FillingDate, setFillingDate] = useState(() =>
+    dayjs().format("YYYY-MM-DD")
+  );
+  console.log("FillingDate state:", FillingDate); // should be like '2025-08-02'
+
   const [TitlePages, setTitlePages] = useState("");
   const [TitlePressId, setTitlePressId] = useState("");
   const [titlepressOptions, setTitlepressOptions] = useState([]);
@@ -126,8 +131,12 @@ function Book() {
   const [ReprintFlag, setReprintFlag] = useState("");
   const [PrintOrder, setPrintOrder] = useState("");
   const [BookId, setBookId] = useState("");
-  const [CreationDate, setCreationDate] = useState("");
-  const [CurrentEditionDate, setCurrentEditionDate] = useState("");
+  const [CreationDate, setCreationDate] = useState(() =>
+    dayjs().format("YYYY-MM-DD")
+  );
+  const [CurrentEditionDate, setCurrentEditionDate] = useState(() =>
+    dayjs().format("YYYY-MM-DD")
+  );
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [books, setBooks] = useState([]);
   const [editingIndex, setEditingIndex] = useState(-1);
@@ -356,7 +365,9 @@ function Book() {
     setMRP("");
     setBookPages("");
     setBookForms("");
-    setFilingDate("");
+    // setFillingDate("");
+    setFillingDate(dayjs().format("YYYY-MM-DD")); // ✅ Set default today
+
     setTitlePages("");
     setTitlePressId("");
     setPaperSizeId("");
@@ -366,8 +377,8 @@ function Book() {
     setReprintFlag("");
     setPrintOrder("");
     setBookId("");
-    setCreationDate("");
-    setCurrentEditionDate("");
+    setCreationDate(dayjs().format("YYYY-MM-DD")); // ✅ Set default today
+    setCurrentEditionDate(dayjs().format("YYYY-MM-DD")); // ✅ Set default today
   };
 
   const handleNewClick = () => {
@@ -417,9 +428,10 @@ function Book() {
     setBookMediumId(book.BookMediumId ?? "");
     setCurrentEdition(book.CurrentEdition ?? "");
     setBookRate(book.BookRate ?? "");
+    setMRP(book.MRP ?? "");
     setBookPages(book.BookPages ?? "");
     setBookForms(book.BookForms ?? "");
-    setFilingDate(convertDateForInput(book.FillingDate));
+    setFillingDate(convertDateForInput(book.FillingDate));
     setTitlePages(book.TitlePages ?? "");
     setTitlePressId(book.TitlePressId ?? "");
     setPaperSizeId(book.PaperSizeId ?? "");
@@ -664,7 +676,7 @@ function Book() {
           setBookRate(data.BookRate || "");
           setBookPages(data.BookPages || "");
           setBookForms(data.BookForms || "");
-          setFilingDate(convertDateForInput(data.FillingDate) || "");
+          setFillingDate(convertDateForInput(data.FillingDate) || "");
           setTitlePages(data.TitlePages || "");
           setTitlePressId(data.TitlePressId || "");
           setPaperSizeId(data.PaperSizeId || "");
@@ -779,6 +791,7 @@ function Book() {
       BookMediumId: BookMediumId || null,
       CurrentEdition: CurrentEdition || null,
       BookRate: BookRate || null,
+      MRP: MRP || null,
       BookPages: BookPages || null,
       BookForms: BookForms || null,
       FillingDate: formatDate(FillingDate),
@@ -1510,12 +1523,24 @@ function Book() {
                 <div>
                   <label className="book-label">Filling Date</label>
                   <div>
-                    <input
+                    {/* <input
                       type="date"
                       id="FillingDate"
                       name="FillingDate"
                       value={FillingDate}
                       onChange={(e) => setFilingDate(e.target.value)}
+                      ref={fillingdateRef}
+                      onKeyDown={(e) => handleKeyDown(e, titlepagesRef)}
+                      className="masterbook-control"
+                      placeholder="Enter Filing Date"
+                    /> */}
+
+                    <input
+                      type="date"
+                      id="FillingDate"
+                      name="FillingDate"
+                      value={FillingDate}
+                      onChange={(e) => setFillingDate(e.target.value)}
                       ref={fillingdateRef}
                       onKeyDown={(e) => handleKeyDown(e, titlepagesRef)}
                       className="masterbook-control"

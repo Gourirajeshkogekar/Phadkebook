@@ -21,6 +21,7 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { RiDeleteBin5Line } from "react-icons/ri";
 import { Tooltip } from "@mui/material";
+import dayjs from "dayjs";
 
 function Employee() {
   const [userId, setUserId] = useState("");
@@ -60,15 +61,19 @@ function Employee() {
   const [MiddleName, setMiddleName] = useState("");
   const [CategoryCode, setCategoryCode] = useState("");
   const [Address, setAddress] = useState("");
-  const [JoiningDate, setJoiningDate] = useState("");
-  const [DOB, setDOB] = useState("");
+  const [JoiningDate, setJoiningDate] = useState(() =>
+    dayjs().format("YYYY-MM-DD")
+  );
+  const [DOB, setDOB] = useState(() => dayjs().format("YYYY-MM-DD"));
   const [BasicPay, setBasicPay] = useState("");
   const [PFApplicable, setPFApplicable] = useState(false);
   const [PFAccountNo, setPFAccountNo] = useState("");
   const [PFNominee, setPFNominee] = useState("");
   const [NomineeRelation, setNomineeRelation] = useState("");
   const [AccountStatus, setAccountStatus] = useState("");
-  const [StatusDate, setStatusDate] = useState("");
+  const [StatusDate, setStatusDate] = useState(() =>
+    dayjs().format("YYYY-MM-DD")
+  );
   const [Qualification, setQualification] = useState("");
   const [GroupCode, setGroupCode] = useState("");
   const [PhoneNo, setPhoneNo] = useState("");
@@ -81,7 +86,9 @@ function Employee() {
   const [AdvanceAccountCode, setAdvanceAccountCode] = useState("");
   const [CashBankAccountCode, setCashBankAccountCode] = useState("");
   const [FirmSalaryAccountCode, setFirmSalaryAccountCode] = useState("");
-  const [PF_JoinDate, setPF_JoiningDate] = useState("");
+  const [PF_JoinDate, setPF_JoiningDate] = useState(() =>
+    dayjs().format("YYYY-MM-DD")
+  );
   const [ESI_Flag, setESI_Flag] = useState(false);
   const [Allowance, setAllowance] = useState("");
   const [UAN_No, setUAN_No] = useState("");
@@ -200,14 +207,14 @@ function Employee() {
     setMiddleName("");
     setCategoryCode("");
     setAddress("");
-    setJoiningDate("");
-    setDOB("");
+    setJoiningDate(dayjs().format("YYYY-MM-DD"));
+    setDOB(dayjs().format("YYYY-MM-DD"));
     setBasicPay("");
     setPFApplicable("");
     setPFAccountNo("");
     setPFNominee("");
     setAccountStatus("");
-    setStatusDate("");
+    setStatusDate(dayjs().format("YYYY-MM-DD"));
     setQualification("");
     setGroupCode("");
     setPhoneNo("");
@@ -220,7 +227,7 @@ function Employee() {
     setAdvanceAccountCode("");
     setCashBankAccountCode("");
     setFirmSalaryAccountCode("");
-    setPF_JoiningDate("");
+    setPF_JoiningDate(dayjs().format("YYYY-MM-DD"));
     setESI_Flag();
     setUAN_No("");
     setESI_No("");

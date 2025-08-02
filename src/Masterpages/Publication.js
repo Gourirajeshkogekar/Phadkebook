@@ -281,7 +281,7 @@ function Publication() {
 
   const handleSubmit = async (e) => {
     e.preventDefault(); // Prevent the default form submission
-    // if (!validateForm()) return;
+    if (!validateForm()) return;
 
     const data = {
       PublicationName: PublicationName,
@@ -462,11 +462,11 @@ function Publication() {
                     />
                   </Tooltip>
 
-                  {/* <div>
+                  <div>
                     {errors.PublicationName && (
                       <b className="error-text">{errors.PublicationName}</b>
                     )}
-                  </div> */}
+                  </div>
                 </div>
               </div>
 
@@ -488,11 +488,11 @@ function Publication() {
                     className="professor-control"
                   />
 
-                  {/* <div>
+                  <div>
                     {errors.PublicationCode && (
                       <b className="error-text">{errors.PublicationCode}</b>
                     )}
-                  </div> */}
+                  </div>
                 </div>
               </div>
 
@@ -521,11 +521,11 @@ function Publication() {
                     />
                   </Tooltip>
 
-                  {/* <div>
+                  <div>
                     {errors.ShortName && (
                       <b className="error-text">{errors.ShortName}</b>
                     )}
-                  </div> */}
+                  </div>
                 </div>
               </div>
 
@@ -682,8 +682,14 @@ function Publication() {
                     id="ContactNo"
                     name="ContactNo"
                     value={ContactNo}
-                    onChange={(e) => setContactNo(e.target.value)}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (/^\d{0,10}$/.test(val)) {
+                        setContactNo(val);
+                      }
+                    }}
                     ref={contactnoRef}
+                    maxLength={10}
                     onKeyDown={(e) => handleKeyDown(e, pubcodeRef)}
                     placeholder="Enter Contact No"
                     className="professor-control"

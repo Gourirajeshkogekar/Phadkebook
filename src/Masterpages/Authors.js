@@ -587,6 +587,7 @@ function Authors() {
                       maxLength={100}
                       ref={authornameRef}
                       onKeyDown={(e) => handleKeyDown(e, address1Ref)}
+                      style={{ width: "400px" }}
                       className="author-control"
                       placeholder="Enter Author Name"
                     />
@@ -619,6 +620,7 @@ function Authors() {
                       maxLength={100}
                       ref={address1Ref}
                       onKeyDown={(e) => handleKeyDown(e, address2Ref)}
+                      style={{ width: "300px" }}
                       className="author-control"
                       placeholder="Enter Address line 1"
                     />
@@ -651,6 +653,7 @@ function Authors() {
                       maxLength={100}
                       ref={address2Ref}
                       onKeyDown={(e) => handleKeyDown(e, address3Ref)}
+                      style={{ width: "300px" }}
                       className="author-control"
                       placeholder="Enter Address line 2"
                     />
@@ -683,6 +686,7 @@ function Authors() {
                       maxLength={100}
                       ref={address3Ref}
                       onKeyDown={(e) => handleKeyDown(e, address4Ref)}
+                      style={{ width: "300px" }}
                       className="author-control"
                       placeholder="Enter Address line 3"
                     />
@@ -716,6 +720,7 @@ function Authors() {
                       maxLength={100}
                       ref={address4Ref}
                       onKeyDown={(e) => handleKeyDown(e, stateRef)}
+                      style={{ width: "300px" }}
                       className="author-control"
                       placeholder="Enter Address line 4"
                     />
