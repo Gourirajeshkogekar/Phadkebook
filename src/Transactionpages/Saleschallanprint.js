@@ -23,31 +23,23 @@ function Saleschallanprint() {
   const { id } = useParams();
   console.log(id, "id from challan");
   const [challanData, setChallanData] = useState([]);
+  const [loading, setLoading] = useState(true); // ✅ track loading
+
   const navigate = useNavigate();
   const componentRef = useRef(null); // ✅ Use useRef instead of useState
 
   useEffect(() => {
     const fetchChallanData = async () => {
+      setLoading(true); // Start loading
       try {
         const response = await axios.get(
           `https://publication.microtechsolutions.net.in/php/getsellschallanprintbyid.php?Id=${id}`
         );
-        setChallanData(response.data);
-        console.log(response, "✅ Challan data");
+        setChallanData(response.data || []);
       } catch (error) {
         console.error("🚨 Axios error:", error);
-        if (error.response) {
-          // Server responded with a status other than 2xx
-          console.error("❗Response error data:", error.response.data);
-          console.error("❗Status code:", error.response.status);
-          console.error("❗Headers:", error.response.headers);
-        } else if (error.request) {
-          // Request was made but no response
-          console.error("❗No response received:", error.request);
-        } else {
-          // Something else happened
-          console.error("❗Error message:", error.message);
-        }
+      } finally {
+        setLoading(false); // End loading
       }
     };
 
@@ -165,7 +157,21 @@ function Saleschallanprint() {
   const handleCancel = () => {
     navigate("/transaction/saleschallan");
   };
-  if (challanData.length === 0) {
+  if (loading) {
+    return (
+      <div
+        style={{
+          textAlign: "center",
+          marginTop: "50px",
+          fontSize: "18px",
+          color: "blue",
+        }}>
+        ⏳ Loading challan data...
+      </div>
+    );
+  }
+
+  if (!loading && challanData.length === 0) {
     return (
       <div
         style={{
@@ -405,7 +411,7 @@ function Saleschallanprint() {
                           width: "115mm",
                           // border: "1px solid black",
                         }}>
-                        {item.BookNameMarathi}
+                        {item.BookNameMarathi || item.BookName}
                       </td>
                       <td
                         align="center"

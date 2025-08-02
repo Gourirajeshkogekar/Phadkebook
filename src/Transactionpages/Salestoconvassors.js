@@ -52,6 +52,9 @@ import {
   DialogContent,
   DialogTitle,
 } from "@mui/material";
+import dayjs from "dayjs";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { LocalizationProvider } from "@mui/x-date-pickers";
 
 function Salestoconvassor() {
   const [userId, setUserId] = useState("");
@@ -182,12 +185,12 @@ function Salestoconvassor() {
       const response = await axios.get(
         `https://publication.microtechsolutions.net.in/php/get/gettblpage.php?Table=SellsForCanvassorHeader&PageNo=${pageIndex}`
       );
-      console.log(response.data, "response of sells for convassor headers");
+      console.log(response.data, "response of Sales for convassor headers");
 
       setSellsforcanvassors(response.data.data);
       setTotalPages(response.data.total_pages);
     } catch (error) {
-      console.error("Error fetching sells for convassor headers:", error);
+      console.error("Error fetching Sales for convassor headers:", error);
     }
   };
 
@@ -211,7 +214,7 @@ function Salestoconvassor() {
       setSellsforcanvassordetails(response.data);
     } catch (error) {
       // toast.error("Error fetching Sells details:", error);
-      console.error("Error fetching Sells details:", error);
+      console.error("Error fetching Sales details:", error);
     }
   };
 
@@ -224,6 +227,7 @@ function Salestoconvassor() {
         value: book.Id,
         label: book.BookName || book.BookNameMarathi,
         code: book.BookCode,
+        price: book.BookRate,
       }));
       setBookOptions(bookOptions);
     } catch (error) {
@@ -292,42 +296,137 @@ function Salestoconvassor() {
     setSubTotal(subtotal);
   };
 
-  const handleInputChange = (index, field, value) => {
-    const updatedRows = [...rows];
+  const [inverror, setInverror] = useState("");
+  const [receipterror, setReceipterror] = useState("");
+  const [ordererror, setOrdererror] = useState("");
+  const [receivederror, setReceivederror] = useState("");
 
-    // Update the value of the current field
-    updatedRows[index][field] = value;
+  const [invdate, setInvdate] = useState(dayjs());
 
-    // Calculate the Amount when Copies and Rate are entered
-    if (field === "Copies" || field === "Rate") {
-      const copies = updatedRows[index].Copies || 0;
-      const rate = updatedRows[index].Rate || 0;
-      updatedRows[index].Amount = copies * rate;
+  const [receiptdate, setReceiptdate] = useState(dayjs());
+  const [orderdate, setOrderdate] = useState(dayjs());
+  const [receiveddate, setReceiveddate] = useState(dayjs());
+
+  const handleDateChange1 = (newValue) => {
+    if (!newValue || !dayjs(newValue).isValid()) {
+      setInverror("Invalid date");
+      setInvdate(null);
+      return;
     }
 
-    // Calculate the DiscountAmount and FinalAmount when DiscountPercentage is entered
-    if (
-      field === "DiscountPercentage" ||
-      field === "Copies" ||
-      field === "Rate"
-    ) {
-      const discountPercentage = updatedRows[index].DiscountPercentage || 0;
-      const amount = updatedRows[index].Amount || 0;
-      updatedRows[index].DiscountAmount = (amount * discountPercentage) / 100;
-      updatedRows[index].Amount = amount - updatedRows[index].DiscountAmount;
+    const today = dayjs();
+    const minDate = today.subtract(3, "day");
+    const maxDate = today.add(2, "day");
+
+    if (newValue.isBefore(minDate) || newValue.isAfter(maxDate)) {
+      setInverror("You can select only 2 days before or after today");
+    } else {
+      setInverror("");
     }
 
-    // Update the state with the new row data
-    setRows(updatedRows);
-    calculateTotals();
+    setInvdate(newValue);
   };
 
+  const handleDateChange2 = (newValue) => {
+    if (!newValue || !dayjs(newValue).isValid()) {
+      setReceipterror("Invalid date");
+      setReceiptdate(null);
+      return;
+    }
+
+    const today = dayjs();
+    const minDate = today.subtract(3, "day");
+    const maxDate = today.add(2, "day");
+
+    if (newValue.isBefore(minDate) || newValue.isAfter(maxDate)) {
+      setReceipterror("You can select only 2 days before or after today");
+    } else {
+      setReceipterror("");
+    }
+
+    setReceiptdate(newValue);
+  };
+
+  const handleDateChange3 = (newValue) => {
+    if (!newValue || !dayjs(newValue).isValid()) {
+      setOrdererror("Invalid date");
+      setOrderdate(null);
+      return;
+    }
+
+    const today = dayjs();
+    const minDate = today.subtract(3, "day");
+    const maxDate = today.add(2, "day");
+
+    if (newValue.isBefore(minDate) || newValue.isAfter(maxDate)) {
+      setOrdererror("You can select only 2 days before or after today");
+    } else {
+      setOrdererror("");
+    }
+
+    setOrderdate(newValue);
+  };
+
+  const handleDateChange4 = (newValue) => {
+    if (!newValue || !dayjs(newValue).isValid()) {
+      setReceivederror("Invalid date");
+      setReceiveddate(null);
+      return;
+    }
+
+    const today = dayjs();
+    const minDate = today.subtract(3, "day");
+    const maxDate = today.add(2, "day");
+
+    if (newValue.isBefore(minDate) || newValue.isAfter(maxDate)) {
+      setReceivederror("You can select only 2 days before or after today");
+    } else {
+      setReceivederror("");
+    }
+
+    setReceiveddate(newValue);
+  };
+
+  const handleInputChange = (index, field, value) => {
+    const updatedRows = [...rows];
+    updatedRows[index][field] = value;
+
+    // Always fetch rate based on BookId
+    const selectedBook = bookOptions.find(
+      (book) => book.value === updatedRows[index].BookId
+    );
+    updatedRows[index].Rate = selectedBook
+      ? parseFloat(selectedBook.price) || 0
+      : 0;
+
+    const copies = parseFloat(updatedRows[index].Copies) || 0;
+    const rate = parseFloat(updatedRows[index].Rate) || 0;
+
+    // Calculate original total
+    const originalAmount = copies * rate;
+
+    // Discount logic
+    const discountPercentage =
+      parseFloat(updatedRows[index].DiscountPercentage) || 0;
+    const discountAmount = (originalAmount * discountPercentage) / 100;
+
+    // Amount after discount (final amount)
+    const finalAmount = originalAmount - discountAmount;
+
+    // Assign values
+    updatedRows[index].DiscountAmount = discountAmount;
+    updatedRows[index].Amount = finalAmount; // This will show in the "Amount" column
+
+    // Update state
+    setRows(updatedRows);
+  };
   const handleAddRow = () => {
     setRows([
       ...rows,
       {
-        BookId: "", // This will be empty for new rows
         SerialNo: "",
+
+        BookId: "", // This will be empty for new rows
         Copies: "",
         Rate: "",
         DiscountPercentage: "",
@@ -400,10 +499,14 @@ function Salestoconvassor() {
   };
 
   const resetForm = () => {
-    setInvoiceDate("");
+    // setInvoiceDate("");
+    setInvdate(dayjs());
+    setInverror("");
     setInvoiceNo("");
     setBillType("");
-    setReceiptDate("");
+    // setReceiptDate("");
+    setReceiptdate(dayjs());
+    setReceipterror("");
     setReceiptNo("");
     setWeight("");
     setBundles("");
@@ -411,9 +514,13 @@ function Salestoconvassor() {
     setDispatchModeId("");
     setPaymentMode("");
     setCanvassorId("");
-    setOrderDate("");
+    // setOrderDate("");
+    setOrderdate(dayjs());
+    setOrdererror("");
     setOrderNo("");
-    setReceivedOn("");
+    // setReceivedOn("");
+    setReceiveddate(dayjs());
+    setReceivederror("");
     setReceivedThrough("");
     setAccountId("");
     setSubTotal("");
@@ -483,15 +590,18 @@ function Salestoconvassor() {
       }
     };
 
-    const invoicedate = convertDateForInput(sellsheader.InvoiceDate.date);
-    const receiptdate = convertDateForInput(sellsheader.ReceiptDate.date);
-    const orderdate = convertDateForInput(sellsheader.OrderDate.date);
-    const receivedondate = convertDateForInput(sellsheader.ReceivedOn.date);
+    const invoicedate = dayjs(sellsheader.InvoiceDate?.date);
+    const receiptdate = dayjs(sellsheader.ReceiptDate?.date);
+    const orderdate = dayjs(sellsheader.OrderDate?.date);
+    const receivedondate = dayjs(sellsheader.ReceivedOn?.date);
 
     // Set the form fields
-    setInvoiceDate(invoicedate);
-    setReceiptDate(receiptdate);
-    setOrderDate(orderdate);
+    // setInvoiceDate(invoicedate);
+    setInvdate(invoicedate);
+    // setReceiptDate(receiptdate);
+    setReceiptdate(receiptdate);
+    // setOrderDate(orderdate);
+    setOrderdate(orderdate);
     setInvoiceNo(sellsheader.InvoiceNo);
     setBillType(sellsheader.BillType);
 
@@ -503,7 +613,8 @@ function Salestoconvassor() {
     setDispatchModeId(sellsheader.DispatchModeId);
     setPaymentMode(sellsheader.PaymentMode);
     setOrderNo(sellsheader.OrderNo);
-    setReceivedOn(receivedondate);
+    // setReceivedOn(receivedondate);
+    setReceiveddate(receivedondate);
     setReceivedThrough(sellsheader.ReceivedThrough);
     setCanvassorId(sellsheader.CanvassorId);
     setTotalCopies(sellsheader.TotalCopies);
@@ -544,8 +655,8 @@ function Salestoconvassor() {
     //   formErrors.InvoiceNo = "Invoice No is required.";
     //   isValid = false;
     // }
-    if (!InvoiceDate) {
-      formErrors.InvoiceDate = "Invoice Date is required.";
+    if (!invdate) {
+      formErrors.invdate = "Invoice Date is required.";
       isValid = false;
     }
 
@@ -562,8 +673,8 @@ function Salestoconvassor() {
       isValid = false;
     }
 
-    if (!ReceiptDate) {
-      formErrors.ReceiptDate = "Receipt Date is required.";
+    if (!receiptdate) {
+      formErrors.receiptdate = "Receipt Date is required.";
       isValid = false;
     }
     if (!Weight) {
@@ -592,12 +703,12 @@ function Salestoconvassor() {
       formErrors.OrderNo = "Order No is required.";
       isValid = false;
     }
-    if (!OrderDate) {
-      formErrors.OrderDate = "Order Date is required.";
+    if (!orderdate) {
+      formErrors.orderdate = "Order Date is required.";
       isValid = false;
     }
-    if (!ReceivedOn) {
-      formErrors.ReceivedOn = "Received On is required.";
+    if (!receiveddate) {
+      formErrors.receiveddate = "Received On is required.";
       isValid = false;
     }
     if (!ReceivedThrough) {
@@ -605,7 +716,7 @@ function Salestoconvassor() {
       isValid = false;
     }
     if (!CanvassorId) {
-      formErrors.CanvassorId = "Canvassor Id is required.";
+      formErrors.CanvassorId = "Convassor Id is required.";
       isValid = false;
     }
     if (!TotalCopies) {
@@ -633,10 +744,28 @@ function Salestoconvassor() {
     e.preventDefault();
     if (!validateForm()) return;
 
-    const formattedinvoicedate = moment(InvoiceDate).format("YYYY-MM-DD");
-    const formattedreceiptdate = moment(ReceiptDate).format("YYYY-MM-DD");
-    const formattedorderdate = moment(OrderDate).format("YYYY-MM-DD");
-    const formattedreceivedon = moment(ReceivedOn).format("YYYY-MM-DD");
+    if (
+      !invdate ||
+      !dayjs(invdate).isValid() ||
+      inverror ||
+      !receiptdate ||
+      !dayjs(receiptdate).isValid() ||
+      receipterror ||
+      !orderdate ||
+      !dayjs(orderdate).isValid() ||
+      ordererror ||
+      !receiveddate ||
+      !dayjs(receiveddate).isValid() ||
+      receivederror
+    ) {
+      toast.error("Please correct all the date fields before submitting.");
+      return;
+    }
+
+    const formattedinvoicedate = dayjs(invdate).format("YYYY-MM-DD");
+    const formattedreceiptdate = dayjs(receiptdate).format("YYYY-MM-DD");
+    const formattedorderdate = dayjs(orderdate).format("YYYY-MM-DD");
+    const formattedreceivedon = dayjs(receiveddate).format("YYYY-MM-DD");
 
     const sellsheaderdata = {
       Id: isEditing ? id : "", // Include the Id for updating, null for new records
@@ -714,8 +843,8 @@ function Salestoconvassor() {
       setIsModalOpen(false);
       toast.success(
         isEditing
-          ? "Sells for Convassor & Sells for Convassor updated successfully!"
-          : "Sells Invoice & Sells Invoice Details added successfully!"
+          ? "Sales for Convassor & Sales for Convassor updated successfully!"
+          : "Sales Invoice & Sales Invoice Details added successfully!"
       );
       resetForm(); // Reset the form fields after successful submission
     } catch (error) {
@@ -728,7 +857,7 @@ function Salestoconvassor() {
   const handlePrint = () => {
     navigate(
       // `/transaction/salestoconvassor/salestoconvassorprint/${currentRow.original.Id}`
-      `/transaction/salestoconvassor/salestoconvassorprint`
+      `/transaction/salestoconvassor/salestoconvassorprint/${currentRow.original.Id}`
     );
   };
 
@@ -794,7 +923,7 @@ function Salestoconvassor() {
 
   return (
     <div className="salestoconvassor-container">
-      <h1>Sells For Canvassor</h1>
+      <h1>Sales For Convassor</h1>
 
       <div className="salestoconvassortable-master">
         <div className="salestoconvassortable1-master">
@@ -878,8 +1007,8 @@ function Salestoconvassor() {
                 fontSize: "27px",
               }}>
               {editingIndex >= 0
-                ? "Edit Sells For Canvassor"
-                : "Add Sells For Canvassor"}
+                ? "Edit Sales For Convassor"
+                : "Add Sales For Convassor"}
             </h2>
             <form className="salestoconvassor-form">
               <div>
@@ -912,20 +1041,30 @@ function Salestoconvassor() {
                   Invoice Date <b className="required">*</b>
                 </label>
                 <div>
-                  <input
-                    type="date"
-                    id="InvoiceDate"
-                    name="InvoiceDate"
-                    value={InvoiceDate}
-                    onChange={(e) => setInvoiceDate(e.target.value)}
-                    className="salestoconvassor-control"
-                    placeholder="Enter Invoice Date"
-                  />
+                  <LocalizationProvider dateAdapter={AdapterDayjs}>
+                    <DatePicker
+                      value={invdate}
+                      onChange={handleDateChange1}
+                      format="DD-MM-YYYY"
+                      slotProps={{
+                        textField: {
+                          size: "small",
+                          fullWidth: true,
+                          error: !!inverror,
+                          helperText: inverror,
+                        },
+                      }}
+                      sx={{
+                        marginTop: "10px",
+                        marginBottom: "5px",
+                        width: "165px",
+                      }}
+                    />
+                  </LocalizationProvider>
                 </div>
-
                 <div>
-                  {errors.InvoiceDate && (
-                    <b className="error-text">{errors.InvoiceDate}</b>
+                  {errors.invdate && (
+                    <b className="error-text">{errors.invdate}</b>
                   )}
                 </div>
               </div>
@@ -988,7 +1127,7 @@ function Salestoconvassor() {
                         fullWidth
                       />
                     )}
-                    sx={{ mt: 1.25, mb: 0.625, width: 170 }} // Equivalent to 10px and 5px
+                    sx={{ mt: 1.25, mb: 0.625, width: 400 }} // Equivalent to 10px and 5px
                   />
                 </div>
 
@@ -1028,20 +1167,31 @@ function Salestoconvassor() {
                   Receipt Date <b className="required">*</b>
                 </label>
                 <div>
-                  <input
-                    type="date"
-                    id="ReceiptDate"
-                    name="ReceiptDate"
-                    value={ReceiptDate}
-                    onChange={(e) => setReceiptDate(e.target.value)}
-                    className="salestoconvassor-control"
-                    placeholder="Enter Receipt Date"
-                  />
+                  <LocalizationProvider dateAdapter={AdapterDayjs}>
+                    <DatePicker
+                      value={receiptdate}
+                      onChange={handleDateChange2}
+                      format="DD-MM-YYYY"
+                      slotProps={{
+                        textField: {
+                          size: "small",
+                          fullWidth: true,
+                          error: !!receipterror,
+                          helperText: receipterror,
+                        },
+                      }}
+                      sx={{
+                        marginTop: "10px",
+                        marginBottom: "5px",
+                        width: "165px",
+                      }}
+                    />
+                  </LocalizationProvider>
                 </div>
 
                 <div>
-                  {errors.ReceiptDate && (
-                    <b className="error-text">{errors.ReceiptDate}</b>
+                  {errors.receiptdate && (
+                    <b className="error-text">{errors.receiptdate}</b>
                   )}
                 </div>
               </div>
@@ -1161,7 +1311,7 @@ function Salestoconvassor() {
                         fullWidth
                       />
                     )}
-                    sx={{ mt: 1.25, mb: 0.625, width: 170 }} // Equivalent to 10px and 5px
+                    sx={{ mt: 1.25, mb: 0.625, width: 300 }} // Equivalent to 10px and 5px
                   />
                 </div>
 
@@ -1230,7 +1380,7 @@ function Salestoconvassor() {
                         fullWidth
                       />
                     )}
-                    sx={{ mt: 1.25, mb: 0.625, width: 170 }} // Equivalent to 10px and 5px
+                    sx={{ mt: 1.25, mb: 0.625, width: 400 }} // Equivalent to 10px and 5px
                   />
                 </div>
 
@@ -1321,7 +1471,7 @@ function Salestoconvassor() {
                                 newValue ? newValue.value : ""
                               )
                             }
-                            sx={{ width: 250 }} // Set width
+                            sx={{ width: 450 }} // Set width
                             getOptionLabel={(option) => option.label}
                             renderInput={(params) => (
                               <TextField
@@ -1350,7 +1500,7 @@ function Salestoconvassor() {
                               handleInputChange(index, "Copies", e.target.value)
                             }
                             style={{
-                              width: "150px",
+                              width: "100px",
                             }}
                             placeholder="Copies"
                           />
@@ -1359,20 +1509,9 @@ function Salestoconvassor() {
                           <input
                             type="number"
                             value={row.Rate}
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              // Regex to validate decimal numbers with at most 18 digits total and 2 decimal places
-                              const regex = /^\d{0,18}(\.\d{0,2})?$/;
-
-                              // Check if the value matches the regex
-                              if (value === "" || regex.test(value)) {
-                                handleInputChange(index, "Rate", value);
-                              }
-                            }}
-                            style={{
-                              width: "150px",
-                            }}
-                            placeholder="Rate"
+                            readOnly
+                            style={{ width: "100px" }}
+                            className="salestoconvassor-control"
                           />
                         </td>
                         <td>
@@ -1394,7 +1533,7 @@ function Salestoconvassor() {
                               }
                             }}
                             style={{
-                              width: "150px",
+                              width: "100px",
                             }}
                             placeholder="Discount %"
                           />
@@ -1405,7 +1544,7 @@ function Salestoconvassor() {
                             value={row.DiscountAmount}
                             readOnly
                             style={{
-                              width: "150px",
+                              width: "100px",
                             }}
                             placeholder="Discount Amount"
                           />
@@ -1416,7 +1555,7 @@ function Salestoconvassor() {
                             value={row.Amount}
                             readOnly
                             style={{
-                              width: "150px",
+                              width: "100px",
                             }}
                             placeholder="Amount"
                           />
@@ -1478,20 +1617,31 @@ function Salestoconvassor() {
                   Order Date <b className="required">*</b>
                 </label>
                 <div>
-                  <input
-                    type="date"
-                    id="OrderDate"
-                    name="OrderDate"
-                    value={OrderDate}
-                    onChange={(e) => setOrderDate(e.target.value)}
-                    className="salestoconvassor-control"
-                    placeholder="Enter Order Date"
-                  />
+                  <LocalizationProvider dateAdapter={AdapterDayjs}>
+                    <DatePicker
+                      value={orderdate}
+                      onChange={handleDateChange3}
+                      format="DD-MM-YYYY"
+                      slotProps={{
+                        textField: {
+                          size: "small",
+                          fullWidth: true,
+                          error: !!ordererror,
+                          helperText: ordererror,
+                        },
+                      }}
+                      sx={{
+                        marginTop: "10px",
+                        marginBottom: "5px",
+                        width: "165px",
+                      }}
+                    />
+                  </LocalizationProvider>
                 </div>
 
                 <div>
-                  {errors.OrderDate && (
-                    <b className="error-text">{errors.OrderDate}</b>
+                  {errors.orderdate && (
+                    <b className="error-text">{errors.orderdate}</b>
                   )}
                 </div>
               </div>
@@ -1501,20 +1651,31 @@ function Salestoconvassor() {
                   Received On <b className="required">*</b>
                 </label>
                 <div>
-                  <input
-                    type="date"
-                    id="ReceivedOn"
-                    name="ReceivedOn"
-                    value={ReceivedOn}
-                    onChange={(e) => setReceivedOn(e.target.value)}
-                    className="salestoconvassor-control"
-                    placeholder="Enter Received On"
-                  />
+                  <LocalizationProvider dateAdapter={AdapterDayjs}>
+                    <DatePicker
+                      value={receiveddate}
+                      onChange={handleDateChange4}
+                      format="DD-MM-YYYY"
+                      slotProps={{
+                        textField: {
+                          size: "small",
+                          fullWidth: true,
+                          error: !!receivederror,
+                          helperText: receivederror,
+                        },
+                      }}
+                      sx={{
+                        marginTop: "10px",
+                        marginBottom: "5px",
+                        width: "165px",
+                      }}
+                    />
+                  </LocalizationProvider>
                 </div>
 
                 <div>
-                  {errors.ReceivedOn && (
-                    <b className="error-text">{errors.ReceivedOn}</b>
+                  {errors.receiveddate && (
+                    <b className="error-text">{errors.receiveddate}</b>
                   )}
                 </div>
               </div>

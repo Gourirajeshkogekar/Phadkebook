@@ -152,6 +152,7 @@ import PaperoutwardPartywiseReport from "./Reports/PaperReports/PaperoutwardPart
 import GodownwisepaperReport from "./Reports/PaperReports/GodownwisepaperReport";
 import BookprintorderReport from "./Reports/PaperReports/BookprintorderReport";
 import BookprintorderSummaryReport from "./Reports/PaperReports/BookprintorderSummaryReport";
+import Paperpurchase from "./Transactionpages/Paperpurchase";
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -304,6 +305,11 @@ function App() {
             />
 
             <Route
+              path="/transaction/paperpurchase"
+              element={<Paperpurchase />}
+            />
+
+            <Route
               path="/transaction/invertchallan"
               element={<Inwardchallan />}
             />
@@ -328,7 +334,7 @@ function App() {
             />
 
             <Route
-              path="/transaction/salestoconvassor/salestoconvassorprint"
+              path="/transaction/salestoconvassor/salestoconvassorprint/:id"
               element={<Canvassorbillprint />}
             />
 

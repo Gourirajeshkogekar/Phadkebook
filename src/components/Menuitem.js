@@ -150,7 +150,7 @@ export const menuItems = [
         icon: <FaPercentage />,
       },
       {
-        title: "Assign Canvassors  ",
+        title: "Assign Convassors  ",
         path: "/masters/assignconvassor",
         icon: <FaTasks />,
       },
@@ -169,16 +169,16 @@ export const menuItems = [
         path: "/masters/level",
         icon: <FaUser />,
       },
-      {
-        title: "Countries  ",
-        path: "/masters/country",
-        icon: <FaFlag />,
-      },
-      {
-        title: "States   ",
-        path: "/masters/state",
-        icon: <FaFlag />,
-      },
+      // {
+      //   title: "Countries  ",
+      //   path: "/masters/country",
+      //   icon: <FaFlag />,
+      // },
+      // {
+      //   title: "States   ",
+      //   path: "/masters/state",
+      //   icon: <FaFlag />,
+      // },
 
       {
         title: "Cities",
@@ -351,18 +351,24 @@ export const menuItems = [
         path: "/transaction/bookpurchase",
         icon: <FaShoppingCart />,
       },
+
+      {
+        title: "Paper Purchase",
+        path: "/transaction/paperpurchase",
+        icon: <FaFileInvoice />,
+      },
       {
         title: "Inward Challan",
         path: "/transaction/invertchallan",
         icon: <FaBoxOpen />,
       },
+      // {
+      //   title: "TDS Entry",
+      //   path: "/transaction/tds",
+      //   icon: <FaMoneyCheckAlt />,
+      // },
       {
-        title: "TDS Entry",
-        path: "/transaction/tds",
-        icon: <FaMoneyCheckAlt />,
-      },
-      {
-        title: "Canvassor Details",
+        title: "Convassor Details",
         path: "/transaction/convassordetails",
         icon: <FaInfoCircle />,
       },
@@ -382,22 +388,22 @@ export const menuItems = [
         icon: <FaPrint />,
       },
       {
-        title: "Sales For Canvassors",
+        title: "Sales For Convassors",
         path: "/transaction/salestoconvassor",
         icon: <FaArrowRight />,
       },
-      {
-        title: "Merge Book",
-        path: "/transaction/mergebook",
-        icon: <FaCompressAlt />,
-      },
+      // {
+      //   title: "Merge Book",
+      //   path: "/transaction/mergebook",
+      //   icon: <FaCompressAlt />,
+      // },
       {
         title: "Book Printing order to Press",
         path: "/transaction/bookprintingordertopress",
         icon: <FaPrint />,
       },
       {
-        title: "Canvassor daily Report",
+        title: "Convassor daily Report",
         path: "/transaction/convassordailyreport",
         icon: <FaFileAlt />,
       },
@@ -585,11 +591,11 @@ export const menuItems = [
         path: "/settings/userrights",
         icon: <FaUserShield />,
       },
-      {
-        title: "Split Data",
-        path: "/settings/splitdata",
-        icon: <FaCodeBranch />,
-      },
+      // {
+      //   title: "Split Data",
+      //   path: "/settings/splitdata",
+      //   icon: <FaCodeBranch />,
+      // },
       // {
       //   title: "Backup-Current Company",
       //   path: "/settings/backup-currentcompany",

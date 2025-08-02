@@ -15,33 +15,33 @@ import {
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import axios from "axios";
-import "./Salesinvoiceprint.css";
+import "./Salestocanvassorbillprint.css";
 
 function Convassorbillprint() {
   const { id } = useParams();
-  console.log(id, "id from sales invoice");
+  console.log(id, "id from sales canvassor");
   const [loading, setLoading] = useState(true);
 
-  const [invoiceData, setInvoiceData] = useState([]);
+  const [canvassordata, setCanvassordata] = useState([]);
   const [isPrinting, setIsPrinting] = useState(false);
   const [isButtonsVisible, setIsButtonsVisible] = useState(true);
   const componentRef = useRef();
 
   useEffect(() => {
-    const fetchInvoicedata = async () => {
+    const fetchConvdata = async () => {
       try {
         const response = await axios.get(
-          `https://publication.microtechsolutions.net.in/php/GetSellsinvoiceprint.php?Id=${id}`
+          `https://publication.microtechsolutions.net.in/php/getsellscanvassorprint.php?Id=${id}`
         );
-        setInvoiceData(response.data);
-        console.log(invoiceData, "invoiceData");
+        setCanvassordata(response.data);
+        console.log(canvassordata, "canvassor data");
       } catch (error) {
-        console.error("Error fetching invoice data:", error);
+        console.error("Error fetching Canv data:", error);
       } finally {
         setLoading(false);
       }
     };
-    fetchInvoicedata();
+    fetchConvdata();
   }, [id]);
 
   const handlePrint = async () => {
@@ -157,13 +157,27 @@ function Convassorbillprint() {
     navigate("/transaction/salestoconvassor");
   };
 
-  if (loading) {
-    return <div>Loading...</div>;
+  if (canvassordata.length === 0) {
+    return (
+      <div
+        style={{
+          textAlign: "center",
+          marginTop: "50px",
+          fontSize: "18px",
+          color: "red",
+        }}>
+        🚫 No data available for this ID.
+        <div style={{ marginTop: "20px" }}>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={() => navigate("/transaction/salestoconvassor")}>
+            Go Back
+          </Button>
+        </div>
+      </div>
+    );
   }
-
-  // if (!invoiceData || invoiceData.length === 0) {
-  //   return <div>No invoice data found.</div>;
-  // }
 
   let totalCopies = 0;
   let totalAmount = 0;
@@ -171,14 +185,14 @@ function Convassorbillprint() {
   let totalFreight = 0;
   let packing = 0;
 
-  invoiceData.forEach((item) => {
+  canvassordata.forEach((item) => {
     totalCopies += parseFloat(item.Copies) || 0;
     totalAmount += parseFloat(item.Amount) || 0;
     totalDiscAmount += parseFloat(item.DiscountAmount) || 0;
   });
 
-  // totalFreight = invoiceData[0].Freight || 0;
-  // packing = invoiceData[0].Packing || 0;
+  totalFreight = canvassordata[0]?.Freight || 0;
+  packing = canvassordata[0]?.Packing || 0;
 
   console.log(totalDiscAmount, "total disc amount");
 
@@ -186,20 +200,20 @@ function Convassorbillprint() {
     <>
       <div
         style={{
-          border: "1px solid red",
-          // marginTop: "5mm",
+          // border: "1px solid red",
+          marginTop: "5mm",
         }}
         className="salesconvassorprint-container">
         <div
           ref={componentRef}
           style={{
-            width: "211mm",
-            height: "285mm",
+            width: "223mm",
+            height: "297mm",
             marginRight: "8mm",
             marginLeft: "18mm",
             marginTop: "11mm",
             marginBottom: "8mm",
-            border: "1px solid black",
+            // border: "1px solid black",
             // background: "silver",
           }}>
           <header
@@ -208,13 +222,13 @@ function Convassorbillprint() {
               height: "58mm",
               // marginLeft: "5mm",
               display: "flex",
-              border: "1px solid black",
+              // border: "1px solid black",
             }}>
             {/* First Column - Account Information */}
             <div
               style={{
                 position: "relative",
-                border: "1px solid black",
+                // border: "1px solid black",
                 display: "flex",
                 flexDirection: "column",
                 justifyContent: "flex-start",
@@ -237,18 +251,18 @@ function Convassorbillprint() {
 
               <p style={{ fontSize: "15px" }}>
                 {[
-                  // invoiceData[0]?.Address1,
-                  // invoiceData[0]?.Address2,
-                  // invoiceData[0]?.Address3,
-                  // invoiceData[0]?.StateName,
-                  // `Dist: ${invoiceData[0]?.CityName}`,
+                  canvassordata[0]?.Address1,
+                  canvassordata[0]?.Address2,
+                  canvassordata[0]?.Address3,
+                  canvassordata[0]?.StateName,
+                  `Dist: ${canvassordata[0]?.CityName}`,
                 ]
                   .filter(Boolean)
                   .join(", ")}
               </p>
 
               <p style={{ fontSize: "13px", whiteSpace: "nowrap" }}>
-                {/* {invoiceData[0]?.GSTNo} */}
+                {canvassordata[0]?.GSTNo}
               </p>
             </div>
 
@@ -269,8 +283,19 @@ function Convassorbillprint() {
                 marginLeft: "3mm",
               }}>
               Debit advice
-              <b style={{ marginTop: "11mm", marginLeft: "11mm" }}>Date</b>
-              <b style={{ marginTop: "4mm", marginLeft: "21mm" }}>Challan No</b>
+              <b style={{ marginTop: "9mm", marginLeft: "12mm" }}>
+                <strong>{/* Invoice Date:  */}</strong>{" "}
+                {canvassordata[0]?.InvoiceDate
+                  ? new Date(canvassordata[0]?.InvoiceDate)
+                      .toLocaleDateString("en-GB")
+                      .replace(/\//g, "-")
+                  : ""}
+              </b>
+              <b style={{ marginTop: "3mm", marginLeft: "22mm" }}>
+                {" "}
+                <strong>{/* Challan No: */}</strong>{" "}
+                {canvassordata[0]?.InvoiceNo}
+              </b>
             </div>
           </header>
 
@@ -279,66 +304,60 @@ function Convassorbillprint() {
               display: "flex",
               flexDirection: "column",
               justifyContent: "flex-start",
-              border: "1px solid black",
+              // border: "1px solid black",
               height: "22mm",
-              width: "211mm",
+              width: "223mm",
               fontSize: "15px",
               fontWeight: "bold",
-              padding: "10px", // optional, for breathing room
+              padding: "10px",
               boxSizing: "border-box",
             }}>
             {/* Row 1 - 3 values */}
             <div style={{ display: "flex", gap: "8px" }}>
               <span style={{ marginLeft: "32mm" }}>
-                {/* {invoiceData[0]?.OrderNo} */}1
+                {canvassordata[0]?.OrderNo}
               </span>
               <span style={{ marginLeft: "35mm" }}>
                 {" "}
-                2024-12-10
-                {/* {invoiceData[0]?.OrderDate
-                  ? new Date(invoiceData[0]?.OrderDate).toLocaleDateString(
+                {canvassordata[0]?.OrderDate
+                  ? new Date(canvassordata[0]?.OrderDate).toLocaleDateString(
                       "en-GB"
                     )
-                  : ""} */}
+                  : ""}
               </span>
               <span style={{ marginLeft: "43mm" }}>
-                parcelsent through
-                {/* {invoiceData[0]?.ParcelSendThrough} */}
+                {canvassordata[0]?.DispatchModeName}
               </span>
             </div>
 
             {/* Row 2 - 5 values */}
             <div style={{ display: "flex", gap: "8px", marginTop: "3px" }}>
               <span style={{ marginLeft: "27mm" }}>
-                1{/* {invoiceData[0]?.ReceiptNo} */}
+                {canvassordata[0]?.ReceiptNo}
               </span>
               <span style={{ marginLeft: "38mm" }}>
                 {" "}
-                2024-5-4
-                {/* {invoiceData[0]?.ReceiptDate
-                  ? new Date(invoiceData[0]?.OrderDate).toLocaleDateString(
+                {canvassordata[0]?.ReceiptDate
+                  ? new Date(canvassordata[0]?.OrderDate).toLocaleDateString(
                       "en-GB"
                     )
-                  : ""} */}
+                  : ""}
               </span>
               <span style={{ marginLeft: "26mm" }}>
-                8{/* {invoiceData[0]?.Bundles} */}
+                {canvassordata[0]?.Bundles}
               </span>
               <span style={{ marginLeft: "40mm" }}>
-                1250
-                {/* {invoiceData[0]?.Weight} */}
+                {canvassordata[0]?.Weight}
               </span>
               <span style={{ marginLeft: "25mm" }}>
-                100
-                {/* {invoiceData[0]?.Freight} */}
+                {canvassordata[0]?.Freight}
               </span>
             </div>
 
             {/* Row 3 - 1 value */}
             <div style={{ marginTop: "4px" }}>
               <span style={{ marginLeft: "43mm" }}>
-                XYZ
-                {/* {invoiceData[0]?.ReceiptSendThrough.substring(0, 10)} */}
+                {canvassordata[0]?.ReceivedThrough.substring(0, 10)}
               </span>
             </div>
           </div>
@@ -347,14 +366,14 @@ function Convassorbillprint() {
           <table
             style={{
               display: "block",
-              minHeight: "178mm",
+              minHeight: "157mm",
               marginRight: "11mm",
-              width: "211mm",
+              width: "223mm",
               marginTop: "9mm",
-              border: "1px solid black",
+              // border: "1px solid black",
             }}>
             <thead>
-              <tr style={{ fontSize: "14px" }}>
+              {/* <tr style={{ fontSize: "14px" }}>
                 <th style={{ border: "1px solid black" }}>No</th>
                 <th style={{ border: "1px solid black" }}>Title Code No</th>
                 <th style={{ border: "1px solid black" }}>Class</th>
@@ -363,110 +382,110 @@ function Convassorbillprint() {
                 <th style={{ border: "1px solid black" }}>Price</th>
                 <th style={{ border: "1px solid black" }}>Amount (Rs. Ps)</th>
                 <th style={{ border: "1px solid black" }}>Amount (Rs. Ps)</th>
-              </tr>
+              </tr> */}
             </thead>
 
             <tbody>
-              {
-                // invoiceData.length > 0 ? (
-                // invoiceData.map((item, index) => (
-                <tr
-                  // key={index}
-                  style={{
-                    fontSize: "15px",
-                    // color: "rebeccapurple",
-                    border: "1px solid black",
-                  }}>
-                  <td
-                    align="left"
+              {canvassordata.length > 0 ? (
+                canvassordata.map((item, index) => (
+                  <tr
+                    key={index}
                     style={{
-                      width: "9mm",
-                      border: "1px solid black",
+                      fontSize: "15px",
+                      // color: "rebeccapurple",
+                      // border: "1px solid black",
                     }}>
-                    {/* {index + 1} */}1
-                  </td>
+                    <td
+                      align="left"
+                      style={{
+                        width: "10mm",
+                        // border: "1px solid black",
+                      }}>
+                      {index + 1}
+                    </td>
+                    <td
+                      align="left"
+                      style={{
+                        width: "22mm",
+                        // border: "1px solid black",
+                      }}>
+                      {item.BookCode}
+                    </td>
+                    <td
+                      align="left"
+                      style={{
+                        width: "22mm",
+                        // border: "1px solid black",
+                      }}>
+                      {item.StandardName}
+                    </td>
+                    <td
+                      style={{
+                        textAlign: "left",
+                        wordBreak: "break-word",
+                        whiteSpace: "normal",
+                        width: "84mm",
+                        // border: "1px solid black",
+                      }}>
+                      {item.BookNameMarathi || item.BookName}
+                    </td>
+                    <td
+                      align="center"
+                      style={{
+                        width: "15mm",
+                        // border: "1px solid black",
+                      }}>
+                      {item.Copies}
+                    </td>
+                    <td
+                      align="right"
+                      style={{
+                        width: "15mm",
+                        // border: "1px solid black",
+                      }}>
+                      {item.Rate}
+                    </td>
+                    <td
+                      align="right"
+                      style={{
+                        width: "20mm",
+                        // border: "1px solid black",
+                      }}>
+                      {item.Amount}
+                    </td>
+                    <td
+                      align="right"
+                      style={{
+                        width: "11mm",
+                        // border: "1px solid black",
+                      }}>
+                      {item.DiscountPercentage || 0}
+                    </td>
+
+                    <td
+                      align="right"
+                      style={{
+                        width: "20mm",
+                        // border: "1px solid black",
+                      }}>
+                      {item.DiscountAmount || 0}
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
                   <td
-                    align="left"
+                    colSpan="9"
                     style={{
-                      width: "19mm",
-                      border: "1px solid black",
+                      textAlign: "center",
+                      padding: "10px",
+                      fontSize: "14px",
+                      fontWeight: "bold",
                     }}>
-                    {/* {item.BookCode} */}
-                    123
-                  </td>
-                  <td
-                    align="left"
-                    style={{
-                      width: "18mm",
-                      border: "1px solid black",
-                    }}>
-                    {/* {item.StandardName} */}
-                    be
-                  </td>
-                  <td
-                    style={{
-                      textAlign: "left",
-                      wordBreak: "break-word",
-                      whiteSpace: "normal",
-                      width: "67mm",
-                      border: "1px solid black",
-                    }}>
-                    {/* {item.BookNameMarathi} */}
-                    book
-                  </td>
-                  <td
-                    align="center"
-                    style={{
-                      width: "12mm",
-                      border: "1px solid black",
-                    }}>
-                    {/* {item.Copies} */}
-                    10
-                  </td>
-                  <td
-                    align="right"
-                    style={{
-                      width: "12mm",
-                      border: "1px solid black",
-                    }}>
-                    {/* {item.Price} */}
-                    1000
-                  </td>
-                  <td
-                    align="right"
-                    style={{
-                      width: "19mm",
-                      border: "1px solid black",
-                    }}>
-                    {/* {item.Amount} */}
-                    1200
-                  </td>
-                  <td
-                    align="right"
-                    style={{
-                      width: "30mm",
-                      border: "1px solid black",
-                    }}>
-                    {/* {item.DiscountPercentage || 0} */}
-                    500
+                    No Data available
                   </td>
                 </tr>
-                // ))
-                // ) : (
-                //   <tr>
-                //     <td
-                //       colSpan="9"
-                //       style={{
-                //         textAlign: "center",
-                //         padding: "10px",
-                //         fontSize: "14px",
-                //         fontWeight: "bold",
-                //       }}>
-                //       No Data available
-                //     </td>
-                //   </tr>
-                // )
-              }
+              )}
             </tbody>
           </table>
 
@@ -497,23 +516,23 @@ function Convassorbillprint() {
                   width: "10mm",
                   textAlign: "center",
                   marginLeft: "11mm",
-                  marginTop: "1mm",
-                  height: "3mm",
-                  border: "1px solid black",
+                  // marginTop: "1mm",
+                  height: "5mm",
+                  // border: "1px solid red",
                 }}>
-                {/* {totalCopies} */}copies
+                {totalCopies}
               </div>{" "}
               {/* Discount Amount */}
               <div
                 style={{
-                  // border: "1px solid red",
+                  // border: "1px solid green",
                   flexGrow: 1,
                   textAlign: "right",
                   marginBottom: "5mm",
-                  marginTop: "2mm",
-                  marginRight: "10mm",
+                  // marginTop: "2mm",
+                  marginRight: "1mm",
                 }}>
-                {/* {totalDiscAmount.toFixed(2)} */}
+                {totalDiscAmount.toFixed(2)}
               </div>{" "}
             </div>
 
@@ -523,7 +542,7 @@ function Convassorbillprint() {
                 display: "flex",
                 justifyContent: "flex-end",
                 fontWeight: "bold",
-                marginRight: "10mm",
+                marginRight: "1mm",
 
                 fontSize: "14px",
               }}>
@@ -531,12 +550,12 @@ function Convassorbillprint() {
                 style={{
                   width: "35mm",
                   marginBottom: "1mm",
-                  marginRight: "13mm",
+                  marginRight: "10mm",
                 }}>
                 Add Freight(1/2)
               </div>
               <div style={{ textAlign: "right" }}>
-                {/* {(totalFreight / 2).toFixed(2)} */}
+                {(totalFreight / 2).toFixed(2)}
               </div>
             </div>
 
@@ -547,13 +566,13 @@ function Convassorbillprint() {
                 justifyContent: "flex-end",
                 fontWeight: "bold",
                 fontSize: "14px",
-                marginRight: "10mm",
+                marginRight: "1mm",
               }}>
-              <div style={{ width: "22mm", marginRight: "18mm" }}>
+              <div style={{ width: "22mm", marginRight: "10mm" }}>
                 Add P & F
               </div>
               <div style={{ textAlign: "right" }}>
-                {/* {parseFloat(packing).toFixed(2)} */}
+                {parseFloat(packing).toFixed(2)}
               </div>
             </div>
 
@@ -565,8 +584,8 @@ function Convassorbillprint() {
                 fontWeight: "bold",
                 fontSize: "14px",
                 marginTop: "5mm",
-                marginRight: "10mm",
-                marginLeft: "14mm",
+                marginRight: "1mm",
+                // marginLeft: "14mm",
               }}>
               {/* <div
                 style={{
@@ -574,11 +593,11 @@ function Convassorbillprint() {
                   marginTop: "2mm",
                 }}></div> */}
               <div style={{ textAlign: "right" }}>
-                {/* {(
+                {(
                   Number(totalDiscAmount) +
                   Number(totalFreight) +
                   Number(packing)
-                ).toFixed(2)} */}
+                ).toFixed(2)}
               </div>
             </div>
           </div>

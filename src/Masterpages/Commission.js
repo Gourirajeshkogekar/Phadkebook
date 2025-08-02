@@ -123,9 +123,9 @@ function Commission() {
         "https://publication.microtechsolutions.net.in/php/Bookget.php"
       );
       setBooks(
-        response.data.map((std) => ({
-          value: std.Id,
-          label: std.BookName,
+        response.data.map((book) => ({
+          value: book.Id,
+          label: book.BookNameMarathi || book.BookName,
         }))
       );
     } catch (error) {
@@ -445,210 +445,219 @@ function Commission() {
                 }}
               />
               <form className="commission-form">
-                <div>
-                  <label className="commission-label">
-                    Book or Group Id<b className="required">*</b>
-                  </label>
-                  {TypeCode === "B" ? (
-                    <Select
-                      id="BookOrGroupId"
-                      name="BookOrGroupId"
-                      value={books.find(
-                        (option) => option.value === BookOrGroupId
-                      )}
-                      onChange={(option) => setBookorGroupid(option.value)}
-                      ref={bookorgroupidRef}
-                      onKeyDown={(e) => handleKeyDown(e, profcatidRef)}
-                      options={books} // Only display books
-                      styles={{
-                        control: (base) => ({
-                          ...base,
-                          width: "170px",
-                          marginTop: "10px",
-                          borderRadius: "4px",
-                          border: "1px solid rgb(223, 222, 222)",
-                          marginBottom: "5px",
-                        }),
-                        menu: (base) => ({
-                          ...base,
-                          zIndex: 100,
-                        }),
-                      }}
-                      placeholder="Select Book"
-                    />
-                  ) : TypeCode === "G" ? (
-                    <Select
-                      id="BookOrGroupId"
-                      name="BookOrGroupId"
-                      value={bookgroups.find(
-                        (option) => option.value === BookOrGroupId
-                      )}
-                      onChange={(option) => setBookorGroupid(option.value)}
-                      ref={bookorgroupidRef}
-                      onKeyDown={(e) => handleKeyDown(e, profcatidRef)}
-                      options={bookgroups} // Only display book groups
-                      styles={{
-                        control: (base) => ({
-                          ...base,
-                          width: "170px",
-                          marginTop: "10px",
-                          borderRadius: "4px",
-                          border: "1px solid rgb(223, 222, 222)",
-                          marginBottom: "5px",
-                        }),
-                        menu: (base) => ({
-                          ...base,
-                          zIndex: 100,
-                        }),
-                      }}
-                      placeholder="Select BookGroup"
-                    />
-                  ) : null}
-                </div>
-
-                <div>
-                  <label className="commission-label">
-                    Party Category<b className="required">*</b>
-                  </label>
+                <div className="firstcom-row">
+                  {" "}
                   <div>
-                    <Select
-                      id="ProfessorCategoryId"
-                      name="ProfessorCategoryId"
-                      value={categories.find(
-                        (option) => option.value === ProfessorCategoryId
-                      )}
-                      onChange={(option) =>
-                        setProfessorCategoryId(option.value)
-                      }
-                      ref={profcatidRef}
-                      onKeyDown={(e) => handleKeyDown(e, stdidRef)}
-                      options={categories}
-                      styles={{
-                        control: (base) => ({
-                          ...base,
-                          width: "170px",
-                          marginTop: "10px",
-                          borderRadius: "4px",
-                          border: "1px solid rgb(223, 222, 222)",
-                          marginBottom: "5px",
-                        }),
-                        menu: (base) => ({
-                          ...base,
-                          zIndex: 100,
-                        }),
-                      }}
-                      placeholder="Professor category"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="commission-label">
-                    Standard Id<b className="required">*</b>
-                  </label>
-                  <div>
-                    <Select
-                      id="StandardId"
-                      name="StandardId"
-                      // value={standards.find(
-                      //   (option) => option.value === StandardId
-                      // )}
-
-                      value={standards.find(
-                        (option) =>
-                          option.value.toString() === StandardId.toString()
-                      )}
-                      onChange={(option) => setStandardId(option.value)}
-                      ref={stdidRef}
-                      onKeyDown={(e) => handleKeyDown(e, startcopyRef)}
-                      options={standards}
-                      styles={{
-                        control: (base) => ({
-                          ...base,
-                          width: "170px",
-                          marginTop: "10px",
-                          borderRadius: "4px",
-                          border: "1px solid rgb(223, 222, 222)",
-                          marginBottom: "5px",
-                        }),
-                        menu: (base) => ({
-                          ...base,
-                          zIndex: 100,
-                        }),
-                      }}
-                      placeholder="Standard"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="commission-label">
-                    Start Copy<b className="required">*</b>
-                  </label>
-                  <div>
-                    <input
-                      type="number"
-                      id="StartCopy"
-                      name="StartCopy"
-                      value={StartCopy}
-                      onChange={(e) => setStartCopy(e.target.value)}
-                      ref={startcopyRef}
-                      onKeyDown={(e) => handleKeyDown(e, endcopyRef)}
-                      className="commission-control"
-                      placeholder="Enter Start Copy"
-                    />
-                  </div>
-
-                  {errors.StartCopy && (
-                    <b className="error-text">{errors.StartCopy}</b>
-                  )}
-                </div>
-
-                <div>
-                  <label className="commission-label">
-                    End Copy<b className="required">*</b>
-                  </label>
-                  <div>
-                    <input
-                      type="number"
-                      id="EndCopy"
-                      name="EndCopy"
-                      value={EndCopy}
-                      onChange={(e) => setEndCopy(e.target.value)}
-                      ref={endcopyRef}
-                      onKeyDown={(e) => handleKeyDown(e, commpercentageRef)}
-                      className="commission-control"
-                      placeholder="Enter End Copy"
-                    />{" "}
+                    <label className="commission-label">
+                      Book or Group Id<b className="required">*</b>
+                    </label>
+                    {TypeCode === "B" ? (
+                      <Select
+                        id="BookOrGroupId"
+                        name="BookOrGroupId"
+                        value={books.find(
+                          (option) => option.value === BookOrGroupId
+                        )}
+                        onChange={(option) => setBookorGroupid(option.value)}
+                        ref={bookorgroupidRef}
+                        onKeyDown={(e) => handleKeyDown(e, profcatidRef)}
+                        options={books} // Only display books
+                        styles={{
+                          control: (base) => ({
+                            ...base,
+                            width: "600px", // 🔥 Increased width
+                            marginTop: "10px",
+                            borderRadius: "4px",
+                            border: "1px solid rgb(223, 222, 222)",
+                            marginBottom: "5px",
+                          }),
+                          menu: (base) => ({
+                            ...base,
+                            zIndex: 100,
+                          }),
+                        }}
+                        placeholder="Select Book"
+                      />
+                    ) : TypeCode === "G" ? (
+                      <Select
+                        id="BookOrGroupId"
+                        name="BookOrGroupId"
+                        value={bookgroups.find(
+                          (option) => option.value === BookOrGroupId
+                        )}
+                        onChange={(option) => setBookorGroupid(option.value)}
+                        ref={bookorgroupidRef}
+                        onKeyDown={(e) => handleKeyDown(e, profcatidRef)}
+                        options={bookgroups} // Only display book groups
+                        styles={{
+                          control: (base) => ({
+                            ...base,
+                            width: "300px", // 🔥 Increased width
+                            marginTop: "10px",
+                            borderRadius: "4px",
+                            border: "1px solid rgb(223, 222, 222)",
+                            marginBottom: "5px",
+                          }),
+                          menu: (base) => ({
+                            ...base,
+                            zIndex: 100,
+                          }),
+                        }}
+                        placeholder="Select BookGroup"
+                      />
+                    ) : null}
                   </div>
                   <div>
-                    {errors.EndCopy && (
-                      <b className="error-text">{errors.EndCopy}</b>
+                    <label className="commission-label">
+                      Party Category<b className="required">*</b>
+                    </label>
+                    <div>
+                      <Select
+                        id="ProfessorCategoryId"
+                        name="ProfessorCategoryId"
+                        value={categories.find(
+                          (option) => option.value === ProfessorCategoryId
+                        )}
+                        onChange={(option) =>
+                          setProfessorCategoryId(option.value)
+                        }
+                        ref={profcatidRef}
+                        onKeyDown={(e) => handleKeyDown(e, stdidRef)}
+                        options={categories}
+                        styles={{
+                          control: (base) => ({
+                            ...base,
+                            width: "300px", // 🔥 Increased width
+                            marginTop: "10px",
+                            borderRadius: "4px",
+                            border: "1px solid rgb(223, 222, 222)",
+                            marginBottom: "5px",
+                          }),
+                          menu: (base) => ({
+                            ...base,
+                            zIndex: 100,
+                          }),
+                        }}
+                        placeholder="Professor category"
+                      />
+                    </div>
+                  </div>{" "}
+                </div>
+                <br />
+
+                <div className="othercom-rows">
+                  <div>
+                    <label className="commission-label">
+                      Standard Id<b className="required">*</b>
+                    </label>
+                    <div>
+                      <Select
+                        id="StandardId"
+                        name="StandardId"
+                        // value={standards.find(
+                        //   (option) => option.value === StandardId
+                        // )}
+
+                        value={standards.find(
+                          (option) =>
+                            option.value.toString() === StandardId.toString()
+                        )}
+                        onChange={(option) => setStandardId(option.value)}
+                        ref={stdidRef}
+                        onKeyDown={(e) => handleKeyDown(e, startcopyRef)}
+                        options={standards}
+                        styles={{
+                          control: (base) => ({
+                            ...base,
+                            width: "170px",
+                            marginTop: "10px",
+                            borderRadius: "4px",
+                            border: "1px solid rgb(223, 222, 222)",
+                            marginBottom: "5px",
+                          }),
+                          menu: (base) => ({
+                            ...base,
+                            zIndex: 100,
+                          }),
+                        }}
+                        placeholder="Standard"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="commission-label">
+                      Start Copy<b className="required">*</b>
+                    </label>
+                    <div>
+                      <input
+                        type="number"
+                        id="StartCopy"
+                        name="StartCopy"
+                        value={StartCopy}
+                        onChange={(e) => setStartCopy(e.target.value)}
+                        ref={startcopyRef}
+                        onKeyDown={(e) => handleKeyDown(e, endcopyRef)}
+                        className="commission-control"
+                        placeholder="Enter Start Copy"
+                      />
+                    </div>
+
+                    {errors.StartCopy && (
+                      <b className="error-text">{errors.StartCopy}</b>
                     )}
                   </div>
-                </div>
 
-                <div>
-                  <label className="commission-label">
-                    Commission %<b className="required">*</b>
-                  </label>
                   <div>
-                    <input
-                      type="text"
-                      id="CommissionPercentage"
-                      name="CommissionPercentage"
-                      value={CommissionPercentage}
-                      onChange={(e) => setCommissionPercentage(e.target.value)}
-                      ref={commpercentageRef}
-                      onKeyDown={(e) => handleKeyDown(e, saveRef)}
-                      className="commission-control"
-                      placeholder="Enter Commission Percentage"
-                    />
+                    <label className="commission-label">
+                      End Copy<b className="required">*</b>
+                    </label>
+                    <div>
+                      <input
+                        type="number"
+                        id="EndCopy"
+                        name="EndCopy"
+                        value={EndCopy}
+                        onChange={(e) => setEndCopy(e.target.value)}
+                        ref={endcopyRef}
+                        onKeyDown={(e) => handleKeyDown(e, commpercentageRef)}
+                        className="commission-control"
+                        placeholder="Enter End Copy"
+                      />{" "}
+                    </div>
+                    <div>
+                      {errors.EndCopy && (
+                        <b className="error-text">{errors.EndCopy}</b>
+                      )}
+                    </div>
                   </div>
 
-                  {errors.CommissionPercentage && (
-                    <b className="error-text">{errors.CommissionPercentage}</b>
-                  )}
+                  <div>
+                    <label className="commission-label">
+                      Commission %<b className="required">*</b>
+                    </label>
+                    <div>
+                      <input
+                        type="text"
+                        id="CommissionPercentage"
+                        name="CommissionPercentage"
+                        value={CommissionPercentage}
+                        onChange={(e) =>
+                          setCommissionPercentage(e.target.value)
+                        }
+                        ref={commpercentageRef}
+                        onKeyDown={(e) => handleKeyDown(e, saveRef)}
+                        className="commission-control"
+                        placeholder="Enter Commission Percentage"
+                      />
+                    </div>
+
+                    {errors.CommissionPercentage && (
+                      <b className="error-text">
+                        {errors.CommissionPercentage}
+                      </b>
+                    )}
+                  </div>
                 </div>
               </form>
 

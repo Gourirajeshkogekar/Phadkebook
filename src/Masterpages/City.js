@@ -48,6 +48,7 @@ function City() {
 
   const [convassor, setConvassor] = useState("");
   const [cities, setCities] = useState([]);
+  const [states, setStates] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingIndex, setEditingIndex] = useState(-1);
   const [error, setError] = useState("");
@@ -83,6 +84,25 @@ function City() {
       setCities(response.data);
     } catch (error) {
       toast.error("Error fetching cities:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchStates();
+  }, []);
+
+  const fetchStates = async () => {
+    try {
+      const response = await axios.get(
+        "https://publication.microtechsolutions.net.in/php/State.php"
+      );
+      const stateOptions = response.data.map((state) => ({
+        value: state.Id,
+        label: state.StateName,
+      }));
+      setStates(stateOptions);
+    } catch (error) {
+      // toast.error("Error fetching states:", error);
     }
   };
 
@@ -389,17 +409,26 @@ function City() {
                   State Code<b className="required">*</b>
                 </label>
                 <div>
-                  <input
-                    type="number"
+                  <Select
                     id="StateCode"
                     name="StateCode"
-                    value={StateCode}
-                    onChange={(e) => setStateCode(e.target.value)}
-                    maxLength={50}
+                    value={states.find((option) => option.value === StateCode)}
+                    onChange={(selectedOption) =>
+                      setStateCode(selectedOption ? selectedOption.value : "")
+                    }
                     ref={statecodeRef}
                     onKeyDown={(e) => handleKeyDown(e, saveRef)}
-                    className="city-control"
-                    placeholder="Enter State Code"
+                    options={states}
+                    placeholder="Select State"
+                    styles={{
+                      control: (base) => ({
+                        ...base,
+                        marginTop: "5px",
+                        minHeight: "38px",
+                        borderRadius: "4px",
+                        border: "1px solid #ccc",
+                      }),
+                    }}
                   />
                   <div>
                     {errors.StateCode && (

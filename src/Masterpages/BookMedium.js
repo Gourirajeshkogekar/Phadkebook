@@ -92,6 +92,7 @@ function BookMedium() {
 
   const handleNewClick = () => {
     resetForm();
+    setIsEditing(false);
     setIsModalOpen(true);
     setEditingIndex(-1);
   };

@@ -63,18 +63,39 @@ padding: 5px 15px; /* Adds padding around the text */
 
 
 .college-form{
-
+/* 
     gap: 20px;
     display: grid;
     grid-template-columns: 1fr 1fr 1fr 1fr;
-    padding: 5px; 
+    padding: 5px;  */
+
+
+    display: flex;
+        flex-direction: column;
+        gap: 15px;
+        margin-top: 15px;
 }
+
+
+.firstcol-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+}
+
+.othercol-rows{
+    display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10px;
+}
+
+
 .college-control{
     padding: 10px;
     border-radius: 4px;
     border: 1px solid rgb(223, 222, 222);
     margin: 10px 0;
-    width: 150px;
+    width: 250px;
     margin-bottom: 5px;
 }
 
@@ -93,13 +114,15 @@ padding: 5px 15px; /* Adds padding around the text */
 
 
 
+
+
 .college-modal {
     position: fixed;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
     background-color: white;
-    max-width: 60%;
+    width: 85%;
     border-radius: 8px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
     padding: 20px;

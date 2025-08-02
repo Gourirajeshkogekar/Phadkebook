@@ -45,6 +45,9 @@ function Area() {
 
   const [AreaName, setAreaName] = useState("");
   const [areas, setAreas] = useState([]);
+  const [cityOptions, setCityOptions] = useState([]);
+  const [CityId, setCityId] = useState("");
+
   const [convassor, setConvassor] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingIndex, setEditingIndex] = useState(-1);
@@ -58,6 +61,8 @@ function Area() {
   const [deleteIndex, setDeleteIndex] = useState(null);
 
   const areanameRef = useRef(null);
+  const cityRef = useRef(null);
+
   const saveRef = useRef(null);
 
   const handleKeyDown = (e, nextFieldRef) => {
@@ -71,6 +76,7 @@ function Area() {
 
   useEffect(() => {
     fetchAreas();
+    fetchAllCities();
   }, []);
 
   const fetchAreas = async () => {
@@ -85,7 +91,23 @@ function Area() {
     }
   };
 
+  const fetchAllCities = async () => {
+    try {
+      const response = await axios.get(
+        "https://publication.microtechsolutions.net.in/php/Cityget.php"
+      );
+      const options = response.data.map((city) => ({
+        value: city.Id,
+        label: city.CityName,
+      }));
+      setCityOptions(options);
+    } catch (error) {
+      // toast.error("Error fetching cities:", error);
+    }
+  };
+
   const resetForm = () => {
+    setCityId("");
     setAreaName("");
   };
 
@@ -288,6 +310,42 @@ function Area() {
             </h2>
 
             <form onSubmit={handleSubmit} className="state-form">
+              <div>
+                <label className="account-label">
+                  City<b className="required">*</b>
+                </label>
+                <div>
+                  <Select
+                    id="CityId"
+                    name="CityId"
+                    value={cityOptions.find(
+                      (option) => option.value === CityId
+                    )}
+                    onChange={(option) => setCityId(option.value)}
+                    ref={cityRef}
+                    onKeyDown={(e) => handleKeyDown(e, areanameRef)}
+                    options={cityOptions}
+                    styles={{
+                      control: (base) => ({
+                        ...base,
+                        width: "250px",
+                        marginTop: "10px",
+                        borderRadius: "4px",
+                        border: "1px solid rgb(223, 222, 222)",
+                        marginBottom: "5px",
+                      }),
+                    }}
+                    placeholder="Select City"
+                  />
+
+                  <div>
+                    {errors.CityId && (
+                      <b className="error-text">{errors.CityId}</b>
+                    )}
+                  </div>
+                </div>
+              </div>
+
               <div>
                 <label className="area-label">
                   Area <b className="required">*</b>

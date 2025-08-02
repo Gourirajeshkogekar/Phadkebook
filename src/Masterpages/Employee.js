@@ -12,6 +12,8 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  Autocomplete,
+  TextField,
 } from "@mui/material";
 
 import Select from "react-select";
@@ -48,6 +50,7 @@ function Employee() {
   const [totalPages, setTotalPages] = useState(1);
 
   const [employees, setEmployees] = useState([]);
+  const [publications, setPublications] = useState([]);
   const [EmployeeCode, setEmployeeCode] = useState("");
   const [EmployeeName, setEmployeeName] = useState("");
   const [CompanyCode, setCompanyCode] = useState("");
@@ -63,6 +66,7 @@ function Employee() {
   const [PFApplicable, setPFApplicable] = useState(false);
   const [PFAccountNo, setPFAccountNo] = useState("");
   const [PFNominee, setPFNominee] = useState("");
+  const [NomineeRelation, setNomineeRelation] = useState("");
   const [AccountStatus, setAccountStatus] = useState("");
   const [StatusDate, setStatusDate] = useState("");
   const [Qualification, setQualification] = useState("");
@@ -111,6 +115,7 @@ function Employee() {
   const pfappRef = useRef(null);
   const pfaccRef = useRef(null);
   const pfnomineeRef = useRef(null);
+  const pfnomineeRelRef = useRef(null);
   const accstsRef = useRef(null);
   const statusdateRef = useRef(null);
   const qualRef = useRef(null);
@@ -166,6 +171,25 @@ function Employee() {
     }
   };
 
+  useEffect(() => {
+    fetchPublications();
+  }, []);
+
+  const fetchPublications = async () => {
+    try {
+      const response = await axios.get(
+        "https://publication.microtechsolutions.net.in/php/Publicationget.php"
+      );
+      const publications = response.data.map((pub) => ({
+        value: pub.Id,
+        label: pub.PublicationCode,
+      }));
+      setPublications(publications);
+    } catch (error) {
+      // toast.error("Error fetching publications:", error);
+    }
+  };
+
   const resetForm = () => {
     setEmployeeCode("");
     setEmployeeName("");
@@ -198,6 +222,10 @@ function Employee() {
     setFirmSalaryAccountCode("");
     setPF_JoiningDate("");
     setESI_Flag();
+    setUAN_No("");
+    setESI_No("");
+    setAllowance("");
+    setNomineeRelation("");
   };
 
   const handleNewClick = () => {
@@ -241,6 +269,7 @@ function Employee() {
     setPFApplicable(emp.PFApplicable);
     setPFAccountNo(emp.PFAccountNo);
     setPFNominee(emp.PFNominee);
+    setNomineeRelation(emp.NomineeRelation);
     setAccountStatus(emp.AccountStatus);
     setQualification(emp.Qualification);
     setGroupCode(emp.GroupCode);
@@ -489,7 +518,7 @@ function Employee() {
 
   const handleSubmit = async (e) => {
     e.preventDefault(); // Prevent the default form submission
-    if (!validateForm()) return;
+    // if (!validateForm()) return;
 
     const data = {
       EmployeeCode: EmployeeCode,
@@ -507,6 +536,7 @@ function Employee() {
       PFApplicable: PFApplicable,
       PFAccountNo: PFAccountNo,
       PFNominee: PFNominee,
+      NomineeRelation: NomineeRelation,
       AccountStatus: AccountStatus,
       StatusDate: StatusDate,
       Qualification: Qualification,
@@ -699,494 +729,372 @@ function Employee() {
               {editingIndex >= 0 ? "Edit Employee" : "Add Employee"}
             </h2>
             <form className="employee-form">
-              <div>
-                <label className="employee-label">
-                  Employee Code<b className="required">*</b>
-                </label>
+              <h3 className="empsection-title">Employee Details</h3>
+              <div className="employee-section">
+                {/* EmployeeCode, EmployeeName, CompanyCode, Title, LastName, FirstName, MiddleName */}
                 <div>
-                  <input
-                    type="number"
-                    id="EmployeeCode"
-                    name="EmployeeCode"
-                    value={EmployeeCode}
-                    onChange={(e) => setEmployeeCode(e.target.value)}
-                    maxLength={20}
-                    ref={empcodeRef}
-                    onKeyDown={(e) => handleKeyDown(e, empnameRef)}
-                    style={{ background: "	#D0D0D0" }}
-                    placeholder="Auto-Incremented"
-                    className="employee-control"
-                    readOnly
-                  />
-
+                  <label className="employee-label">
+                    Employee Code<b className="required">*</b>
+                  </label>
                   <div>
-                    {errors.EmployeeCode && (
-                      <b className="error-text">{errors.EmployeeCode}</b>
-                    )}
+                    <input
+                      type="number"
+                      id="EmployeeCode"
+                      name="EmployeeCode"
+                      value={EmployeeCode}
+                      onChange={(e) => setEmployeeCode(e.target.value)}
+                      maxLength={20}
+                      ref={empcodeRef}
+                      onKeyDown={(e) => handleKeyDown(e, empnameRef)}
+                      style={{ background: "	#D0D0D0" }}
+                      placeholder="Auto-Incremented"
+                      className="employee-control"
+                      readOnly
+                    />
+
+                    {/* <div>
+                      {errors.EmployeeCode && (
+                        <b className="error-text">{errors.EmployeeCode}</b>
+                      )}
+                    </div> */}
                   </div>
                 </div>
-              </div>
-              <div>
-                <label className="employee-label">
-                  Employee Name<b className="required">*</b>
-                </label>
                 <div>
-                  <Tooltip
-                    title={
-                      <span style={{ fontSize: "14px", fontWeight: "bold" }}>
-                        {EmployeeName}
-                      </span>
-                    }
-                    arrow>
+                  <label className="employee-label">
+                    Employee Name<b className="required">*</b>
+                  </label>
+                  <div>
+                    <Tooltip
+                      title={
+                        <span style={{ fontSize: "14px", fontWeight: "bold" }}>
+                          {EmployeeName}
+                        </span>
+                      }
+                      arrow>
+                      <input
+                        type="text"
+                        id="EmployeeName"
+                        name="EmployeeName"
+                        value={EmployeeName}
+                        onChange={(e) => setEmployeeName(e.target.value)}
+                        maxLength={50}
+                        ref={empnameRef}
+                        onKeyDown={(e) => handleKeyDown(e, compcodeRef)}
+                        placeholder="Enter Employee name"
+                        className="employee-control"
+                      />
+                    </Tooltip>
+
+                    {/* <div>
+                      {errors.EmployeeName && (
+                        <b className="error-text">{errors.EmployeeName}</b>
+                      )}
+                    </div> */}
+                  </div>
+                </div>
+                <div>
+                  <label className="employee-label">
+                    Company Code<b className="required">*</b>
+                  </label>
+                  <div>
+                    {/* <input
+                      type="number"
+                      id="CompanyCode"
+                      name="CompanyCode"
+                      value={CompanyCode}
+                      onChange={(e) => setCompanyCode(e.target.value)}
+                      maxLength={20}
+                      ref={compcodeRef}
+                      onKeyDown={(e) => handleKeyDown(e, qualRef)}
+                      placeholder="Enter Company Code"
+                      className="employee-control"
+                    /> */}
+                    <Autocomplete
+                      options={publications} // comes from your fetchPublications function
+                      getOptionLabel={(option) => option.label}
+                      value={
+                        publications.find(
+                          (option) => option.value === CompanyCode
+                        ) || null
+                      }
+                      onChange={(e, newValue) =>
+                        setCompanyCode(newValue ? newValue.value : "")
+                      }
+                      sx={{ marginTop: "10px" }}
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          placeholder="Select Company Code"
+                          size="small"
+                          className="employee-control"
+                          inputRef={compcodeRef}
+                          onKeyDown={(e) => handleKeyDown(e, qualRef)}
+                          error={!!errors.CompanyCode}
+                          helperText={errors.CompanyCode}
+                        />
+                      )}
+                      isOptionEqualToValue={(option, value) =>
+                        option.value === value.value
+                      }
+                    />
+                    {/* <div>
+                      {errors.CompanyCode && (
+                        <b className="error-text">{errors.CompanyCode}</b>
+                      )}
+                    </div> */}
+                  </div>
+                </div>{" "}
+                <div>
+                  <label className="employee-label">Qualification</label>
+                  <div>
                     <input
                       type="text"
-                      id="EmployeeName"
-                      name="EmployeeName"
-                      value={EmployeeName}
-                      onChange={(e) => setEmployeeName(e.target.value)}
+                      id="Qualification"
+                      name="Qualification"
+                      value={Qualification}
+                      onChange={(e) => setQualification(e.target.value)}
                       maxLength={50}
-                      ref={empnameRef}
-                      onKeyDown={(e) => handleKeyDown(e, compcodeRef)}
-                      placeholder="Enter Employee name"
+                      ref={qualRef}
+                      onKeyDown={(e) => handleKeyDown(e, titleRef)}
+                      placeholder="Enter Qualification"
                       className="employee-control"
                     />
-                  </Tooltip>
 
-                  <div>
-                    {errors.EmployeeName && (
-                      <b className="error-text">{errors.EmployeeName}</b>
-                    )}
-                  </div>
-                </div>
-              </div>
-              <div>
-                <label className="employee-label">
-                  Company Code<b className="required">*</b>
-                </label>
-                <div>
-                  <input
-                    type="number"
-                    id="CompanyCode"
-                    name="CompanyCode"
-                    value={CompanyCode}
-                    onChange={(e) => setCompanyCode(e.target.value)}
-                    maxLength={20}
-                    ref={compcodeRef}
-                    onKeyDown={(e) => handleKeyDown(e, titleRef)}
-                    placeholder="Enter Company Code"
-                    className="employee-control"
-                  />
-
-                  <div>
-                    {errors.CompanyCode && (
-                      <b className="error-text">{errors.CompanyCode}</b>
-                    )}
-                  </div>
-                </div>
-              </div>{" "}
-              <div>
-                <label className="employee-label">Title</label>
-                <div>
-                  <Tooltip
-                    title={
-                      <span style={{ fontSize: "14px", fontWeight: "bold" }}>
-                        {Title}
-                      </span>
-                    }
-                    arrow>
-                    <input
-                      type="text"
-                      id="Title"
-                      name="Title"
-                      value={Title}
-                      onChange={(e) => setTitle(e.target.value)}
-                      maxLength={50}
-                      ref={titleRef}
-                      onKeyDown={(e) => handleKeyDown(e, lastnameRef)}
-                      placeholder="Enter Title"
-                      className="employee-control"
-                    />
-                  </Tooltip>
-
-                  <div>
-                    {errors.Title && (
-                      <b className="error-text">{errors.Title}</b>
-                    )}
-                  </div>
-                </div>
-              </div>{" "}
-              <div>
-                <label className="employee-label">Last Name</label>
-                <div>
-                  <Tooltip
-                    title={
-                      <span style={{ fontSize: "14px", fontWeight: "bold" }}>
-                        {LastName}
-                      </span>
-                    }
-                    arrow>
-                    <input
-                      type="text"
-                      id="LastName"
-                      name="LastName"
-                      value={LastName}
-                      onChange={(e) => setLastName(e.target.value)}
-                      maxLength={50}
-                      ref={lastnameRef}
-                      onKeyDown={(e) => handleKeyDown(e, firstnameRef)}
-                      placeholder="Enter Last Name"
-                      className="employee-control"
-                    />
-                  </Tooltip>
-
-                  <div>
-                    {errors.LastName && (
-                      <b className="error-text">{errors.LastName}</b>
-                    )}
-                  </div>
-                </div>
-              </div>
-              <div>
-                <label className="employee-label">First Name</label>
-                <div>
-                  <Tooltip
-                    title={
-                      <span style={{ fontSize: "14px", fontWeight: "bold" }}>
-                        {FirstName}
-                      </span>
-                    }
-                    arrow>
-                    <input
-                      type="text"
-                      id="FirstName"
-                      name="FirstName"
-                      value={FirstName}
-                      onChange={(e) => setFirstName(e.target.value)}
-                      maxLength={50}
-                      ref={firstnameRef}
-                      onKeyDown={(e) => handleKeyDown(e, midnameRef)}
-                      placeholder="Enter First Name"
-                      className="employee-control"
-                    />
-                  </Tooltip>
-
-                  <div>
-                    {errors.FirstName && (
-                      <b className="error-text">{errors.FirstName}</b>
-                    )}
-                  </div>
-                </div>
-              </div>
-              <div>
-                <label className="employee-label">Middle Name</label>
-                <div>
-                  <Tooltip
-                    title={
-                      <span style={{ fontSize: "14px", fontWeight: "bold" }}>
-                        {MiddleName}
-                      </span>
-                    }
-                    arrow>
-                    <input
-                      type="text"
-                      id="MiddleName"
-                      name="MiddleName"
-                      value={MiddleName}
-                      onChange={(e) => setMiddleName(e.target.value)}
-                      maxLength={50}
-                      ref={midnameRef}
-                      onKeyDown={(e) => handleKeyDown(e, catcodeRef)}
-                      placeholder="Enter Middle name"
-                      className="employee-control"
-                    />
-                  </Tooltip>
-
-                  <div>
-                    {errors.MiddleName && (
-                      <b className="error-text">{errors.MiddleName}</b>
-                    )}
-                  </div>
-                </div>
-              </div>{" "}
-              <div>
-                <label className="employee-label">Category Code</label>
-                <div>
-                  <input
-                    type="text"
-                    id="CategoryCode"
-                    name="CategoryCode"
-                    value={CategoryCode}
-                    onChange={(e) => setCategoryCode(e.target.value)}
-                    maxLength={50}
-                    ref={catcodeRef}
-                    onKeyDown={(e) => handleKeyDown(e, addressRef)}
-                    placeholder="Enter Category Code"
-                    className="employee-control"
-                  />
-
-                  <div>
-                    {errors.CategoryCode && (
-                      <b className="error-text">{errors.CategoryCode}</b>
-                    )}
-                  </div>
-                </div>
-              </div>{" "}
-              <div>
-                <label className="employee-label">Address</label>
-                <div>
-                  <Tooltip
-                    title={
-                      <span style={{ fontSize: "14px", fontWeight: "bold" }}>
-                        {Address}
-                      </span>
-                    }
-                    arrow>
-                    <input
-                      type="text"
-                      id="Address"
-                      name="Address"
-                      value={Address}
-                      onChange={(e) => setAddress(e.target.value)}
-                      maxLength={50}
-                      ref={addressRef}
-                      onKeyDown={(e) => handleKeyDown(e, joiningdateRef)}
-                      placeholder="Enter Address"
-                      className="employee-control"
-                    />
-                  </Tooltip>
-
-                  <div>
-                    {errors.Address && (
-                      <b className="error-text">{errors.Address}</b>
-                    )}
-                  </div>
-                </div>
-              </div>{" "}
-              <div>
-                <label className="employee-label">
-                  Joining Date<b className="required">*</b>
-                </label>
-                <div>
-                  <input
-                    type="date"
-                    id="JoiningDate"
-                    name="JoiningDate"
-                    value={JoiningDate}
-                    onChange={(e) => setJoiningDate(e.target.value)}
-                    ref={joiningdateRef}
-                    onKeyDown={(e) => handleKeyDown(e, dobRef)}
-                    placeholder="Enter Joining Date"
-                    className="employee-control"
-                  />
-
-                  <div>
-                    {errors.JoiningDate && (
-                      <b className="error-text">{errors.JoiningDate}</b>
-                    )}
-                  </div>
-                </div>
-              </div>{" "}
-              <div>
-                <label className="employee-label">
-                  DOB<b className="required">*</b>
-                </label>
-                <div>
-                  <input
-                    type="date"
-                    id="DOB"
-                    name="DOB"
-                    value={DOB}
-                    onChange={(e) => setDOB(e.target.value)}
-                    maxLength={50}
-                    ref={dobRef}
-                    onKeyDown={(e) => handleKeyDown(e, basicpayRef)}
-                    placeholder="Enter DOB"
-                    className="employee-control"
-                  />
-
-                  <div>
-                    {errors.DOB && <b className="error-text">{errors.DOB}</b>}
-                  </div>
-                </div>
-              </div>{" "}
-              <div>
-                <label className="employee-label">Basic Pay</label>
-                <div>
-                  <input
-                    type="number"
-                    id="BasicPay"
-                    name="BasicPay"
-                    value={BasicPay}
-                    onChange={(e) => setBasicPay(e.target.value)}
-                    maxLength={20}
-                    ref={basicpayRef}
-                    onKeyDown={(e) => handleKeyDown(e, pfappRef)}
-                    placeholder="Enter Basic Pay"
-                    className="employee-control"
-                  />
-
-                  {/* <div>
-                    {errors.BasicPay && <b className="error-text">{errors.BasicPay}</b>}
-                      </div>  */}
-                </div>
-              </div>{" "}
-              <div>
-                <label className="employee-label">PF Applicable</label>
-                <div>
-                  <input
-                    type="checkbox"
-                    id="PFApplicable"
-                    name="PFApplicable"
-                    checked={PFApplicable}
-                    onChange={(e) => setPFApplicable(e.target.checked)}
-                    ref={pfappRef}
-                    onKeyDown={(e) => handleKeyDown(e, pfaccRef)}
-                    placeholder="Enter PF Applicable"
-                    // className="employee-control"
-                    style={{
-                      marginLeft: "20px",
-                      marginTop: "20px",
-                      marginBottom: "15px",
-                    }}
-                  />
-                </div>
-              </div>{" "}
-              <div>
-                <label className="employee-label">PF Account No</label>
-                <div>
-                  <input
-                    type="number"
-                    id="PFAccountNo"
-                    name="PFAccountNo"
-                    value={PFAccountNo}
-                    onChange={(e) => setPFAccountNo(e.target.value)}
-                    maxLength={50}
-                    ref={pfaccRef}
-                    onKeyDown={(e) => handleKeyDown(e, pfnomineeRef)}
-                    placeholder="Enter Account No"
-                    className="employee-control"
-                  />
-
-                  {/* <div>
-                    {errors.PFAccountNo && <b className="error-text">{errors.PFAccountNo}</b>}
-                      </div>  */}
-                </div>
-              </div>{" "}
-              <div>
-                <label className="employee-label">PF Nominee</label>
-                <div>
-                  <input
-                    type="text"
-                    id="PFNominee"
-                    name="PFNominee"
-                    value={PFNominee}
-                    onChange={(e) => setPFNominee(e.target.value)}
-                    maxLength={50}
-                    ref={pfnomineeRef}
-                    onKeyDown={(e) => handleKeyDown(e, accstsRef)}
-                    placeholder="Enter PF Nominee"
-                    className="employee-control"
-                  />
-
-                  {/* <div>
-                    {errors.PFNominee && <b className="error-text">{errors.PFNominee}</b>}
-                      </div>  */}
-                </div>
-              </div>{" "}
-              <div>
-                <label className="employee-label">
-                  Account Status<b className="required">*</b>
-                </label>
-                <div>
-                  <input
-                    type="text"
-                    id="AccountStatus"
-                    name="AccountStatus"
-                    value={AccountStatus}
-                    onChange={(e) => setAccountStatus(e.target.value)}
-                    maxLength={1}
-                    ref={accstsRef}
-                    onKeyDown={(e) => handleKeyDown(e, statusdateRef)}
-                    placeholder="Enter Account Status"
-                    className="employee-control"
-                  />
-
-                  <div>
-                    {errors.AccountStatus && (
-                      <b className="error-text">{errors.AccountStatus}</b>
-                    )}
-                  </div>
-                </div>
-              </div>{" "}
-              <div>
-                <label className="employee-label">
-                  Status Date<b className="required">*</b>
-                </label>
-                <div>
-                  <input
-                    type="date"
-                    id="StatusDate"
-                    name="StatusDate"
-                    value={StatusDate}
-                    onChange={(e) => setStatusDate(e.target.value)}
-                    maxLength={50}
-                    ref={statusdateRef}
-                    onKeyDown={(e) => handleKeyDown(e, qualRef)}
-                    placeholder="Enter Status Date"
-                    className="employee-control"
-                  />
-
-                  <div>
-                    {errors.StatusDate && (
-                      <b className="error-text">{errors.StatusDate}</b>
-                    )}
-                  </div>
-                </div>
-              </div>{" "}
-              <div>
-                <label className="employee-label">Qualification</label>
-                <div>
-                  <input
-                    type="text"
-                    id="Qualification"
-                    name="Qualification"
-                    value={Qualification}
-                    onChange={(e) => setQualification(e.target.value)}
-                    maxLength={50}
-                    ref={qualRef}
-                    onKeyDown={(e) => handleKeyDown(e, grpcodeRef)}
-                    placeholder="Enter Qualification"
-                    className="employee-control"
-                  />
-
-                  {/* <div>
+                    {/* <div>
                     {errors.Qualification && <b className="error-text">{errors.Qualification}</b>}
                       </div>  */}
-                </div>
-              </div>{" "}
-              <div>
-                <label className="employee-label">Group Code</label>
+                  </div>
+                </div>{" "}
                 <div>
-                  <input
-                    type="text"
-                    id="GroupCode"
-                    name="GroupCode"
-                    value={GroupCode}
-                    onChange={(e) => setGroupCode(e.target.value)}
-                    maxLength={1}
-                    ref={grpcodeRef}
-                    onKeyDown={(e) => handleKeyDown(e, phoneRef)}
-                    placeholder="Enter Group Code"
-                    className="employee-control"
-                  />
-
+                  <label className="employee-label">Title</label>
                   <div>
-                    {errors.GroupCode && (
-                      <b className="error-text">{errors.GroupCode}</b>
-                    )}
+                    <Tooltip
+                      title={
+                        <span style={{ fontSize: "14px", fontWeight: "bold" }}>
+                          {Title}
+                        </span>
+                      }
+                      arrow>
+                      <input
+                        type="text"
+                        id="Title"
+                        name="Title"
+                        value={Title}
+                        onChange={(e) => setTitle(e.target.value)}
+                        maxLength={50}
+                        ref={titleRef}
+                        onKeyDown={(e) => handleKeyDown(e, lastnameRef)}
+                        placeholder="Enter Title"
+                        className="employee-control"
+                      />
+                    </Tooltip>
+
+                    {/* <div>
+                      {errors.Title && (
+                        <b className="error-text">{errors.Title}</b>
+                      )}
+                    </div> */}
+                  </div>
+                </div>{" "}
+                <div>
+                  <label className="employee-label">Last Name</label>
+                  <div>
+                    <Tooltip
+                      title={
+                        <span style={{ fontSize: "14px", fontWeight: "bold" }}>
+                          {LastName}
+                        </span>
+                      }
+                      arrow>
+                      <input
+                        type="text"
+                        id="LastName"
+                        name="LastName"
+                        value={LastName}
+                        onChange={(e) => setLastName(e.target.value)}
+                        maxLength={50}
+                        ref={lastnameRef}
+                        onKeyDown={(e) => handleKeyDown(e, firstnameRef)}
+                        placeholder="Enter Last Name"
+                        className="employee-control"
+                      />
+                    </Tooltip>
+
+                    {/* <div>
+                      {errors.LastName && (
+                        <b className="error-text">{errors.LastName}</b>
+                      )}
+                    </div> */}
                   </div>
                 </div>
-              </div>{" "}
+                <div>
+                  <label className="employee-label">First Name</label>
+                  <div>
+                    <Tooltip
+                      title={
+                        <span style={{ fontSize: "14px", fontWeight: "bold" }}>
+                          {FirstName}
+                        </span>
+                      }
+                      arrow>
+                      <input
+                        type="text"
+                        id="FirstName"
+                        name="FirstName"
+                        value={FirstName}
+                        onChange={(e) => setFirstName(e.target.value)}
+                        maxLength={50}
+                        ref={firstnameRef}
+                        onKeyDown={(e) => handleKeyDown(e, midnameRef)}
+                        placeholder="Enter First Name"
+                        className="employee-control"
+                      />
+                    </Tooltip>
+
+                    {/* <div>
+                      {errors.FirstName && (
+                        <b className="error-text">{errors.FirstName}</b>
+                      )}
+                    </div> */}
+                  </div>
+                </div>
+                <div>
+                  <label className="employee-label">Middle Name</label>
+                  <div>
+                    <Tooltip
+                      title={
+                        <span style={{ fontSize: "14px", fontWeight: "bold" }}>
+                          {MiddleName}
+                        </span>
+                      }
+                      arrow>
+                      <input
+                        type="text"
+                        id="MiddleName"
+                        name="MiddleName"
+                        value={MiddleName}
+                        onChange={(e) => setMiddleName(e.target.value)}
+                        maxLength={50}
+                        ref={midnameRef}
+                        onKeyDown={(e) => handleKeyDown(e, catcodeRef)}
+                        placeholder="Enter Middle name"
+                        className="employee-control"
+                      />
+                    </Tooltip>
+
+                    {/* <div>
+                      {errors.MiddleName && (
+                        <b className="error-text">{errors.MiddleName}</b>
+                      )}
+                    </div> */}
+                  </div>
+                </div>{" "}
+              </div>
+              <h3 className="empsection-title">Address & Personal Info</h3>
+              <div className="employee-section">
+                {/* CategoryCode, Address, JoiningDate, DOB, PhoneNo, DayGroup */}
+                <div>
+                  <label className="employee-label">Category Code</label>
+                  <div>
+                    <input
+                      type="text"
+                      id="CategoryCode"
+                      name="CategoryCode"
+                      value={CategoryCode}
+                      onChange={(e) => setCategoryCode(e.target.value)}
+                      maxLength={50}
+                      ref={catcodeRef}
+                      onKeyDown={(e) => handleKeyDown(e, addressRef)}
+                      placeholder="Enter Category Code"
+                      className="employee-control"
+                    />
+
+                    {/* <div>
+                      {errors.CategoryCode && (
+                        <b className="error-text">{errors.CategoryCode}</b>
+                      )}
+                    </div> */}
+                  </div>
+                </div>{" "}
+                <div>
+                  <label className="employee-label">Address</label>
+                  <div>
+                    <Tooltip
+                      title={
+                        <span style={{ fontSize: "14px", fontWeight: "bold" }}>
+                          {Address}
+                        </span>
+                      }
+                      arrow>
+                      <input
+                        type="text"
+                        id="Address"
+                        name="Address"
+                        value={Address}
+                        onChange={(e) => setAddress(e.target.value)}
+                        maxLength={50}
+                        ref={addressRef}
+                        onKeyDown={(e) => handleKeyDown(e, joiningdateRef)}
+                        placeholder="Enter Address"
+                        className="employee-control"
+                      />
+                    </Tooltip>
+
+                    {/* <div>
+                      {errors.Address && (
+                        <b className="error-text">{errors.Address}</b>
+                      )}
+                    </div> */}
+                  </div>
+                </div>{" "}
+                <div>
+                  <label className="employee-label">
+                    Joining Date<b className="required">*</b>
+                  </label>
+                  <div>
+                    <input
+                      type="date"
+                      id="JoiningDate"
+                      name="JoiningDate"
+                      value={JoiningDate}
+                      onChange={(e) => setJoiningDate(e.target.value)}
+                      ref={joiningdateRef}
+                      onKeyDown={(e) => handleKeyDown(e, dobRef)}
+                      placeholder="Enter Joining Date"
+                      className="employee-control"
+                    />
+
+                    {/* <div>
+                      {errors.JoiningDate && (
+                        <b className="error-text">{errors.JoiningDate}</b>
+                      )}
+                    </div> */}
+                  </div>
+                </div>{" "}
+                <div>
+                  <label className="employee-label">
+                    DOB<b className="required">*</b>
+                  </label>
+                  <div>
+                    <input
+                      type="date"
+                      id="DOB"
+                      name="DOB"
+                      value={DOB}
+                      onChange={(e) => setDOB(e.target.value)}
+                      maxLength={50}
+                      ref={dobRef}
+                      onKeyDown={(e) => handleKeyDown(e, phoneRef)}
+                      placeholder="Enter DOB"
+                      className="employee-control"
+                    />
+
+                    {/* <div>
+                      {errors.DOB && <b className="error-text">{errors.DOB}</b>}
+                    </div> */}
+                  </div>
+                </div>{" "}
+              </div>
               <div>
                 <label className="employee-label">Phone No</label>
                 <div>
@@ -1219,217 +1127,90 @@ function Employee() {
                     onChange={(e) => setDayGroup(e.target.value)}
                     maxLength={1}
                     ref={daygrpRef}
-                    onKeyDown={(e) => handleKeyDown(e, dutyhoursRef)}
+                    onKeyDown={(e) => handleKeyDown(e, pfappRef)}
                     placeholder="Enter Day Group"
                     className="employee-control"
                   />
 
-                  <div>
+                  {/* <div>
                     {errors.DayGroup && (
                       <b className="error-text">{errors.DayGroup}</b>
                     )}
-                  </div>
+                  </div> */}
                 </div>
               </div>{" "}
-              <div>
-                <label className="employee-label">Duty Hours</label>
+              <h3 className="empsection-title">PF Details</h3>
+              <div className="employee-section">
                 <div>
-                  <input
-                    type="number"
-                    id="DutyHours"
-                    name="DutyHours"
-                    value={DutyHours}
-                    onChange={(e) => setDutyHours(e.target.value)}
-                    // maxLength={50}
-                    ref={dutyhoursRef}
-                    onKeyDown={(e) => handleKeyDown(e, paydaysRef)}
-                    placeholder="Enter Duty Hours"
-                    className="employee-control"
-                  />
-
+                  <label className="employee-label">PF Applicable</label>
                   <div>
-                    {errors.DutyHours && (
-                      <b className="error-text">{errors.DutyHours}</b>
-                    )}
+                    <input
+                      type="checkbox"
+                      id="PFApplicable"
+                      name="PFApplicable"
+                      checked={PFApplicable}
+                      onChange={(e) => setPFApplicable(e.target.checked)}
+                      ref={pfappRef}
+                      onKeyDown={(e) => handleKeyDown(e, pfnomineeRef)}
+                      style={{
+                        marginLeft: "20px",
+                        marginTop: "20px",
+                        marginBottom: "15px",
+                      }}
+                    />
                   </div>
                 </div>
-              </div>{" "}
-              <div>
-                <label className="employee-label">Pay Days</label>
-                <div>
+
+                <div style={{ display: "none" }}>
+                  <label className="employee-label">PF Account No</label>
                   <input
                     type="number"
-                    id="PayDays"
-                    name="PayDays"
-                    value={PayDays}
-                    onChange={(e) => setPayDays(e.target.value)}
-                    // maxLength={50}
-                    ref={paydaysRef}
-                    onKeyDown={(e) => handleKeyDown(e, ptaxRef)}
-                    placeholder="Enter Pay Days"
-                    className="employee-control"
-                  />
-
-                  {/* <div>
-                    {errors.PayDays && <b className="error-text">{errors.PayDays}</b>}
-                      </div>  */}
-                </div>
-              </div>{" "}
-              <div>
-                <label className="employee-label">P_tax</label>
-                <div>
-                  <input
-                    type="checkbox"
-                    id="P_Tax"
-                    name="P_Tax"
-                    checked={P_Tax}
-                    onChange={(e) => setP_Tax(e.target.checked)}
-                    // maxLength={50}
-                    ref={ptaxRef}
-                    onKeyDown={(e) => handleKeyDown(e, bonusamtRef)}
-                    placeholder="Enter P_Tax"
-                    // className="employee-control"
-
-                    style={{
-                      marginLeft: "20px",
-                      marginTop: "20px",
-                      marginBottom: "15px",
-                    }}
-                  />
-                </div>
-              </div>{" "}
-              <div>
-                <label className="employee-label">
-                  Bonus Amount<b className="required">*</b>
-                </label>
-                <div>
-                  <input
-                    type="number"
-                    id="BonusAmount"
-                    name="BonusAmount"
-                    value={BonusAmount}
-                    onChange={(e) => setBonusAmount(e.target.value)}
-                    maxLength={20}
-                    ref={bonusamtRef}
-                    onKeyDown={(e) => handleKeyDown(e, salaccRef)}
-                    placeholder="Enter Bonus Amount"
-                    className="employee-control"
-                  />
-
-                  <div>
-                    {errors.BonusAmount && (
-                      <b className="error-text">{errors.BonusAmount}</b>
-                    )}
-                  </div>
-                </div>
-              </div>{" "}
-              <div>
-                <label className="employee-label">
-                  Salary Acc Code<b className="required">*</b>
-                </label>
-                <div>
-                  <input
-                    type="number"
-                    id="SalaryAccountCode"
-                    name="SalaryAccountCode"
-                    value={SalaryAccountCode}
-                    onChange={(e) => setSalaryAccountCode(e.target.value)}
-                    maxLength={20}
-                    ref={salaccRef}
-                    onKeyDown={(e) => handleKeyDown(e, advaccRef)}
-                    placeholder="Enter Salary Account Code"
-                    className="employee-control"
-                  />
-
-                  <div>
-                    {errors.SalaryAccountCode && (
-                      <b className="error-text">{errors.SalaryAccountCode}</b>
-                    )}
-                  </div>
-                </div>
-              </div>{" "}
-              <div>
-                <label className="employee-label">
-                  Advance Acc Code<b className="required">*</b>
-                </label>
-                <div>
-                  <input
-                    type="number"
-                    id="AdvanceAccountCode"
-                    name="AdvanceAccountCode"
-                    value={AdvanceAccountCode}
-                    onChange={(e) => setAdvanceAccountCode(e.target.value)}
-                    maxLength={20}
-                    ref={advaccRef}
-                    onKeyDown={(e) => handleKeyDown(e, cashbackaccRef)}
-                    placeholder="Enter Advance Account Code"
-                    className="employee-control"
-                  />
-
-                  <div>
-                    {errors.AdvanceAccountCode && (
-                      <b className="error-text">{errors.AdvanceAccountCode}</b>
-                    )}
-                  </div>
-                </div>
-              </div>{" "}
-              <div>
-                <label className="employee-label">
-                  Cash Bank Acc Code<b className="required">*</b>
-                </label>
-                <div>
-                  <input
-                    type="number"
-                    id="CashBankAccountCode"
-                    name="CashBankAccountCode"
-                    value={CashBankAccountCode}
-                    onChange={(e) => setCashBankAccountCode(e.target.value)}
-                    maxLength={20}
-                    ref={cashbackaccRef}
-                    onKeyDown={(e) => handleKeyDown(e, firmsalaccRef)}
-                    placeholder="Enter Cash Bank Account Code"
-                    className="employee-control"
-                  />
-
-                  <div>
-                    {errors.CashBankAccountCode && (
-                      <b className="error-text">{errors.CashBankAccountCode}</b>
-                    )}
-                  </div>
-                </div>
-              </div>{" "}
-              <div>
-                <label className="employee-label">
-                  Firm Salary Acc Code<b className="required">*</b>
-                </label>
-                <div>
-                  <input
-                    type="number"
-                    id="FirmSalaryAccountCode"
-                    name="FirmSalaryAccountCode"
-                    value={FirmSalaryAccountCode}
-                    onChange={(e) => setFirmSalaryAccountCode(e.target.value)}
+                    id="PFAccountNo"
+                    name="PFAccountNo"
+                    value={PFAccountNo}
+                    onChange={(e) => setPFAccountNo(e.target.value)}
                     maxLength={50}
-                    ref={firmsalaccRef}
-                    onKeyDown={(e) => handleKeyDown(e, pfjoiningRef)}
-                    placeholder="Enter Firm Salary Account Code"
+                    ref={pfaccRef}
+                    onKeyDown={(e) => handleKeyDown(e, pfnomineeRef)}
+                    placeholder="Enter Account No"
                     className="employee-control"
                   />
-
-                  <div>
-                    {errors.FirmSalaryAccountCode && (
-                      <b className="error-text">
-                        {errors.FirmSalaryAccountCode}
-                      </b>
-                    )}
-                  </div>
                 </div>
-              </div>{" "}
-              <div>
-                <label className="employee-label">
-                  PF Joining Date<b className="required">*</b>
-                </label>
+
                 <div>
+                  <label className="employee-label">PF Nominee</label>
+                  <input
+                    type="text"
+                    id="PFNominee"
+                    name="PFNominee"
+                    value={PFNominee}
+                    onChange={(e) => setPFNominee(e.target.value)}
+                    maxLength={50}
+                    ref={pfnomineeRef}
+                    onKeyDown={(e) => handleKeyDown(e, pfnomineeRelRef)}
+                    placeholder="Enter PF Nominee"
+                    className="employee-control"
+                  />
+                </div>
+
+                <div>
+                  <label className="employee-label">PF Nominee Relation</label>
+                  <input
+                    type="text"
+                    id="NomineeRelation"
+                    name="NomineeRelation"
+                    value={NomineeRelation}
+                    onChange={(e) => setNomineeRelation(e.target.value)}
+                    maxLength={50}
+                    ref={pfnomineeRelRef}
+                    onKeyDown={(e) => handleKeyDown(e, pfjoiningRef)}
+                    placeholder="Enter PF Nominee Relation"
+                    className="employee-control"
+                  />
+                </div>
+
+                <div>
+                  <label className="employee-label">PF Joining Date</label>
                   <input
                     type="date"
                     id="PF_JoinDate"
@@ -1437,66 +1218,13 @@ function Employee() {
                     value={PF_JoinDate}
                     onChange={(e) => setPF_JoiningDate(e.target.value)}
                     ref={pfjoiningRef}
-                    onKeyDown={(e) => handleKeyDown(e, esiflagRef)}
-                    placeholder="Enter Pf Joining Date"
-                    className="employee-control"
-                  />
-
-                  <div>
-                    {errors.PF_JoinDate && (
-                      <b className="error-text">{errors.PF_JoinDate}</b>
-                    )}
-                  </div>
-                </div>
-              </div>{" "}
-              <div>
-                <label className="employee-label">
-                  ESI Flag<b className="required">*</b>
-                </label>
-                <div>
-                  <input
-                    type="checkbox"
-                    id="ESI_Flag"
-                    name="ESI_Flag"
-                    checked={ESI_Flag}
-                    onChange={(e) => setESI_Flag(e.target.checked)}
-                    ref={esiflagRef}
-                    onKeyDown={(e) => handleKeyDown(e, allowRef)}
-                    placeholder="Enter ESI Flag"
-                    // className="employee-control"
-
-                    style={{
-                      marginLeft: "20px",
-                      marginTop: "20px",
-                      marginBottom: "15px",
-                    }}
-                  />
-                </div>
-              </div>{" "}
-              <div>
-                <label className="employee-label">Allowance</label>
-                <div>
-                  <input
-                    type="number"
-                    id="Allowance"
-                    name="Allowance"
-                    value={Allowance}
-                    onChange={(e) => setAllowance(e.target.value)}
-                    maxLength={20}
-                    ref={allowRef}
                     onKeyDown={(e) => handleKeyDown(e, uannoRef)}
-                    placeholder="Enter Allowance"
                     className="employee-control"
                   />
-
-                  {/* <div>
-                    {errors.Allowance && <b className="error-text">{errors.Allowance}</b>}
-                      </div>  */}
                 </div>
-              </div>{" "}
-              <div>
-                <label className="employee-label">UAN No</label>
+
                 <div>
+                  <label className="employee-label">UAN No</label>
                   <input
                     type="text"
                     id="UAN_No"
@@ -1509,15 +1237,10 @@ function Employee() {
                     placeholder="Enter UAN No"
                     className="employee-control"
                   />
-
-                  {/* <div>
-                    {errors.UAN_No && <b className="error-text">{errors.UAN_No}</b>}
-                      </div>  */}
                 </div>
-              </div>
-              <div>
-                <label className="employee-label">ESI No</label>
+
                 <div>
+                  <label className="employee-label">ESI No</label>
                   <input
                     type="number"
                     id="ESI_No"
@@ -1526,16 +1249,260 @@ function Employee() {
                     onChange={(e) => setESI_No(e.target.value)}
                     maxLength={20}
                     ref={esinoRef}
-                    onKeyDown={(e) => handleKeyDown(e, saveRef)}
+                    onKeyDown={(e) => handleKeyDown(e, esiflagRef)}
                     placeholder="Enter ESI No"
+                    className="employee-control"
+                  />
+                </div>
+
+                <div>
+                  <label className="employee-label">ESI Flag</label>
+                  <div>
+                    <input
+                      type="checkbox"
+                      id="ESI_Flag"
+                      name="ESI_Flag"
+                      checked={ESI_Flag}
+                      onChange={(e) => setESI_Flag(e.target.checked)}
+                      ref={esiflagRef}
+                      onKeyDown={(e) => handleKeyDown(e, basicpayRef)}
+                      style={{
+                        marginLeft: "20px",
+                        marginTop: "20px",
+                        marginBottom: "15px",
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+              <h3 className="empsection-title">Salary & Account Details</h3>
+              <div className="employee-section">
+                <div>
+                  <label className="employee-label">Basic Pay</label>
+                  <input
+                    type="number"
+                    id="BasicPay"
+                    name="BasicPay"
+                    value={BasicPay}
+                    onChange={(e) => setBasicPay(e.target.value)}
+                    maxLength={20}
+                    ref={basicpayRef}
+                    onKeyDown={(e) => handleKeyDown(e, dutyhoursRef)}
+                    placeholder="Enter Basic Pay"
+                    className="employee-control"
+                  />
+                </div>
+
+                <div>
+                  <label className="employee-label">Duty Hours</label>
+                  <input
+                    type="number"
+                    id="DutyHours"
+                    name="DutyHours"
+                    value={DutyHours}
+                    onChange={(e) => setDutyHours(e.target.value)}
+                    ref={dutyhoursRef}
+                    onKeyDown={(e) => handleKeyDown(e, paydaysRef)}
+                    placeholder="Enter Duty Hours"
+                    className="employee-control"
+                  />
+                </div>
+
+                <div>
+                  <label className="employee-label">Pay Days</label>
+                  <input
+                    type="number"
+                    id="PayDays"
+                    name="PayDays"
+                    value={PayDays}
+                    onChange={(e) => setPayDays(e.target.value)}
+                    ref={paydaysRef}
+                    onKeyDown={(e) => handleKeyDown(e, ptaxRef)}
+                    className="employee-control"
+                  />
+                </div>
+
+                <div>
+                  <label className="employee-label">P_Tax</label>
+                  <div>
+                    <input
+                      type="checkbox"
+                      id="P_Tax"
+                      name="P_Tax"
+                      checked={P_Tax}
+                      onChange={(e) => setP_Tax(e.target.checked)}
+                      ref={ptaxRef}
+                      onKeyDown={(e) => handleKeyDown(e, salaccRef)}
+                      style={{
+                        marginLeft: "20px",
+                        marginTop: "20px",
+                        marginBottom: "15px",
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <div style={{ display: "none" }}>
+                  <label className="employee-label">Bonus Amount</label>
+                  <input
+                    type="number"
+                    id="BonusAmount"
+                    name="BonusAmount"
+                    value={BonusAmount}
+                    onChange={(e) => setBonusAmount(e.target.value)}
+                    ref={bonusamtRef}
+                    onKeyDown={(e) => handleKeyDown(e, salaccRef)}
+                    className="employee-control"
+                  />
+                </div>
+
+                <div>
+                  <label className="employee-label">Salary Account Code</label>
+                  <input
+                    type="number"
+                    id="SalaryAccountCode"
+                    name="SalaryAccountCode"
+                    value={SalaryAccountCode}
+                    onChange={(e) => setSalaryAccountCode(e.target.value)}
+                    ref={salaccRef}
+                    onKeyDown={(e) => handleKeyDown(e, advaccRef)}
+                    className="employee-control"
+                  />
+                </div>
+
+                <div>
+                  <label className="employee-label">Advance Account Code</label>
+                  <input
+                    type="number"
+                    id="AdvanceAccountCode"
+                    name="AdvanceAccountCode"
+                    value={AdvanceAccountCode}
+                    onChange={(e) => setAdvanceAccountCode(e.target.value)}
+                    ref={advaccRef}
+                    onKeyDown={(e) => handleKeyDown(e, cashbackaccRef)}
+                    className="employee-control"
+                  />
+                </div>
+
+                <div>
+                  <label className="employee-label">
+                    Cash Bank Account Code
+                  </label>
+                  <input
+                    type="number"
+                    id="CashBankAccountCode"
+                    name="CashBankAccountCode"
+                    value={CashBankAccountCode}
+                    onChange={(e) => setCashBankAccountCode(e.target.value)}
+                    ref={cashbackaccRef}
+                    onKeyDown={(e) => handleKeyDown(e, firmsalaccRef)}
+                    className="employee-control"
+                  />
+                </div>
+
+                <div>
+                  <label className="employee-label">
+                    Firm Salary Account Code
+                  </label>
+                  <input
+                    type="number"
+                    id="FirmSalaryAccountCode"
+                    name="FirmSalaryAccountCode"
+                    value={FirmSalaryAccountCode}
+                    onChange={(e) => setFirmSalaryAccountCode(e.target.value)}
+                    ref={firmsalaccRef}
+                    onKeyDown={(e) => handleKeyDown(e, allowRef)}
+                    className="employee-control"
+                  />
+                </div>
+
+                <div>
+                  <label className="employee-label">Allowance</label>
+                  <input
+                    type="number"
+                    id="Allowance"
+                    name="Allowance"
+                    value={Allowance}
+                    onChange={(e) => setAllowance(e.target.value)}
+                    ref={allowRef}
+                    onKeyDown={(e) => handleKeyDown(e, statusdateRef)}
+                    className="employee-control"
+                  />
+                </div>
+              </div>
+              <div style={{ display: "none" }}>
+                <label className="employee-label">
+                  Account Status<b className="required">*</b>
+                </label>
+                <div>
+                  <input
+                    type="text"
+                    id="AccountStatus"
+                    name="AccountStatus"
+                    value={AccountStatus}
+                    onChange={(e) => setAccountStatus(e.target.value)}
+                    maxLength={1}
+                    ref={accstsRef}
+                    onKeyDown={(e) => handleKeyDown(e, statusdateRef)}
+                    placeholder="Enter Account Status"
                     className="employee-control"
                   />
 
                   {/* <div>
-                    {errors.ESI_No && <b className="error-text">{errors.ESI_No}</b>}
-                      </div>  */}
+                    {errors.AccountStatus && (
+                      <b className="error-text">{errors.AccountStatus}</b>
+                    )}
+                  </div> */}
                 </div>
-              </div>
+              </div>{" "}
+              <div>
+                <label className="employee-label">
+                  Status Date<b className="required">*</b>
+                </label>
+                <div>
+                  <input
+                    type="date"
+                    id="StatusDate"
+                    name="StatusDate"
+                    value={StatusDate}
+                    onChange={(e) => setStatusDate(e.target.value)}
+                    maxLength={50}
+                    ref={statusdateRef}
+                    onKeyDown={(e) => handleKeyDown(e, grpcodeRef)}
+                    placeholder="Enter Status Date"
+                    className="employee-control"
+                  />
+
+                  {/* <div>
+                    {errors.StatusDate && (
+                      <b className="error-text">{errors.StatusDate}</b>
+                    )}
+                  </div> */}
+                </div>
+              </div>{" "}
+              <div>
+                <label className="employee-label">Group Code</label>
+                <div>
+                  <input
+                    type="text"
+                    id="GroupCode"
+                    name="GroupCode"
+                    value={GroupCode}
+                    onChange={(e) => setGroupCode(e.target.value)}
+                    maxLength={1}
+                    ref={grpcodeRef}
+                    onKeyDown={(e) => handleKeyDown(e, saveRef)}
+                    placeholder="Enter Group Code"
+                    className="employee-control"
+                  />
+
+                  {/* <div>
+                    {errors.GroupCode && (
+                      <b className="error-text">{errors.GroupCode}</b>
+                    )}
+                  </div> */}
+                </div>
+              </div>{" "}
             </form>
             <div className="employee-btn-container">
               <Button

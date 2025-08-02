@@ -51,6 +51,9 @@ import {
   DialogContent,
   DialogTitle,
 } from "@mui/material";
+import dayjs from "dayjs";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+
 function Paperoutforprinting() {
   const [userId, setUserId] = useState("");
   const [yearid, setYearId] = useState("");
@@ -303,11 +306,15 @@ function Paperoutforprinting() {
   };
 
   const resetForm = () => {
-    setChallanDate("");
+    // setChallanDate("");
+    setChallandate(dayjs());
+    setChallanerror("");
     setChallanNo("");
     setGodownId("");
     setAccountId("");
-    setTimeOfRemoval("");
+    // setTimeOfRemoval("");
+    setTimeofremoval(dayjs());
+    setTimeerror("");
     setVehicleNo("");
     setNameOfDriver("");
     setRows([
@@ -370,15 +377,17 @@ function Paperoutforprinting() {
       Id: detail.Id, // Include the detail Id in the mapped row for tracking
     }));
 
-    const challandate = convertDateForInput(paperheader.ChallanDate.date);
+    const challandate = dayjs(paperheader.ChallanDate?.date);
 
-    const timeofremoval = convertDateForInput(paperheader.TimeOfRemoval.date);
+    const timeofremoval = dayjs(paperheader.TimeOfRemoval?.date);
 
     setChallanNo(paperheader.ChallanNo);
-    setChallanDate(challandate);
+    // setChallanDate(challandate);
+    setChallandate(challandate);
     setGodownId(paperheader.GodownId);
     setAccountId(paperheader.AccountId);
-    setTimeOfRemoval(timeofremoval);
+    // setTimeOfRemoval(timeofremoval);
+    setTimeofremoval(timeofremoval);
     setVehicleNo(paperheader.VehicleNo);
     setNameOfDriver(paperheader.NameOfDriver);
 
@@ -412,9 +421,9 @@ function Paperoutforprinting() {
     //   formErrors.ChallanNo = "Challan No is required";
     // }
 
-    if (!ChallanDate) {
+    if (!challandate) {
       isValid = false;
-      formErrors.ChallanDate = "Challan Date is required";
+      formErrors.challandate = "Challan Date is required";
     }
 
     if (!GodownId) {
@@ -427,9 +436,9 @@ function Paperoutforprinting() {
       formErrors.AccountId = "Account Id is required";
     }
 
-    if (!TimeOfRemoval) {
+    if (!timeofremoval) {
       isValid = false;
-      formErrors.TimeOfRemoval = "Time Of removal is required";
+      formErrors.timeofremoval = "Time Of removal is required";
     }
 
     if (!VehicleNo) {
@@ -450,8 +459,20 @@ function Paperoutforprinting() {
     e.preventDefault();
     if (!validateForm()) return;
 
-    const formattedChallandate = moment(ChallanDate).format("YYYY-MM-DD");
-    const formattedTimeofremoval = moment(TimeOfRemoval).format("YYYY-MM-DD");
+    if (
+      !challandate ||
+      !dayjs(challandate).isValid() ||
+      challanerror ||
+      !timeofremoval ||
+      !dayjs(timeofremoval).isValid() ||
+      timeerror
+    ) {
+      toast.error("Please correct all the date fields before submitting.");
+      return;
+    }
+
+    const formattedChallandate = dayjs(challandate).format("YYYY-MM-DD");
+    const formattedTimeofremoval = dayjs(timeofremoval).format("YYYY-MM-DD");
 
     const paperData = {
       Id: isEditing ? id : "", // Include the Id for updating, null for new records
@@ -520,6 +541,52 @@ function Paperoutforprinting() {
       // console.error("Error saving record:", error);
       toast.error("Error saving record!");
     }
+  };
+
+  const [challandate, setChallandate] = useState(dayjs());
+  const [challanerror, setChallanerror] = useState("");
+
+  const [timeofremoval, setTimeofremoval] = useState(dayjs());
+  const [timeerror, setTimeerror] = useState("");
+
+  const handleDateChange1 = (newValue) => {
+    if (!newValue || !dayjs(newValue).isValid()) {
+      setChallanerror("Invalid date");
+      setChallandate(null);
+      return;
+    }
+
+    const today = dayjs();
+    const minDate = today.subtract(3, "day");
+    const maxDate = today.add(2, "day");
+
+    if (newValue.isBefore(minDate) || newValue.isAfter(maxDate)) {
+      setChallanerror("You can select only 2 days before or after today");
+    } else {
+      setChallanerror("");
+    }
+
+    setChallandate(newValue);
+  };
+
+  const handleDateChange2 = (newValue) => {
+    if (!newValue || !dayjs(newValue).isValid()) {
+      setTimeerror("Invalid date");
+      setTimeofremoval(null);
+      return;
+    }
+
+    const today = dayjs();
+    const minDate = today.subtract(3, "day");
+    const maxDate = today.add(2, "day");
+
+    if (newValue.isBefore(minDate) || newValue.isAfter(maxDate)) {
+      setTimeerror("You can select only 2 days before or after today");
+    } else {
+      setTimeerror("");
+    }
+
+    setTimeofremoval(newValue);
   };
 
   const handleInputChange = (index, field, value) => {
@@ -707,20 +774,31 @@ function Paperoutforprinting() {
                   Challan Date <b className="required">*</b>
                 </label>
                 <div>
-                  <input
-                    type="date"
-                    id="ChallanDate"
-                    name="ChallanDate"
-                    value={ChallanDate}
-                    onChange={(e) => setChallanDate(e.target.value)}
-                    className="paperout-control"
-                    placeholder="Enter Challan Date"
-                  />
+                  <LocalizationProvider dateAdapter={AdapterDayjs}>
+                    <DatePicker
+                      value={challandate}
+                      onChange={handleDateChange1}
+                      format="DD-MM-YYYY"
+                      slotProps={{
+                        textField: {
+                          size: "small",
+                          fullWidth: true,
+                          error: !!challanerror,
+                          helperText: challanerror,
+                        },
+                      }}
+                      sx={{
+                        marginTop: "10px",
+                        marginBottom: "5px",
+                        width: "165px",
+                      }}
+                    />
+                  </LocalizationProvider>
                 </div>
 
                 <div>
-                  {errors.ChallanDate && (
-                    <b className="error-text">{errors.ChallanDate}</b>
+                  {errors.challandate && (
+                    <b className="error-text">{errors.challandate}</b>
                   )}
                 </div>
               </div>
@@ -751,7 +829,7 @@ function Paperoutforprinting() {
                         fullWidth
                       />
                     )}
-                    sx={{ mt: 1.25, mb: 0.625, width: 170 }} // Equivalent to 10px and 5px
+                    sx={{ mt: 1.25, mb: 0.625, width: 300 }} // Equivalent to 10px and 5px
                   />
                 </div>
 
@@ -788,7 +866,7 @@ function Paperoutforprinting() {
                         fullWidth
                       />
                     )}
-                    sx={{ mt: 1.25, mb: 0.625, width: 170 }} // Equivalent to 10px and 5px
+                    sx={{ mt: 1.25, mb: 0.625, width: 300 }} // Equivalent to 10px and 5px
                   />
                 </div>
 
@@ -804,20 +882,31 @@ function Paperoutforprinting() {
                   Time Of Removal <b className="required">*</b>
                 </label>
                 <div>
-                  <input
-                    type="date"
-                    id="TimeOfRemoval"
-                    name="TimeOfRemoval"
-                    value={TimeOfRemoval}
-                    onChange={(e) => setTimeOfRemoval(e.target.value)}
-                    className="paperout-control"
-                    placeholder="Enter Time of removal"
-                  />
+                  <LocalizationProvider dateAdapter={AdapterDayjs}>
+                    <DatePicker
+                      value={timeofremoval}
+                      onChange={handleDateChange2}
+                      format="DD-MM-YYYY"
+                      slotProps={{
+                        textField: {
+                          size: "small",
+                          fullWidth: true,
+                          error: !!timeerror,
+                          helperText: timeerror,
+                        },
+                      }}
+                      sx={{
+                        marginTop: "10px",
+                        marginBottom: "5px",
+                        width: "165px",
+                      }}
+                    />
+                  </LocalizationProvider>
                 </div>
 
                 <div>
-                  {errors.TimeOfRemoval && (
-                    <b className="error-text">{errors.TimeOfRemoval}</b>
+                  {errors.timeerror && (
+                    <b className="error-text">{errors.timeerror}</b>
                   )}
                 </div>
               </div>
@@ -858,6 +947,7 @@ function Paperoutforprinting() {
                     value={NameOfDriver}
                     onChange={(e) => setNameOfDriver(e.target.value)}
                     maxLength={50}
+                    style={{ width: "300px" }}
                     className="paperout-control"
                     placeholder="Enter Name of Driver"
                   />
@@ -946,7 +1036,7 @@ function Paperoutforprinting() {
                                 newValue ? newValue.value : ""
                               )
                             }
-                            sx={{ width: 250 }} // Set width
+                            sx={{ width: 400 }} // Set width
                             getOptionLabel={(option) => option.label}
                             renderInput={(params) => (
                               <TextField
@@ -978,7 +1068,7 @@ function Paperoutforprinting() {
                               }
                             }}
                             style={{
-                              width: "150px",
+                              width: "170px",
                             }}
                             placeholder="Enter MillName"
                           />
@@ -995,7 +1085,7 @@ function Paperoutforprinting() {
                               )
                             }
                             style={{
-                              width: "150px",
+                              width: "100px",
                             }}
                             placeholder="Enter Bundles"
                           />
@@ -1015,7 +1105,7 @@ function Paperoutforprinting() {
                               }
                             }}
                             style={{
-                              width: "150px",
+                              width: "100px",
                             }}
                             placeholder="Enter Quantity"
                           />
@@ -1031,7 +1121,7 @@ function Paperoutforprinting() {
                               }
                             }}
                             style={{
-                              width: "150px",
+                              width: "100px",
                             }}
                             placeholder="Enter Unit "
                           />
@@ -1044,7 +1134,7 @@ function Paperoutforprinting() {
                               handleInputChange(index, "Papers", e.target.value)
                             }
                             style={{
-                              width: "150px",
+                              width: "100px",
                             }}
                             placeholder="Enter Papers"
                           />
@@ -1061,7 +1151,7 @@ function Paperoutforprinting() {
                               )
                             }
                             style={{
-                              width: "150px",
+                              width: "100px",
                             }}
                             placeholder="Enter CurrentStock"
                           />

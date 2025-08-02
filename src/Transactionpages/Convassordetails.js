@@ -55,6 +55,9 @@ import {
   DialogContent,
   DialogTitle,
 } from "@mui/material";
+import dayjs from "dayjs";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { LocalizationProvider } from "@mui/x-date-pickers";
 
 function Convassordetails() {
   const [userId, setUserId] = useState("");
@@ -398,6 +401,52 @@ function Convassordetails() {
     }
   };
 
+  const [safedate, setSafedate] = useState(dayjs());
+  const [safedateerror, setSafedateerror] = useState("");
+
+  const [transdate, setTransdate] = useState(dayjs());
+  const [transerror, setTranserror] = useState("");
+
+  const handleDateChange1 = (newValue) => {
+    if (!newValue || !dayjs(newValue).isValid()) {
+      setSafedateerror("Invalid date");
+      setSafedate(null);
+      return;
+    }
+
+    const today = dayjs();
+    const minDate = today.subtract(3, "day");
+    const maxDate = today.add(2, "day");
+
+    if (newValue.isBefore(minDate) || newValue.isAfter(maxDate)) {
+      setSafedateerror("You can select only 2 days before or after today");
+    } else {
+      setSafedateerror("");
+    }
+
+    setSafedate(newValue);
+  };
+
+  const handleDateChange2 = (newValue) => {
+    if (!newValue || !dayjs(newValue).isValid()) {
+      setTranserror("Invalid date");
+      setTransdate(null);
+      return;
+    }
+
+    const today = dayjs();
+    const minDate = today.subtract(3, "day");
+    const maxDate = today.add(2, "day");
+
+    if (newValue.isBefore(minDate) || newValue.isAfter(maxDate)) {
+      setTranserror("You can select only 2 days before or after today");
+    } else {
+      setTranserror("");
+    }
+
+    setTransdate(newValue);
+  };
+
   const handleInputChange = (index, field, value) => {
     const updatedRows = [...rows];
 
@@ -489,11 +538,16 @@ function Convassordetails() {
     setrefno("");
     setSelectedbranch(null);
     setSpecimenreportNo("");
-    setDate("");
+    // setDate("");
+    setSafedate(dayjs());
+    setSafedateerror("");
     setConvassorId(null);
     setCityId(null);
-    setTransactiondate(null);
+    // setTransactiondate(null);
+    setTransdate(dayjs());
+    setTranserror("");
     setCollegeId(null);
+
     setRows([
       {
         SerialNo: "",
@@ -602,10 +656,8 @@ function Convassordetails() {
     setRows(updatedRows);
 
     // Update form fields
-    const date = convertDateForInput(convassorheader.Date?.date);
-    const transdate = convertDateForInput(
-      convassorheader.TransactionDate?.date
-    );
+    const date = dayjs(convassorheader.Date?.date);
+    const transdate = dayjs(convassorheader.TransactionDate?.date);
     const selectedBranchName = Object.keys(branchMapping).find(
       (key) => branchMapping[key] === convassorheader.Option
     );
@@ -613,10 +665,12 @@ function Convassordetails() {
     setSelectedbranch(selectedBranchName || "");
     setrefno(convassorheader.RefNo);
     setSpecimenreportNo(convassorheader.Specimen_report_no);
-    setDate(date);
+    // setDate(date);
+    setSafedate(date);
     setConvassorId(convassorheader.CanvassorId);
     setCityId(convassorheader.CityId);
-    setTransactiondate(transdate);
+    // setTransactiondate(transdate);
+    setTransdate(transdate);
     setCollegeId(convassorheader.CollegeId);
 
     console.log(convassorheader, "convassor header");
@@ -624,117 +678,6 @@ function Convassordetails() {
 
     setIsLoading(false);
   };
-
-  // const fetchProfessorName = async (professorId, index) => {
-  //   if (professorCache[professorId]) {
-  //     return professorCache[professorId]; // ✅ Return from cache if available
-  //   }
-
-  //   try {
-  //     const response = await fetch(
-  //       `https://publication.microtechsolutions.net.in/php/get/getbycolm.php?Table=Professor&Colname=Id&Colvalue=${professorId}`
-  //     );
-  //     const data = await response.json();
-  //     const professorName = data?.[0]?.ProfessorName || 'Unknown';
-
-  //     setProfessorCache((prevCache) => ({
-  //       ...prevCache,
-  //       [professorId]: professorName, // 🔹 Store in cache for future use
-  //     }));
-
-  //     // ✅ Update `rows` state dynamically
-  //   setRows((prevRows) =>
-  //     prevRows.map((row, i) =>
-  //       i === index ? { ...row, ProfessorName: professorName } : row
-  //     )
-  //   );
-
-  //     return professorName;
-  //   } catch (error) {
-  //     console.error(`Error fetching professor name for ID ${professorId}:`, error);
-  //     return 'Unknown';
-  //   }
-  // };
-
-  // const handleEdit = async () => {
-  //   if (currentRow) {
-  //     console.log("Editing item with ID:", currentRow.original.Id);
-  //     setIdwiseData(currentRow.original.Id);
-  //   }
-
-  //   setIsLoading(true);
-
-  //   console.log(currentRow, 'row');
-  //   const convassorheader = convassorheaders[currentRow.index];
-
-  //   const convassordetail = convassordetails.filter(
-  //     (detail) => detail.CanvassorheaderId === convassorheader.Id
-  //   );
-
-  //   const convertDateForInput = (dateStr) => {
-  //     if (typeof dateStr === 'string' && dateStr.includes('-')) {
-  //       const [year, month, day] = dateStr.split(' ')[0].split('-');
-  //       return `${year}-${month}-${day}`;
-  //     } else {
-  //       console.error('Invalid date format:', dateStr);
-  //       return '';
-  //     }
-  //   };
-
-  //   // 🔹 Set initial rows with ProfessorId (placeholder)
-  //   const initialRows = convassordetail.map((detail) => ({
-  //     CanvassorheaderId: detail.CanvassorheaderId,
-  //     BookId: detail.BookId,
-  //     ProfessorId: detail.ProfessorId,
-  //     ProfessorName: professorCache[detail.ProfessorId] || `Fetching...`, // 🔹 Show ID initially
-  //     Copies: detail.Copies,
-  //     Id: detail.Id,
-  //   }));
-
-  //   setRows(initialRows); // ✅ Instantly update UI with placeholders
-
-  //   // ✅ Open the drawer immediately
-  //   setEditingIndex(currentRow.index);
-  //   setIsDrawerOpen(true);
-  //   setIsEditing(true);
-  //   setId(convassorheader.Id);
-
-  //   handleMenuClose();
-
-  //   // ✅ Fetch professor names in the background (lazy loading)
-  //   const updatedRows = await Promise.all(
-  //     initialRows.map(async (row) => ({
-  //       ...row,
-  //       ProfessorName: await fetchProfessorName(row.ProfessorId), // ✅ Fetch dynamically
-  //     }))
-  //   );
-
-  //   setRows(updatedRows); // ✅ Update names once fetched
-
-  //   // ✅ Update form fields
-  //   const date = convertDateForInput(convassorheader.Date?.date);
-  //   const transdate = convertDateForInput(convassorheader.TransactionDate?.date);
-
-  //   const selectedBranchName = Object.keys(branchMapping).find(
-  //     (key) => branchMapping[key] === convassorheader.Option
-  //   );
-  //   setSelectedbranch(selectedBranchName || '');
-  //   setrefno(convassorheader.RefNo);
-  //   setSpecimenreportNo(convassorheader.Specimen_report_no);
-  //   setDate(date);
-  //   setConvassorId(convassorheader.CanvassorId);
-  //   setCityId(convassorheader.CityId);
-  //   setTransactiondate(transdate);
-  //   setCollegeId(convassorheader.CollegeId);
-
-  //   console.log(convassorheader, 'convassor header');
-  //   console.log(convassordetails, 'convassor detail');
-
-  //   // ✅ Finish loading
-  //   fetchConvassordetails().then(() => {
-  //     setIsLoading(false);
-  //   });
-  // };
 
   const validateForm = () => {
     let formErrors = {};
@@ -748,9 +691,20 @@ function Convassordetails() {
     e.preventDefault();
     if (!validateForm()) return;
 
-    const formattedDate = moment(Date).format("YYYY-MM-DD");
-    const formattedTransactionDate =
-      moment(TransactionDate).format("YYYY-MM-DD");
+    if (
+      !safedate ||
+      !dayjs(safedate).isValid() ||
+      safedateerror ||
+      !transdate ||
+      !dayjs(transdate).isValid() ||
+      transerror
+    ) {
+      toast.error("Please correct all the date fields before submitting.");
+      return;
+    }
+
+    const formattedDate = dayjs(safedate).format("YYYY-MM-DD");
+    const formattedTransactionDate = dayjs(transdate).format("YYYY-MM-DD");
 
     const convassorHeaderdata = {
       Id: isEditing ? id : "", // Include the Id for updating, null for new records
@@ -878,7 +832,7 @@ function Convassordetails() {
 
   return (
     <div className="convassordetails-container">
-      <h1>Canvassor Details</h1>
+      <h1>Convassor Details</h1>
 
       <div className="convassordetailstable-master">
         <div className="convassordetailstable1-master">
@@ -953,7 +907,7 @@ function Convassordetails() {
           PaperProps={{
             sx: {
               borderRadius: isSmallScreen ? "0" : "10px 0 0 10px",
-              width: isSmallScreen ? "100%" : "70%",
+              width: isSmallScreen ? "100%" : "87%",
 
               zIndex: 1000,
               paddingLeft: "16px",
@@ -970,8 +924,8 @@ function Convassordetails() {
             <Typography variant="h6">
               <b>
                 {isEditing
-                  ? "Edit Canvassor Details"
-                  : "Create Canvassor Details"}
+                  ? "Edit Convassor Details"
+                  : "Create Convassor Details"}
               </b>
             </Typography>{" "}
             <CloseIcon sx={{ cursor: "pointer" }} onClick={handleDrawerClose} />
@@ -1022,15 +976,26 @@ function Convassordetails() {
                 Date<b className="required">*</b>:
               </label>
               <div>
-                <input
-                  type="date"
-                  id="Date"
-                  name="Date"
-                  value={Date}
-                  onChange={(e) => setDate(e.target.value)}
-                  className="convassordetails-control"
-                  placeholder="Enter Date"
-                />
+                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                  <DatePicker
+                    value={safedate}
+                    onChange={handleDateChange1}
+                    format="DD-MM-YYYY"
+                    slotProps={{
+                      textField: {
+                        size: "small",
+                        fullWidth: true,
+                        error: !!safedateerror,
+                        helperText: safedateerror,
+                      },
+                    }}
+                    sx={{
+                      marginTop: "10px",
+                      marginBottom: "5px",
+                      width: "165px",
+                    }}
+                  />
+                </LocalizationProvider>
               </div>
 
               {/* <div>
@@ -1062,7 +1027,7 @@ function Convassordetails() {
                       fullWidth
                     />
                   )}
-                  sx={{ mt: 1.25, mb: 0.625, width: 170 }} // Equivalent to 10px and 5px
+                  sx={{ mt: 1.25, mb: 0.625, width: 250 }} // Equivalent to 10px and 5px
                 />
               </div>
               {/* <div>
@@ -1094,7 +1059,7 @@ function Convassordetails() {
                       fullWidth
                     />
                   )}
-                  sx={{ mt: 1.25, mb: 0.625, width: 170 }} // Equivalent to 10px and 5px
+                  sx={{ mt: 1.25, mb: 0.625, width: 250 }} // Equivalent to 10px and 5px
                 />
               </div>
               {/* <div>
@@ -1107,15 +1072,26 @@ function Convassordetails() {
                 Transaction Date<b className="required">*</b>:
               </label>
               <div>
-                <input
-                  type="date"
-                  id="TransactionDate"
-                  name="TransactionDate"
-                  value={TransactionDate}
-                  onChange={(e) => setTransactiondate(e.target.value)}
-                  className="convassordetails-control"
-                  placeholder="Enter Transaction date"
-                />
+                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                  <DatePicker
+                    value={transdate}
+                    onChange={handleDateChange2}
+                    format="DD-MM-YYYY"
+                    slotProps={{
+                      textField: {
+                        size: "small",
+                        fullWidth: true,
+                        error: !!transerror,
+                        helperText: transerror,
+                      },
+                    }}
+                    sx={{
+                      marginTop: "10px",
+                      marginBottom: "5px",
+                      width: "165px",
+                    }}
+                  />
+                </LocalizationProvider>
               </div>
 
               {/* <div>
@@ -1147,7 +1123,7 @@ function Convassordetails() {
                       fullWidth
                     />
                   )}
-                  sx={{ mt: 1.25, mb: 0.625, width: 170 }} // Equivalent to 10px and 5px
+                  sx={{ mt: 1.25, mb: 0.625, width: 320 }} // Equivalent to 10px and 5px
                 />
               </div>
               {/* <div>
@@ -1247,7 +1223,7 @@ function Convassordetails() {
                               newValue ? newValue.value : ""
                             )
                           }
-                          sx={{ width: "200px" }} // Set width
+                          sx={{ width: 350 }} // Set width
                           getOptionLabel={(option) => option.label}
                           renderInput={(params) => (
                             <TextField
@@ -1258,7 +1234,7 @@ function Convassordetails() {
                               sx={{
                                 "& .MuiInputBase-root": {
                                   height: "50px",
-                                  width: "200px", // Adjust height here
+                                  // width: "200px", // Adjust height here
                                 },
                                 "& .MuiInputBase-input": {
                                   padding: "14px", // Adjust padding for better alignment
@@ -1325,6 +1301,13 @@ function Convassordetails() {
                             handleSearchChange(inputValue, index)
                           }
                           placeholder="Type to search professor..."
+                          // sx={{ width: "500px" }} // Set width
+                          styles={{
+                            container: (base) => ({
+                              ...base,
+                              width: 350, // ✅ Set your desired width here
+                            }),
+                          }}
                         />
                       </td>
 
@@ -1335,6 +1318,7 @@ function Convassordetails() {
                           onChange={(e) =>
                             handleInputChange(index, "Copies", e.target.value)
                           }
+                          style={{ width: "100px" }}
                         />
                       </td>
                       <td>

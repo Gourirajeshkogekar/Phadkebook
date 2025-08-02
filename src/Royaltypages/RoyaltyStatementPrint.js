@@ -2,6 +2,7 @@ import React, { useRef } from "react";
 import { Button } from "@mui/material";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
+import { useNavigate } from "react-router-dom";
 
 function RoyaltyStatementprint() {
   const printRef = useRef();
@@ -113,6 +114,11 @@ function RoyaltyStatementprint() {
       console.error("Error generating PDF:", error);
       alert("Failed to generate PDF. Please try again.");
     }
+  };
+
+  const navigate = useNavigate();
+  const handleCancel = () => {
+    navigate("/royalty");
   };
 
   return (
@@ -263,12 +269,21 @@ function RoyaltyStatementprint() {
           onClick={handlePrint}
           sx={{
             backgroundColor: "green",
+            marginRight: "5px",
             color: "white",
             "&:hover": {
               backgroundColor: "darkgreen",
             },
           }}>
           Print
+        </Button>
+
+        <Button
+          onClick={handleCancel}
+          variant="contained"
+          style={{ background: "red", color: "white" }}>
+          {" "}
+          Cancel
         </Button>
       </div>
     </div>

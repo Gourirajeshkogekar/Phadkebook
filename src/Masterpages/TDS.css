@@ -37,7 +37,7 @@
   
   .mastertds-form {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr;
     margin: 1px;
     margin-top: 20px;
      gap: 20px
@@ -48,7 +48,7 @@
     border-radius: 4px;
     border: 1px solid rgb(223, 222, 222);
     margin: 10px 0;
-    width: 150px;
+    width: 250px;
     margin-bottom: 5px;
   }
   
@@ -69,11 +69,11 @@
   
 .mastertds-modal {
     position: fixed;
-    top: 50%;
+    top: 40%;
     left: 50%;
     transform: translate(-50%, -50%);
     background-color: white;
-    max-width: 70%;
+    width:  70%;
     border-radius: 8px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
     padding: 20px;

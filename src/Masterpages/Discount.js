@@ -82,7 +82,7 @@ function Discount() {
       );
       const bookOptions = response.data.map((book) => ({
         value: book.Id,
-        label: book.BookName,
+        label: book.BookNameMarathi || book.BookName,
       }));
       setBookOptions(bookOptions);
     } catch (error) {
@@ -386,7 +386,7 @@ function Discount() {
                     styles={{
                       control: (base) => ({
                         ...base,
-                        width: "170px",
+                        width: "600px",
                         marginTop: "10px",
                         borderRadius: "4px",
                         border: "1px solid rgb(223, 222, 222)",

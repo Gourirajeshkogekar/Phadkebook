@@ -220,7 +220,7 @@ function PaperSize() {
       PaperSizeName: papersize,
       MillName: millname,
       Unit: unit,
-      OpeningStock: opstock,
+      OpeningStock: 0,
       MultipleFactor: multiplefactor,
       STRSize_Code: STRSize_Code,
       SizeCode: SizeCode,
@@ -283,9 +283,14 @@ function PaperSize() {
         size: 50,
       },
 
+      // {
+      //   accessorKey: "SizeCode",
+      //   header: "Size code",
+      //   size: 50,
+      // },
       {
-        accessorKey: "SizeCode",
-        header: "Size code",
+        accessorKey: "Unit",
+        header: "Unit",
         size: 50,
       },
       {
@@ -449,18 +454,18 @@ function PaperSize() {
                       </span>
                     }
                     arrow>
-                    <input
-                      type="text"
+                    <select
                       id="unit"
                       name="unit"
                       value={unit}
                       onChange={(e) => setUnit(e.target.value)}
-                      maxLength={25}
                       ref={unitRef}
                       onKeyDown={(e) => handleKeyDown(e, opstockRef)}
-                      className="papersize-control"
-                      placeholder="Enter unit"
-                    />
+                      className="papersize-control">
+                      <option value="">Select unit</option>
+                      <option value="REAM">REAM</option>
+                      <option value="Paper">Paper</option>
+                    </select>
                   </Tooltip>
 
                   <div>
@@ -468,7 +473,7 @@ function PaperSize() {
                   </div>
                 </div>
               </div>
-              <div>
+              {/* <div>
                 <label className="papersize-label">
                   Opening stock <b className="required">*</b>
                 </label>
@@ -500,7 +505,7 @@ function PaperSize() {
                     )}
                   </div>
                 </div>
-              </div>
+              </div> */}
 
               <div>
                 <label className="papersize-label">

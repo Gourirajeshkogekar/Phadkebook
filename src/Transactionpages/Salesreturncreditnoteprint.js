@@ -22,26 +22,26 @@ function Salesreturncreditnoteprint() {
   console.log(id, "id from sales invoice");
   const [loading, setLoading] = useState(true);
 
-  const [invoiceData, setInvoiceData] = useState([]);
+  const [creditnotedata, setCreditnotedata] = useState([]);
   const [isPrinting, setIsPrinting] = useState(false);
   const [isButtonsVisible, setIsButtonsVisible] = useState(true);
   const componentRef = useRef();
 
   useEffect(() => {
-    const fetchInvoicedata = async () => {
+    const fetchCreditnotedata = async () => {
       try {
         const response = await axios.get(
-          `https://publication.microtechsolutions.net.in/php/getsellsinvoiceprintbyid.php?Id=${id}`
+          `https://publication.microtechsolutions.net.in/php/getcreditnoteprint.php?Id=${id}`
         );
-        setInvoiceData(response.data);
-        console.log(invoiceData, "invoiceData");
+        setCreditnotedata(response.data);
+        console.log(creditnotedata, "creditnotedata");
       } catch (error) {
-        console.error("Error fetching invoice data:", error);
+        console.error("Error fetching creditnote data:", error);
       } finally {
         setLoading(false);
       }
     };
-    fetchInvoicedata();
+    fetchCreditnotedata();
   }, [id]);
 
   const handlePrint = async () => {
@@ -156,7 +156,7 @@ function Salesreturncreditnoteprint() {
   const handleCancel = () => {
     navigate("/transaction/salesreturn-creditnote");
   };
-  if (invoiceData.length === 0) {
+  if (creditnotedata.length === 0) {
     return (
       <div
         style={{
@@ -184,14 +184,14 @@ function Salesreturncreditnoteprint() {
   let totalFreight = 0;
   let packing = 0;
 
-  invoiceData.forEach((item) => {
+  creditnotedata.forEach((item) => {
     totalCopies += parseFloat(item.Copies) || 0;
     totalAmount += parseFloat(item.Amount) || 0;
     totalDiscAmount += parseFloat(item.DiscountAmount) || 0;
   });
 
-  totalFreight = invoiceData[0].Freight || 0;
-  packing = invoiceData[0].Packing || 0;
+  totalFreight = creditnotedata[0].Freight || 0;
+  packing = creditnotedata[0].Packing || 0;
 
   console.log(totalDiscAmount, "total disc amount");
 
@@ -202,12 +202,12 @@ function Salesreturncreditnoteprint() {
           // border: "1px solid red",
           marginTop: "5mm",
         }}
-        className="salesinvoiceprint-container">
+        className="creditnoteprint-container">
         <div
           ref={componentRef}
           style={{
             width: "223mm",
-            height: "297mm",
+            height: "276mm",
             marginRight: "15mm",
             marginLeft: "21mm",
             marginTop: "28mm",
@@ -244,23 +244,23 @@ function Salesreturncreditnoteprint() {
                   fontWeight: "bold",
                   whiteSpace: "nowrap",
                 }}>
-                {invoiceData[0]?.AccountName}
+                {creditnotedata[0]?.AccountName}
               </h6>
 
               <p style={{ fontSize: "15px" }}>
                 {[
-                  invoiceData[0]?.Address1,
-                  invoiceData[0]?.Address2,
-                  invoiceData[0]?.Address3,
-                  invoiceData[0]?.StateName,
-                  `Dist: ${invoiceData[0]?.CityName}`,
+                  creditnotedata[0]?.Address1,
+                  creditnotedata[0]?.Address2,
+                  creditnotedata[0]?.Address3,
+                  creditnotedata[0]?.StateName,
+                  `Dist: ${creditnotedata[0]?.CityName}`,
                 ]
                   .filter(Boolean)
                   .join(", ")}
               </p>
 
               <p style={{ fontSize: "13px", whiteSpace: "nowrap" }}>
-                {invoiceData[0]?.GSTNo}
+                {creditnotedata[0]?.GSTNo}
               </p>
             </div>
 
@@ -287,18 +287,18 @@ function Salesreturncreditnoteprint() {
                   marginTop: "8mm",
                   marginRight: "40mm",
                 }}>
-                <strong> Credit Memo No: </strong> {invoiceData[0]?.InvoiceNo}
+                <strong> Credit Note No: {creditnotedata[0]?.NoteNo}</strong>{" "}
               </b>
               <b
                 style={{
                   fontSize: "15px",
                   whiteSpace: "nowrap",
                   // marginLeft: "2mm",
-                  marginTop: "2mm",
+                  marginTop: "1mm",
                 }}>
-                <strong>{/* Invoice Date:  */}</strong>{" "}
-                {invoiceData[0]?.InvoiceDate
-                  ? new Date(invoiceData[0]?.InvoiceDate)
+                <strong>Date: </strong>{" "}
+                {creditnotedata[0]?.Date
+                  ? new Date(creditnotedata[0]?.Date)
                       .toLocaleDateString("en-GB")
                       .replace(/\//g, "-")
                   : ""}
@@ -310,7 +310,8 @@ function Salesreturncreditnoteprint() {
                   marginLeft: "15mm",
                   marginTop: "3mm",
                 }}>
-                <strong>{/* Challan No: */}</strong> {invoiceData[0]?.ChallanNo}
+                <strong>{/* Challan No: */}</strong>{" "}
+                {creditnotedata[0]?.ChallanNo}
               </b>
             </div>
           </header>
@@ -322,7 +323,7 @@ function Salesreturncreditnoteprint() {
               flexDirection: "column",
               justifyContent: "flex-start",
               // border: "1px solid black",
-              height: "22mm",
+              height: "15mm",
               width: "223mm",
               fontSize: "15px",
               fontWeight: "bold",
@@ -332,49 +333,42 @@ function Salesreturncreditnoteprint() {
             {/* Row 1 - 3 values */}
             <div style={{ display: "flex", gap: "8px" }}>
               <span style={{ marginLeft: "32mm" }}>
-                {invoiceData[0]?.OrderNo}
+                {creditnotedata[0]?.OrderNo}
               </span>
               <span style={{ marginLeft: "35mm" }}>
                 {" "}
-                {invoiceData[0]?.OrderDate
-                  ? new Date(invoiceData[0]?.OrderDate).toLocaleDateString(
+                {creditnotedata[0]?.OrderDate
+                  ? new Date(creditnotedata[0]?.OrderDate).toLocaleDateString(
                       "en-GB"
                     )
                   : ""}
               </span>
               <span style={{ marginLeft: "43mm" }}>
-                {invoiceData[0]?.ParcelSendThrough}
+                {creditnotedata[0]?.ParcelSendThrough}
               </span>
             </div>
 
             {/* Row 2 - 5 values */}
             <div style={{ display: "flex", gap: "8px", marginTop: "3px" }}>
               <span style={{ marginLeft: "27mm" }}>
-                {invoiceData[0]?.ReceiptNo}
+                {creditnotedata[0]?.ReceiptNo}
               </span>
               <span style={{ marginLeft: "38mm" }}>
                 {" "}
-                {invoiceData[0]?.ReceiptDate
-                  ? new Date(invoiceData[0]?.OrderDate).toLocaleDateString(
+                {creditnotedata[0]?.ReceiptDate
+                  ? new Date(creditnotedata[0]?.OrderDate).toLocaleDateString(
                       "en-GB"
                     )
                   : ""}
               </span>
               <span style={{ marginLeft: "26mm" }}>
-                {invoiceData[0]?.Bundles}
+                {creditnotedata[0]?.Bundles}
               </span>
               <span style={{ marginLeft: "40mm" }}>
-                {invoiceData[0]?.Weight}
+                {creditnotedata[0]?.Weight}
               </span>
               <span style={{ marginLeft: "25mm" }}>
-                {invoiceData[0]?.Freight}
-              </span>
-            </div>
-
-            {/* Row 3 - 1 value */}
-            <div style={{ marginTop: "4px" }}>
-              <span style={{ marginLeft: "43mm" }}>
-                {invoiceData[0]?.ReceiptSendThrough.substring(0, 10)}
+                {creditnotedata[0]?.Freight}
               </span>
             </div>
           </div>
@@ -383,10 +377,10 @@ function Salesreturncreditnoteprint() {
           <table
             style={{
               display: "block",
-              minHeight: "175mm",
+              minHeight: "152mm",
               marginRight: "11mm",
-              // width: "223mm",
-              marginTop: "10mm",
+              width: "223mm",
+              marginTop: "8mm",
               // border: "1px solid black",
             }}>
             <thead>
@@ -405,20 +399,20 @@ function Salesreturncreditnoteprint() {
             </thead>
 
             <tbody>
-              {invoiceData.length > 0 ? (
-                invoiceData.map((item, index) => (
+              {creditnotedata.length > 0 ? (
+                creditnotedata.map((item, index) => (
                   <tr
                     key={index}
                     style={{
                       fontSize: "15px",
                       // color: "rebeccapurple",
-                      // border: "1px solid black"
+                      // border: "1px solid black",
                     }}>
                     <td
                       align="left"
                       style={{
                         width: "10mm",
-                        // style: "1px solid black"
+                        style: "1px solid black",
                       }}>
                       {index + 1}
                     </td>
@@ -426,7 +420,7 @@ function Salesreturncreditnoteprint() {
                       align="left"
                       style={{
                         width: "22mm",
-                        //  border: "1px solid black"
+                        // border: "1px solid black",
                       }}>
                       {item.BookCode}
                     </td>
@@ -434,7 +428,7 @@ function Salesreturncreditnoteprint() {
                       align="left"
                       style={{
                         width: "22mm",
-                        //  border: "1px solid black"
+                        // border: "1px solid black",
                       }}>
                       {item.StandardName}
                     </td>
@@ -452,7 +446,7 @@ function Salesreturncreditnoteprint() {
                       align="center"
                       style={{
                         width: "15mm",
-                        //  border: "1px solid black"
+                        // border: "1px solid black",
                       }}>
                       {item.Copies}
                     </td>
@@ -460,7 +454,7 @@ function Salesreturncreditnoteprint() {
                       align="right"
                       style={{
                         width: "15mm",
-                        //  border: "1px solid black"
+                        // border: "1px solid black",
                       }}>
                       {item.Price}
                     </td>
@@ -468,7 +462,7 @@ function Salesreturncreditnoteprint() {
                       align="right"
                       style={{
                         width: "20mm",
-                        //  border: "1px solid black"
+                        // border: "1px solid black",
                       }}>
                       {item.Amount}
                     </td>
@@ -476,7 +470,7 @@ function Salesreturncreditnoteprint() {
                       align="right"
                       style={{
                         width: "11mm",
-                        //  border: "1px solid black"
+                        // border: "1px solid black",
                       }}>
                       {item.DiscountPercentage || 0}
                     </td>
@@ -484,7 +478,7 @@ function Salesreturncreditnoteprint() {
                       align="right"
                       style={{
                         width: "20mm",
-                        //  border: "1px solid black"
+                        // border: "1px solid black",
                       }}>
                       {item.DiscountAmount || 0}
                     </td>
@@ -534,8 +528,8 @@ function Salesreturncreditnoteprint() {
                   width: "10mm",
                   textAlign: "center",
                   marginLeft: "13mm",
-                  marginTop: "1mm",
-                  height: "3mm",
+                  // marginTop: "1mm",
+                  height: "7mm",
                   // border: "1px solid black",
                 }}>
                 {totalCopies}
@@ -547,10 +541,11 @@ function Salesreturncreditnoteprint() {
                   flexGrow: 1,
                   textAlign: "right",
                   marginBottom: "5mm",
-                  marginTop: "2mm",
-                  marginRight: "10mm",
+                  height: "7mm",
+                  // marginTop: "2mm",
+                  marginRight: "1mm",
                 }}>
-                {totalDiscAmount.toFixed(2)}
+                {totalDiscAmount.toFixed(2)}12548
               </div>{" "}
             </div>
 
@@ -560,7 +555,7 @@ function Salesreturncreditnoteprint() {
                 display: "flex",
                 justifyContent: "flex-end",
                 fontWeight: "bold",
-                marginRight: "10mm",
+                marginRight: "1mm",
 
                 fontSize: "14px",
               }}>
@@ -568,7 +563,7 @@ function Salesreturncreditnoteprint() {
                 style={{
                   width: "35mm",
                   marginBottom: "1mm",
-                  marginRight: "13mm",
+                  marginRight: "8mm",
                 }}>
                 Add Freight(1/2)
               </div>
@@ -584,12 +579,12 @@ function Salesreturncreditnoteprint() {
                 justifyContent: "flex-end",
                 fontWeight: "bold",
                 fontSize: "14px",
-                marginRight: "10mm",
+                // marginRight: "8mm",
               }}>
-              <div style={{ width: "22mm", marginRight: "18mm" }}>
+              <div style={{ width: "22mm", marginRight: "10mm" }}>
                 Add P & F
               </div>
-              <div style={{ textAlign: "right" }}>
+              <div style={{ textAlign: "right", marginRight: "1mm" }}>
                 {parseFloat(packing).toFixed(2)}
               </div>
             </div>
@@ -602,7 +597,7 @@ function Salesreturncreditnoteprint() {
                 fontWeight: "bold",
                 fontSize: "14px",
                 marginTop: "5mm",
-                marginRight: "10mm",
+                marginRight: "1mm",
               }}>
               {/* <div
                 style={{

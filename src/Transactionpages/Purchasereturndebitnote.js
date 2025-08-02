@@ -59,6 +59,8 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { DatePicker } from "@mui/x-date-pickers";
 import { Edit, Delete, Add, MoreVert, Print } from "@mui/icons-material";
+import dayjs from "dayjs";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 
 function Purchasereturndebitnote() {
   const [userId, setUserId] = useState("");
@@ -83,6 +85,22 @@ function Purchasereturndebitnote() {
 
     fetchPurchasereturns();
   }, []);
+
+  useEffect(() => {
+    const today = new Date();
+    const formattedToday = today.toISOString().split("T")[0];
+    setPurchaseReturnDate(formattedToday); // set today's date as default
+  }, []);
+
+  const getToday = () => {
+    return new Date().toISOString().split("T")[0];
+  };
+
+  const getMaxDate = () => {
+    const today = new Date();
+    today.setDate(today.getDate() + 2); // add 2 days
+    return today.toISOString().split("T")[0];
+  };
 
   const [pageIndex, setPageIndex] = useState(1); // Current page
   const [totalPages, setTotalPages] = useState(1);
@@ -194,8 +212,9 @@ function Purchasereturndebitnote() {
       );
       const bookOptions = response.data.map((book) => ({
         value: book.Id,
-        label: book.BookName,
+        label: book.BookName || book.BookNameMarathi,
         code: book.BookCode,
+        price: book.BookRate,
       }));
       setBookOptions(bookOptions);
     } catch (error) {
@@ -233,33 +252,55 @@ function Purchasereturndebitnote() {
     setSubTotal(subtotal);
     setTotal(total);
   };
+  const [purchasesafedate, setPurchasesafedate] = useState(dayjs());
+  const [purchaseerror, setPurchaseerror] = useState("");
+  const [receiveddateerror, setReceiveddateerror] = useState("");
+
+  const handleDateChange1 = (newValue) => {
+    if (!newValue || !dayjs(newValue).isValid()) {
+      setPurchaseerror("Invalid date");
+      setPurchasesafedate(null);
+      return;
+    }
+
+    const today = dayjs();
+    const minDate = today.subtract(3, "day");
+    const maxDate = today.add(2, "day");
+
+    if (newValue.isBefore(minDate) || newValue.isAfter(maxDate)) {
+      setPurchaseerror("You can select only 2 days before or after today");
+    } else {
+      setPurchaseerror("");
+    }
+
+    setPurchasesafedate(newValue);
+  };
 
   const handleInputChange = (index, field, value) => {
     const updatedRows = [...rows];
 
-    // Update the value of the current field
     updatedRows[index][field] = value;
 
-    // Calculate the Amount when Copies and Rate are entered
-    if (field === "Copies" || field === "Rate") {
-      const copies = updatedRows[index].Copies || 0;
-      const rate = updatedRows[index].Rate || 0;
-      updatedRows[index].Amount = copies * rate;
+    // If BookId is changed, update Rate from bookOptions
+    if (field === "BookId") {
+      const selectedBook = bookOptions.find((book) => book.value === value);
+      updatedRows[index].Rate = selectedBook?.price || 0;
     }
 
-    // Calculate the DiscountAmount and FinalAmount when DiscountPercentage is entered
-    if (
-      field === "DiscountPercentage" ||
-      field === "Copies" ||
-      field === "Rate"
-    ) {
-      const discountPercentage = updatedRows[index].DiscountPercentage || 0;
-      const amount = updatedRows[index].Amount || 0;
-      updatedRows[index].DiscountAmount = (amount * discountPercentage) / 100;
-      updatedRows[index].Amount = amount - updatedRows[index].DiscountAmount;
-    }
+    // Extract necessary values
+    const copies = parseFloat(updatedRows[index].Copies) || 0;
+    const rate = parseFloat(updatedRows[index].Rate) || 0;
+    const discountPercentage =
+      parseFloat(updatedRows[index].DiscountPercentage) || 0;
 
-    // Update the state with the new row data
+    // Recalculate Amount and DiscountAmount
+    const amountBeforeDiscount = copies * rate;
+    const discountAmount = (amountBeforeDiscount * discountPercentage) / 100;
+    const finalAmount = amountBeforeDiscount - discountAmount;
+
+    updatedRows[index].DiscountAmount = discountAmount;
+    updatedRows[index].Amount = finalAmount;
+
     setRows(updatedRows);
     calculateTotals();
   };
@@ -342,7 +383,9 @@ function Purchasereturndebitnote() {
 
   const resetForm = () => {
     setPurchaseReturnNo("");
-    setPurchaseReturnDate("");
+    // setPurchaseReturnDate("");
+    setPurchasesafedate(dayjs());
+    setPurchaseerror("");
     setRefrenceNo("");
     setSupplierId("");
     setAccountId("");
@@ -472,8 +515,8 @@ function Purchasereturndebitnote() {
     //   formErrors.PurchaseReturnNo = "Purchase Return No  is required.";
     //   isValid = false;
     // }
-    if (!PurchaseReturnDate) {
-      formErrors.PurchaseReturnDate = "Purchase Return Date is required.";
+    if (!purchasesafedate) {
+      formErrors.purchasesafedate = "Purchase Return Date is required.";
       isValid = false;
     }
 
@@ -533,8 +576,17 @@ function Purchasereturndebitnote() {
     e.preventDefault();
     if (!validateForm()) return;
 
+    if (
+      !purchasesafedate ||
+      !dayjs(purchasesafedate).isValid() ||
+      purchaseerror
+    ) {
+      toast.error("Please correct all the date fields before submitting.");
+      return;
+    }
+
     const formattedPurchaseReturnDate =
-      moment(PurchaseReturnDate).format("YYYY-MM-DD");
+      moment(purchasesafedate).format("YYYY-MM-DD");
 
     const purchasereturnData = {
       Id: isEditing ? id : "", // Include the Id for updating, null for new records
@@ -804,15 +856,26 @@ function Purchasereturndebitnote() {
                   Purchase Return Date <b className="required">*</b>
                 </label>
                 <div>
-                  <input
-                    type="date"
-                    id="PurchaseReturnDate"
-                    name="PurchaseReturnDate"
-                    value={PurchaseReturnDate}
-                    onChange={(e) => setPurchaseReturnDate(e.target.value)}
-                    className="preturn-control"
-                    placeholder="Enter Purchase Return Date"
-                  />
+                  <LocalizationProvider dateAdapter={AdapterDayjs}>
+                    <DatePicker
+                      value={purchasesafedate}
+                      onChange={handleDateChange1}
+                      format="DD-MM-YYYY"
+                      slotProps={{
+                        textField: {
+                          size: "small",
+                          fullWidth: true,
+                          error: !!purchaseerror,
+                          helperText: purchaseerror,
+                        },
+                      }}
+                      sx={{
+                        marginTop: "10px",
+                        marginBottom: "5px",
+                        width: "250px",
+                      }}
+                    />
+                  </LocalizationProvider>
                 </div>
 
                 <div>
@@ -871,7 +934,7 @@ function Purchasereturndebitnote() {
                         fullWidth
                       />
                     )}
-                    sx={{ mt: 1.25, mb: 0.625, width: 170 }} // Equivalent to 10px and 5px
+                    sx={{ mt: 1.25, mb: 0.625, width: 310 }} // Equivalent to 10px and 5px
                   />
                 </div>
                 <div>
@@ -907,7 +970,7 @@ function Purchasereturndebitnote() {
                         fullWidth
                       />
                     )}
-                    sx={{ mt: 1.25, mb: 0.625, width: 170 }} // Equivalent to 10px and 5px
+                    sx={{ mt: 1.25, mb: 0.625, width: 300 }} // Equivalent to 10px and 5px
                   />
                 </div>
                 <div>
@@ -997,7 +1060,7 @@ function Purchasereturndebitnote() {
                                 newValue ? newValue.value : ""
                               )
                             }
-                            sx={{ width: 250 }} // Set width
+                            sx={{ width: 500 }} // Set width
                             getOptionLabel={(option) => option.label}
                             renderInput={(params) => (
                               <TextField
@@ -1026,7 +1089,7 @@ function Purchasereturndebitnote() {
                               handleInputChange(index, "Copies", e.target.value)
                             }
                             style={{
-                              width: "150px",
+                              width: "100px",
                             }}
                             placeholder="Copies"
                             className="preturn-control"
@@ -1036,22 +1099,15 @@ function Purchasereturndebitnote() {
                           <input
                             type="number"
                             value={row.Rate}
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              // Regex to validate decimal numbers with at most 18 digits total and 2 decimal places
-                              const regex = /^\d{0,18}(\.\d{0,2})?$/;
-
-                              // Check if the value matches the regex
-                              if (value === "" || regex.test(value)) {
-                                handleInputChange(index, "Rate", value);
-                              }
-                            }}
-                            style={{
-                              width: "150px",
-                            }}
+                            readOnly
+                            style={{ width: "150px" }}
                             placeholder="Rate"
                             className="preturn-control"
                           />
+                          {/* 
+                          {bookOptions.find(
+                            (option) => option.value === row.BookId
+                          )?.price || ""} */}
                         </td>
                         <td>
                           <input
@@ -1072,7 +1128,7 @@ function Purchasereturndebitnote() {
                               }
                             }}
                             style={{
-                              width: "150px",
+                              width: "100px",
                             }}
                             placeholder="Discount %"
                             className="preturn-control"

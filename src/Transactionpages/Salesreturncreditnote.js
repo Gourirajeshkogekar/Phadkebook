@@ -59,15 +59,22 @@ import {
   Print,
   Discount,
 } from "@mui/icons-material";
+import dayjs from "dayjs";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 
 function Salesreturncreditnote() {
   const [userId, setUserId] = useState("");
   const [yearid, setYearId] = useState("");
+  const [fromdate, setFromdate] = useState("");
+  const [newErrors, setNewerrors] = useState("");
+  const [todate, setTodate] = useState("");
   const [dateError, setDateError] = useState(false);
 
   useEffect(() => {
     const storedUserId = sessionStorage.getItem("UserId");
     const storedYearId = sessionStorage.getItem("YearId");
+    const storedFromDate = sessionStorage.getItem("FromDate");
+    const storedToDate = sessionStorage.getItem("ToDate");
 
     if (storedUserId) {
       setUserId(storedUserId);
@@ -77,8 +84,16 @@ function Salesreturncreditnote() {
 
     if (storedYearId) {
       setYearId(storedYearId);
+      console.log(storedYearId, "yearid");
     } else {
       toast.error("Year is not set.");
+    }
+
+    if (storedFromDate) {
+      setFromdate(storedFromDate);
+    }
+    if (storedToDate) {
+      setTodate(storedToDate);
     }
 
     fetchSalereturncredits();
@@ -88,9 +103,14 @@ function Salesreturncreditnote() {
   const [totalPages, setTotalPages] = useState(1);
   const [NoteNo, setNoteNo] = useState(null);
   const [Party_RefNo, setPartyrefno] = useState("");
-  const [date, setDate] = useState(null);
+  const today = new Date();
+  const twoDaysAfter = new Date();
+  twoDaysAfter.setDate(today.getDate() + 2);
+
+  const [creditnotedate, setDate] = useState("");
   const [AccountId, setAccountId] = useState("");
   const [DebitAccountId, setDebitAccountId] = useState("");
+  const [InvoiceId, setInvoiceId] = useState("");
   const [ReceiptNo, setReceiptno] = useState("");
   const [ReceiptDate, setReceiptDate] = useState("");
   const [Weight, setWeight] = useState("");
@@ -119,7 +139,7 @@ function Salesreturncreditnote() {
   const [isEditing, setIsEditing] = useState(false);
   const [salesreturncredits, setSalesreturncredits] = useState([]);
   const [salesreturncreditdetails, setSalesreturncreditdetails] = useState([]);
-
+  const [invoicedetails, setInvoicedetails] = useState([]);
   const [anchorEl, setAnchorEl] = useState(null);
   const [currentIndex, setCurrentIndex] = useState(null);
   const [selectedIndex, setSelectedIndex] = useState(null);
@@ -164,7 +184,7 @@ function Salesreturncreditnote() {
       Copies: 0,
       Price: 0,
       Discount: 0,
-      Amount: 0,
+      Amount: "",
     },
   ]);
 
@@ -173,6 +193,7 @@ function Salesreturncreditnote() {
     fetchBooks();
     fetchAccounts();
     fetchDespModes();
+    fetchInvoices();
   }, []);
 
   useEffect(() => {
@@ -253,6 +274,142 @@ function Salesreturncreditnote() {
     } catch (error) {
       // toast.error("Error fetching desp modes:", error);
     }
+  };
+
+  const fetchInvoices = async () => {
+    try {
+      const response = await axios.get(
+        "https://publication.microtechsolutions.net.in/php/gettable.php?Table=Invoiceheader"
+      );
+      const invoicedetails = response.data.map((inv) => ({
+        value: inv.Id,
+        label: inv.InvoiceNo,
+      }));
+      setInvoicedetails(invoicedetails);
+    } catch (error) {
+      // toast.error("Error fetching challans:", error);
+    }
+  };
+
+  const fetchInvoiceDetails = async (selectedInvoiceId) => {
+    console.log(selectedInvoiceId, "sele invoice id");
+    try {
+      const response = await axios.get(
+        `https://publication.microtechsolutions.net.in/php/get/getbycolm.php?Table=Invoicedetail&Colname=InvoiceId&Colvalue=${selectedInvoiceId}`
+      );
+      setRows(response.data); // Set fetched data to table rows
+    } catch (error) {
+      toast.error("Error fetching Invoice details");
+    }
+  };
+
+  // Fetch invoices for selected account
+  const fetchInvoicesByAccount = async (accountId) => {
+    try {
+      const response = await axios.get(
+        `https://publication.microtechsolutions.net.in/php/get/getbycolm.php?Table=Invoiceheader&Colname=AccountId&Colvalue=${accountId}`
+      );
+      const data = response.data;
+
+      // Map to format: { value: ..., label: ... }
+      const formattedInvoices = data.map((invoice) => ({
+        value: invoice.Id,
+        label: invoice.InvoiceNo,
+      }));
+
+      setInvoicedetails(formattedInvoices);
+    } catch (error) {
+      console.error("Error fetching invoices:", error);
+      setInvoicedetails([]);
+    }
+  };
+
+  const [safedate, setSafedate] = useState(dayjs());
+  const [receiptsafedate, setReceiptsafedate] = useState(dayjs());
+  const [ordersafedate, setOrdersafedate] = useState(dayjs());
+  const [receivedsafedate, setReceivedsafedate] = useState(dayjs());
+  const [receiptdateerror, setReceiptdateerror] = useState("");
+  const [orderdateerror, setOrderdateerror] = useState("");
+  const [receiveddateerror, setReceiveddateerror] = useState("");
+
+  const handleDateChange1 = (newValue) => {
+    if (!newValue || !dayjs(newValue).isValid()) {
+      setDateError("Invalid date");
+      setSafedate(null);
+      return;
+    }
+
+    const today = dayjs();
+    const minDate = today.subtract(3, "day");
+    const maxDate = today.add(2, "day");
+
+    if (newValue.isBefore(minDate) || newValue.isAfter(maxDate)) {
+      setDateError("You can select only 2 days before or after today");
+    } else {
+      setDateError("");
+    }
+
+    setSafedate(newValue);
+  };
+
+  const handleDateChange2 = (newValue) => {
+    if (!newValue || !dayjs(newValue).isValid()) {
+      setReceiptdateerror("Invalid date");
+      setReceiptsafedate(null);
+      return;
+    }
+
+    const today = dayjs();
+    const minDate = today.subtract(3, "day");
+    const maxDate = today.add(2, "day");
+
+    if (newValue.isBefore(minDate) || newValue.isAfter(maxDate)) {
+      setReceiptdateerror("You can select only 2 days before or after today");
+    } else {
+      setReceiptdateerror("");
+    }
+
+    setReceiptsafedate(newValue);
+  };
+
+  const handleDateChange3 = (newValue) => {
+    if (!newValue || !dayjs(newValue).isValid()) {
+      setOrderdateerror("Invalid date");
+      setOrdersafedate(null);
+      return;
+    }
+
+    const today = dayjs();
+    const minDate = today.subtract(3, "day");
+    const maxDate = today.add(2, "day");
+
+    if (newValue.isBefore(minDate) || newValue.isAfter(maxDate)) {
+      setOrderdateerror("You can select only 2 days before or after today");
+    } else {
+      setOrderdateerror("");
+    }
+
+    setOrdersafedate(newValue);
+  };
+
+  const handleDateChange4 = (newValue) => {
+    if (!newValue || !dayjs(newValue).isValid()) {
+      setReceiveddateerror("Invalid date");
+      setReceivedsafedate(null);
+      return;
+    }
+
+    const today = dayjs();
+    const minDate = today.subtract(3, "day");
+    const maxDate = today.add(2, "day");
+
+    if (newValue.isBefore(minDate) || newValue.isAfter(maxDate)) {
+      setReceiveddateerror("You can select only 2 days before or after today");
+    } else {
+      setReceiveddateerror("");
+    }
+
+    setReceivedsafedate(newValue);
   };
 
   const handleInputChange = (index, field, value) => {
@@ -376,20 +533,30 @@ function Salesreturncreditnote() {
     setDeleteIndex(null);
   };
   const resetForm = () => {
+    setNoteNo("");
     setPartyrefno("");
-    setDate("");
+    // setDate("");
+    setSafedate(dayjs());
+    setDateError("");
     setAccountId("");
     setDebitAccountId("");
+    setInvoiceId("");
     setReceiptno("");
-    setReceiptDate("");
+    // setReceiptDate("");
+    setReceiptsafedate(dayjs());
+    setReceiptdateerror("");
     setWeight("");
     setBundles("");
     setFreight("");
     setChallanNo("");
     setDispatchId("");
     setOrderNo("");
-    setOrderdate("");
-    setReceivedDate("");
+    // setOrderdate("");
+    setOrdersafedate(dayjs());
+    setOrderdateerror("");
+    // setReceivedDate("");
+    setReceivedsafedate(dayjs());
+    setReceiveddateerror("");
     setReceivedThrough("");
     setPaymentOption("");
     setTtl_copies("");
@@ -398,6 +565,7 @@ function Salesreturncreditnote() {
     setOther_Charge1_percentage("");
     setOther_Charge1_amt("");
     setTtl_amount("");
+
     setRows([
       {
         SerialNo: "",
@@ -425,6 +593,7 @@ function Salesreturncreditnote() {
 
   const handleEdit = () => {
     if (currentRow) {
+      console.log(currentRow, "currentrow");
       console.log("Editing item with ID:", currentRow.original.Id);
       setIdwiseData(currentRow.original.Id);
     }
@@ -433,12 +602,14 @@ function Salesreturncreditnote() {
     console.log(currentRow, "row");
     const salesreturncredit = salesreturncredits[currentRow.index];
 
+    console.log(salesreturncredit, "sales return credit note");
     // Filter purchase details to match the selected PurchaseId
     const salesreturncreditdetail = salesreturncreditdetails.filter(
       (detail) => detail.SalesReturnCreditNoteId === salesreturncredit.Id
     );
 
-    // Map the details to rows
+    console.log(salesreturncreditdetail, "details");
+
     // Convert date strings to DD-MM-YYYY format
     const convertDateForInput = (dateStr) => {
       if (typeof dateStr === "string" && dateStr.includes("-")) {
@@ -463,31 +634,35 @@ function Salesreturncreditnote() {
       Id: detail.Id, // Include the detail Id in the mapped row for tracking
     }));
 
-    const date = convertDateForInput(salesreturncredit.Date?.date);
-    const receiptdate = convertDateForInput(
-      salesreturncredit.ReceiptDate?.date
-    );
-    const orderdate = convertDateForInput(salesreturncredit.OrderDate?.date);
-    const receiveddate = convertDateForInput(
-      salesreturncredit.ReceivedDate?.date
-    );
+    const creditdate = dayjs(salesreturncredit.Date?.date);
+    const receiptdate = dayjs(salesreturncredit.ReceiptDate?.date);
+    const orderdate = dayjs(salesreturncredit.OrderDate?.date);
+    const receiveddate = dayjs(salesreturncredit.ReceivedDate?.date);
 
     // Set the form fields
     setNoteNo(salesreturncredit.NoteNo);
     setPartyrefno(salesreturncredit.Party_RefNo);
-    setDate(date);
+    // setDate(creditdate);
+    setSafedate(creditdate);
     setAccountId(salesreturncredit.AccountId);
     setDebitAccountId(salesreturncredit.DebitAccountId);
+    setInvoiceId(salesreturncredit.InvoiceId);
+    if (salesreturncredit.InvoiceId) {
+      fetchInvoiceDetails(salesreturncredit.InvoiceId);
+    }
     setReceiptno(salesreturncredit.ReceiptNo);
-    setReceiptDate(receiptdate);
+    // setReceiptDate(receiptdate);
+    setReceiptsafedate(receiptdate);
     setWeight(salesreturncredit.Weight);
     setBundles(salesreturncredit.Bundles);
     setFreight(salesreturncredit.Freight);
     setChallanNo(salesreturncredit.ChallanNo);
     setDispatchId(salesreturncredit.DispatchId);
     setOrderNo(salesreturncredit.OrderNo);
-    setOrderdate(orderdate);
-    setReceivedDate(receiveddate);
+    // setOrderdate(orderdate);
+    setOrdersafedate(orderdate);
+    // setReceivedDate(receiveddate);
+    setReceivedsafedate(receiveddate);
     setReceivedThrough(salesreturncredit.ReceivedThrough);
     setPaymentOption(salesreturncredit.PaymentOption);
     setTtl_copies(salesreturncredit.setTtl_copies);
@@ -501,7 +676,9 @@ function Salesreturncreditnote() {
     console.log(salesreturncreditdetail, "salesreturncredit detail");
     console.log(mappedRows, "mapped rows");
     // Set the rows for the table with all the details
-    setRows(mappedRows);
+    // setRows(mappedRows);
+    setRows([]); // Clear stale rows before fetching new ones
+    fetchInvoiceDetails(salesreturncredit.InvoiceId);
 
     // Set editing state
     setEditingIndex(currentRow.index);
@@ -521,67 +698,26 @@ function Salesreturncreditnote() {
       setIsLoading(false); // Stop loading after data is fetched
     });
   };
-
   const validateForm = () => {
     let formErrors = {};
     let isValid = true;
 
-    //     if (!PurchaseReturnNo) {
-    //         formErrors.PurchaseReturnNo = "Purchase Return No  is required.";
-    //         isValid = false;
-    //     }
-    //     if (!PurchaseReturnDate) {
-    //         formErrors.PurchaseReturnDate = "Purchase Return Date is required.";
-    //         isValid = false;
-    //     }
+    if (!creditnotedate) {
+      formErrors.creditnotedate = "Credit Note date is required";
+      isValid = false;
+    } else {
+      const creditNoteDateObj = new Date(creditnotedate);
+      const fromDateObj = new Date(fromdate);
+      const toDateObj = new Date(todate);
 
-    //     if (!RefrenceNo) {
-    //       formErrors.RefrenceNo = "Reference No is required.";
-    //       isValid = false;
-    //   }
-    //     if (!AccountId) {
-    //         formErrors.AccountId = "Account Id is required.";
-    //         isValid = false;
-    //     }
-    //     if (!SupplierId) {
-    //       formErrors.SupplierId = "Supplier Id is required.";
-    //       isValid = false;
-    //   }
-
-    //   if (!SubTotal) {
-    //     formErrors.SubTotal = "Sub Total  is required.";
-    //     isValid = false;
-    // }
-    // if (!Extra1) {
-    //     formErrors.Extra1 = "Extra1 is required.";
-    //     isValid = false;
-    // }
-
-    // if (!Extra1Amount) {
-    //   formErrors.Extra1Amount = "Extra1 Amount is required.";
-    //   isValid = false;
-    // }
-    // if (!Extra2) {
-    //     formErrors.Extra2 = "Extra2 is required.";
-    //     isValid = false;
-    // }
-    // if (!Extra2Amount) {
-    //   formErrors.Extra2Amount = "Extra2 Amount is required.";
-    //   isValid = false;
-    // }
-
-    // if (!Total) {
-    //   formErrors.Total = "Total is required.";
-    //   isValid = false;
-    // }
-    // if (!TotalCopies) {
-    //     formErrors.TotalCopies = "Total Copies is required.";
-    //     isValid = false;
-    // }
-    // if (!Remark) {
-    //   formErrors.Remark = "Remark is required.";
-    //   isValid = false;
-    // }
+      if (creditNoteDateObj < fromDateObj) {
+        formErrors.creditnotedate = `Date cannot be before ${fromDateObj.toLocaleDateString()}`;
+        isValid = false;
+      } else if (creditNoteDateObj > toDateObj) {
+        formErrors.creditnotedate = `Date cannot be after ${toDateObj.toLocaleDateString()}`;
+        isValid = false;
+      }
+    }
 
     setErrors(formErrors);
     return isValid;
@@ -589,13 +725,31 @@ function Salesreturncreditnote() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!validateForm()) return;
+    // if (!validateForm()) return;
+
+    if (
+      !safedate ||
+      !dayjs(safedate).isValid() ||
+      dateError ||
+      !receiptsafedate ||
+      !dayjs(receiptsafedate).isValid() ||
+      receiptdateerror ||
+      !ordersafedate ||
+      !dayjs(ordersafedate).isValid() ||
+      orderdateerror ||
+      !receivedsafedate ||
+      !dayjs(receivedsafedate).isValid() ||
+      receiveddateerror
+    ) {
+      toast.error("Please correct all the date fields before submitting.");
+      return;
+    }
 
     const backendDate = salesreturncredits.Date;
-    const formattedDate = moment(backendDate).format("YYYY-MM-DD");
-    const formattedReceiptDate = moment(ReceiptDate).format("YYYY-MM-DD");
-    const formattedOrderDate = moment(OrderDate).format("YYYY-MM-DD");
-    const formattedReceivedDate = moment(ReceivedDate).format("YYYY-MM-DD");
+    const formattedDate = dayjs(safedate).format("YYYY-MM-DD");
+    const formattedReceiptDate = dayjs(receiptsafedate).format("YYYY-MM-DD");
+    const formattedOrderDate = dayjs(ordersafedate).format("YYYY-MM-DD");
+    const formattedReceivedDate = dayjs(receivedsafedate).format("YYYY-MM-DD");
 
     const salesreturncreditdata = {
       Id: isEditing ? id : "", // Include the Id for updating, null for new records
@@ -603,6 +757,7 @@ function Salesreturncreditnote() {
       Date: formattedDate, // Convert branch name to corresponding number
       AccountId: AccountId,
       DebitAccountId: DebitAccountId,
+      InvoiceId: InvoiceId,
       ReceiptNo: ReceiptNo,
       ReceiptDate: formattedReceiptDate,
       Weight: Weight,
@@ -652,15 +807,15 @@ function Salesreturncreditnote() {
           Copies: row.Copies,
           Price: row.Price,
           Discount: row.Discount,
-
           Amount: row.Amount,
           Id: row.Id,
-          CreatedBy: row.Id ? undefined : userId,
-          UpdatedBy: row.Id ? userId : undefined,
+          ...(row?.Id && row.Id > 0
+            ? { UpdatedBy: userId }
+            : { CreatedBy: userId }),
         };
 
         const salesreturncreditdetailurl =
-          isEditing && row.Id
+          row?.Id && row.Id > 0
             ? "https://publication.microtechsolutions.net.in/php/update/salesreturncreditnotedetail.php"
             : "https://publication.microtechsolutions.net.in/php/post/salesreturncreditnotedetail.php";
 
@@ -848,9 +1003,9 @@ function Salesreturncreditnote() {
           PaperProps={{
             sx: {
               borderRadius: isSmallScreen ? "0" : "10px 0 0 10px",
-              width: isSmallScreen ? "100%" : "80%",
+              width: isSmallScreen ? "100%" : "85%",
               zIndex: 1000,
-              paddingLeft: "16px",
+              paddingLeft: "5px",
             },
           }}>
           <Box
@@ -909,55 +1064,26 @@ function Salesreturncreditnote() {
 
               <Box>
                 <Typography variant="body2" fontWeight="bold">
-                  {" "}
                   Date
                 </Typography>
-                <LocalizationProvider dateAdapter={AdapterDateFns}>
+                <LocalizationProvider dateAdapter={AdapterDayjs}>
                   <DatePicker
-                    value={date ? new Date(date) : null} // Convert to Date object
-                    onChange={(newValue) => setDate(newValue)}
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        error={!!errors.date}
-                        helperText={errors.date}
-                      />
-                    )}
+                    value={safedate}
+                    onChange={handleDateChange1}
+                    format="DD-MM-YYYY"
                     slotProps={{
-                      textField: { size: "small", fullWidth: true },
+                      textField: {
+                        size: "small",
+                        fullWidth: true,
+                        error: !!dateError,
+                        helperText: dateError,
+                      },
                     }}
-                    format="dd-MM-yyyy"
                   />
                 </LocalizationProvider>
               </Box>
 
-              <Box sx={{ width: "220px" }}>
-                <Typography fontWeight="bold" variant="body2">
-                  Party Name
-                </Typography>
-                <Autocomplete
-                  options={accountOptions}
-                  value={
-                    accountOptions.find(
-                      (option) => option.value === AccountId
-                    ) || null
-                  }
-                  onChange={(event, newValue) =>
-                    setAccountId(newValue ? newValue.value : null)
-                  }
-                  getOptionLabel={(option) => option.label} // Display only label in dropdown
-                  renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      placeholder="Select Party Name"
-                      size="small"
-                      fullWidth
-                    />
-                  )}
-                />
-              </Box>
-
-              <Box sx={{ width: "220px" }}>
+              <Box sx={{ width: "450px" }}>
                 <Typography fontWeight="bold" variant="body2">
                   Debit Account
                 </Typography>
@@ -980,6 +1106,69 @@ function Salesreturncreditnote() {
                       margin="none"
                     />
                   )}
+                />
+              </Box>
+
+              <Box sx={{ width: "450px" }}>
+                <Typography fontWeight="bold" variant="body2">
+                  Party Name
+                </Typography>
+                <Autocomplete
+                  options={accountOptions}
+                  value={
+                    accountOptions.find(
+                      (option) => option.value === AccountId
+                    ) || null
+                  }
+                  onChange={(event, newValue) => {
+                    const selectedAccountId = newValue ? newValue.value : null;
+                    setAccountId(selectedAccountId);
+                    setInvoiceId(null); // Reset invoice selection
+                    if (selectedAccountId) {
+                      fetchInvoicesByAccount(selectedAccountId); // Fetch invoices
+                    }
+                  }}
+                  getOptionLabel={(option) => option.label} // Display only label in dropdown
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      placeholder="Select Party Name"
+                      size="small"
+                      fullWidth
+                    />
+                  )}
+                />
+              </Box>
+
+              <Box sx={{ width: "100px" }}>
+                <Typography fontWeight="bold" variant="body2">
+                  Invoice No
+                </Typography>
+                <Autocomplete
+                  options={invoicedetails}
+                  value={
+                    invoicedetails.find(
+                      (option) => option.value === InvoiceId
+                    ) || null
+                  }
+                  onChange={(event, newValue) => {
+                    const selectedId = newValue ? newValue.value : null;
+                    setInvoiceId(selectedId);
+                    if (selectedId) {
+                      fetchInvoiceDetails(selectedId); // ← Call API on select
+                    }
+                  }}
+                  getOptionLabel={(option) => option.label} // Display only label in dropdown
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      placeholder="Select Invoice id"
+                      size="small"
+                      margin="none"
+                      fullWidth
+                    />
+                  )}
+                  sx={{ mb: 0.625, width: 170 }}
                 />
               </Box>
             </Box>
@@ -1009,21 +1198,19 @@ function Salesreturncreditnote() {
                 <Typography variant="body2" fontWeight="bold">
                   Receipt Date
                 </Typography>
-                <LocalizationProvider dateAdapter={AdapterDateFns}>
+                <LocalizationProvider dateAdapter={AdapterDayjs}>
                   <DatePicker
-                    value={ReceiptDate ? new Date(ReceiptDate) : null} // Convert to Date object
-                    onChange={(newValue) => setReceiptDate(newValue)}
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        error={!!errors.ReceiptDate}
-                        helperText={errors.ReceiptDate}
-                      />
-                    )}
+                    value={receiptsafedate}
+                    onChange={handleDateChange2}
+                    format="DD-MM-YYYY"
                     slotProps={{
-                      textField: { size: "small" },
+                      textField: {
+                        size: "small",
+                        fullWidth: true,
+                        error: !!receiptdateerror,
+                        helperText: receiptdateerror,
+                      },
                     }}
-                    format="dd-MM-yyyy"
                   />
                 </LocalizationProvider>
               </Box>
@@ -1136,21 +1323,19 @@ function Salesreturncreditnote() {
                 <Typography variant="body2" fontWeight="bold">
                   Order Date
                 </Typography>
-                <LocalizationProvider dateAdapter={AdapterDateFns}>
+                <LocalizationProvider dateAdapter={AdapterDayjs}>
                   <DatePicker
-                    value={OrderDate ? new Date(OrderDate) : null} // Convert to Date object
-                    onChange={(newValue) => setOrderdate(newValue)}
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        error={!!errors.OrderDate}
-                        helperText={errors.OrderDate}
-                      />
-                    )}
+                    value={ordersafedate}
+                    onChange={handleDateChange3}
+                    format="DD-MM-YYYY"
                     slotProps={{
-                      textField: { size: "small", fullWidth: true },
+                      textField: {
+                        size: "small",
+                        fullWidth: true,
+                        error: !!orderdateerror,
+                        helperText: orderdateerror,
+                      },
                     }}
-                    format="dd-MM-yyyy"
                   />
                 </LocalizationProvider>
               </Box>
@@ -1159,21 +1344,19 @@ function Salesreturncreditnote() {
                 <Typography variant="body2" fontWeight="bold">
                   Received Date
                 </Typography>
-                <LocalizationProvider dateAdapter={AdapterDateFns}>
+                <LocalizationProvider dateAdapter={AdapterDayjs}>
                   <DatePicker
-                    value={ReceivedDate ? new Date(ReceivedDate) : null} // Convert to Date object
-                    onChange={(newValue) => setReceivedDate(newValue)}
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        error={!!errors.ReceivedDate}
-                        helperText={errors.ReceivedDate}
-                      />
-                    )}
+                    value={receivedsafedate}
+                    onChange={handleDateChange4}
+                    format="DD-MM-YYYY"
                     slotProps={{
-                      textField: { size: "small" },
+                      textField: {
+                        size: "small",
+                        fullWidth: true,
+                        error: !!receiveddateerror,
+                        helperText: receiveddateerror,
+                      },
                     }}
-                    format="dd-MM-yyyy"
                   />
                 </LocalizationProvider>
               </Box>
@@ -1295,7 +1478,7 @@ function Salesreturncreditnote() {
                                 newValue ? newValue.value : ""
                               )
                             }
-                            sx={{ width: 250 }} // Set width
+                            sx={{ width: 500 }} // Set width
                             getOptionLabel={(option) => option.label}
                             renderInput={(params) => (
                               <TextField
@@ -1324,7 +1507,7 @@ function Salesreturncreditnote() {
                               handleInputChange(index, "Copies", e.target.value)
                             }
                             style={{
-                              width: "150px",
+                              width: "70px",
                             }}
                             placeholder="Copies"
                           />
@@ -1337,7 +1520,7 @@ function Salesreturncreditnote() {
                               handleInputChange(index, "Price", e.target.value)
                             }
                             style={{
-                              width: "150px",
+                              width: "100px",
                             }}
                             placeholder="Price"
                           />
@@ -1346,17 +1529,18 @@ function Salesreturncreditnote() {
                           <input
                             type="number"
                             value={row.Discount}
-                            onChange={(e) =>
-                              handleInputChange(
-                                index,
-                                "Discount",
-                                e.target.value
-                              )
-                            }
-                            style={{
-                              width: "150px",
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              const regex = /^\d{0,18}(\.\d{0,2})?$/;
+                              if (value === "" || regex.test(value)) {
+                                handleInputChange(index, "Discount", value);
+                              }
                             }}
-                            placeholder="Discount"
+                            style={{
+                              width: "80px",
+                            }}
+                            placeholder="Discount %"
+                            className="salesreturn-control"
                           />
                         </td>
 
@@ -1366,7 +1550,7 @@ function Salesreturncreditnote() {
                             value={row.Amount}
                             readOnly
                             style={{
-                              width: "150px",
+                              width: "100px",
                             }}
                             placeholder="Amount"
                           />

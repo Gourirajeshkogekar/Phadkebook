@@ -54,11 +54,16 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { DatePicker } from "@mui/x-date-pickers";
 import { Edit, Delete, Add, MoreVert, Print } from "@mui/icons-material";
+import dayjs from "dayjs";
+
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 
 function SalesChallan() {
   const [userId, setUserId] = useState("");
   const [yearid, setYearId] = useState("");
   const [dateError, setDateError] = useState(false);
+
+  const [challandateerror, setchallandateerror] = useState(false);
 
   useEffect(() => {
     const storedUserId = sessionStorage.getItem("UserId");
@@ -190,34 +195,64 @@ function SalesChallan() {
     }
   };
 
+  const [rowErrors, setRowErrors] = useState([]); // array of objects per row
+
+  const [challansafedate, setChallansafedate] = useState(dayjs());
+
+  const handleDateChange1 = (newValue) => {
+    if (!newValue || !dayjs(newValue).isValid()) {
+      setchallandateerror("Invalid date");
+      setChallansafedate(null);
+      return;
+    }
+
+    const today = dayjs();
+    const minDate = today.subtract(3, "day");
+    const maxDate = today.add(2, "day");
+
+    if (newValue.isBefore(minDate) || newValue.isAfter(maxDate)) {
+      setchallandateerror("You can select only 2 days before or after today");
+    } else {
+      setchallandateerror("");
+    }
+
+    setChallansafedate(newValue);
+  };
+
   const handleInputChange = (index, field, value) => {
     const updatedRows = [...rows];
 
-    // Update the value of the current field
+    // Update the selected field
     updatedRows[index][field] = value;
 
-    // Calculate the Amount when Copies and Rate are entered
-    if (field === "Copies" || field === "Rate") {
-      const copies = updatedRows[index].Copies || 0;
-      const rate = updatedRows[index].Rate || 0;
-      updatedRows[index].Amount = copies * rate;
+    // If BookId is selected, set the Rate from bookOptions
+    if (field === "BookId") {
+      const selectedBook = bookOptions.find((book) => book.value === value);
+      if (selectedBook) {
+        updatedRows[index].Rate = parseFloat(selectedBook.price) || 0;
+      }
     }
 
-    // Calculate the DiscountAmount and FinalAmount when DiscountPercentage is entered
-    if (
-      field === "DiscountPercentage" ||
-      field === "Copies" ||
-      field === "Rate"
-    ) {
-      const discountPercentage = updatedRows[index].DiscountPercentage || 0;
-      const amount = updatedRows[index].Amount || 0;
-      updatedRows[index].DiscountAmount = (amount * discountPercentage) / 100;
-      updatedRows[index].Amount = amount - updatedRows[index].DiscountAmount;
-    }
+    // Set Copies and Rate default to 0 if undefined
+    const copies = parseFloat(updatedRows[index].Copies) || 0;
+    const rate = parseFloat(updatedRows[index].Rate) || 0;
 
-    // Update the state with the new row data
+    // Calculate base amount
+    updatedRows[index].Amount = copies * rate;
+
+    // Calculate discount if DiscountPercentage is available
+    const discountPercentage =
+      parseFloat(updatedRows[index].DiscountPercentage) || 0;
+
+    updatedRows[index].DiscountAmount =
+      (updatedRows[index].Amount * discountPercentage) / 100;
+
+    // Final Amount after discount
+    updatedRows[index].FinalAmount =
+      updatedRows[index].Amount - updatedRows[index].DiscountAmount;
+
+    // Update state
     setRows(updatedRows);
-    // calculateTotals();
   };
 
   const handleAddRow = () => {
@@ -247,7 +282,7 @@ function SalesChallan() {
         value: book.Id,
         // label: book.BookNameMarathi,
         label: book.BookName || book.BookNameMarathi,
-
+        price: book.BookRate,
         code: book.BookCode,
       }));
       setBookOptions(bookOptions);
@@ -324,12 +359,15 @@ function SalesChallan() {
   };
 
   const resetForm = () => {
-    setChallanDate("");
+    // setChallanDate("");
+    setChallansafedate(dayjs());
+    setchallandateerror("");
     setChallanNo("");
     setAccountId("");
     setTotalamount("");
     setTotalcopies("");
     setTransport("");
+    setRowErrors([]);
     setRows([
       {
         SerialNo: "",
@@ -392,11 +430,13 @@ function SalesChallan() {
       }
     };
 
-    const challanDate = convertDateForInput(sellschallan.ChallanDate?.date);
+    const challanDate = dayjs(sellschallan.ChallanDate?.date);
 
     // Set the form fields
     setChallanNo(sellschallan.ChallanNo);
-    setChallanDate(challanDate);
+    // setChallanDate(challanDate);
+    setChallansafedate(challanDate);
+
     setAccountId(sellschallan.AccountId);
     setTotalcopies(sellschallan.TotalCopies);
     setTotalamount(sellschallan.TotalAmount);
@@ -519,9 +559,27 @@ function SalesChallan() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!validateForm()) return;
+    // if (!validateForm()) return;
 
-    const formattedChallandate = moment(ChallanDate).format("YYYY-MM-DD");
+    if (
+      !challansafedate ||
+      !dayjs(challansafedate).isValid() ||
+      challandateerror
+    ) {
+      toast.error("Please correct all the date fields before submitting.");
+      return;
+    }
+
+    // // ✅ Check for row-level ChequeDate errors
+    // const hasChequeDateErrors = Object.values(rowErrors).some(
+    //   (row) => row?.ChequeDate
+    // );
+    // if (hasChequeDateErrors) {
+    //   toast.error("Please fix all Date errors in the table before submitting.");
+    //   return;
+    // }
+
+    const formattedChallandate = dayjs(challansafedate).format("YYYY-MM-DD");
 
     const sellschallandata = {
       Id: isEditing ? id : "", // Include the Id for updating, null for new records
@@ -756,7 +814,7 @@ function SalesChallan() {
           PaperProps={{
             sx: {
               borderRadius: isSmallScreen ? "0" : "10px 0 0 10px",
-              width: isSmallScreen ? "100%" : "70%",
+              width: isSmallScreen ? "100%" : "80%",
               zIndex: 1000,
             },
           }}>
@@ -811,21 +869,24 @@ borderWidth: 1,
                   {" "}
                   Challan Date
                 </Typography>
-                <LocalizationProvider dateAdapter={AdapterDateFns}>
+                <LocalizationProvider dateAdapter={AdapterDayjs}>
                   <DatePicker
-                    value={ChallanDate ? new Date(ChallanDate) : null} // Convert to Date object
-                    onChange={(newValue) => setChallanDate(newValue)}
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        error={!!errors.ChallanDate}
-                        helperText={errors.ChallanDate}
-                      />
-                    )}
+                    value={challansafedate}
+                    onChange={handleDateChange1}
+                    format="DD-MM-YYYY"
                     slotProps={{
-                      textField: { size: "small", fullWidth: true },
+                      textField: {
+                        size: "small",
+                        fullWidth: true,
+                        error: !!challandateerror,
+                        helperText: challandateerror,
+                      },
                     }}
-                    format="dd-MM-yyyy"
+                    sx={{
+                      marginTop: "10px",
+                      marginBottom: "5px",
+                      width: "250px",
+                    }}
                   />
                 </LocalizationProvider>
                 {/* {errors.ChallanDate && (
@@ -854,6 +915,7 @@ borderWidth: 1,
                       placeholder="Select Party Name"
                       size="small"
                       margin="none"
+                      sx={{ width: "400px" }} // ✅ Set desired width here
                       fullWidth
                     />
                   )}
@@ -870,6 +932,7 @@ borderWidth: 1,
                   size="small"
                   margin="none"
                   placeholder="Parcel"
+                  sx={{ width: "200px" }}
                   fullWidth
                 />
               </Box>
@@ -949,7 +1012,7 @@ borderWidth: 1,
                                 newValue ? newValue.value : ""
                               )
                             }
-                            sx={{ width: "200px" }} // Set width
+                            sx={{ width: "500px" }} // Set width
                             getOptionLabel={(option) => option.label} // Fix the typo
                             renderInput={(params) => (
                               <TextField
@@ -968,24 +1031,21 @@ borderWidth: 1,
                             onChange={(e) =>
                               handleInputChange(index, "Copies", e.target.value)
                             }
+                            style={{ width: "80px" }} // Use style instead of sx
                             placeholder="Copies"
                           />
                         </td>
                         <td>
-                          <input
-                            type="number"
-                            value={row.Rate}
-                            onChange={(e) =>
-                              handleInputChange(index, "Rate", e.target.value)
-                            }
-                            placeholder="Rate"
-                          />
+                          {bookOptions.find(
+                            (option) => option.value === row.BookId
+                          )?.price || ""}
                         </td>
 
                         <td>
                           <input
                             type="number"
                             value={row.Amount}
+                            style={{ width: "100px" }} // Use style instead of sx
                             readOnly
                             placeholder="Amount"
                           />
@@ -1035,6 +1095,7 @@ borderWidth: 1,
                   size="small"
                   margin="none"
                   placeholder="Total copies"
+                  style={{ width: "210px" }} // Use style instead of sx
                   fullWidth
                 />
               </Box>
@@ -1049,6 +1110,7 @@ borderWidth: 1,
                   size="small"
                   margin="none"
                   placeholder="Total Amount"
+                  style={{ width: "200px" }} // Use style instead of sx
                   fullWidth
                 />
               </Box>

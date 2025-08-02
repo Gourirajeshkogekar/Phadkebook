@@ -54,7 +54,6 @@ import {
 import CloseIcon from "@mui/icons-material/Close";
 import { useTheme } from "@mui/material/styles";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
-import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { DatePicker } from "@mui/x-date-pickers";
 import {
   Edit,
@@ -64,6 +63,8 @@ import {
   Print,
   Discount,
 } from "@mui/icons-material";
+import dayjs from "dayjs";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 
 function Raddisales() {
   const [userId, setUserId] = useState("");
@@ -181,7 +182,9 @@ function Raddisales() {
     setBookId("");
     setRate("");
     setNumber("");
-    setDate("");
+    // setDate("");
+    setsafedate(dayjs());
+    setdateerror("");
   };
 
   const handleNewClick = () => {
@@ -200,12 +203,12 @@ function Raddisales() {
   const handleEdit = (row) => {
     const raddisale = raddisales[row.index];
 
-    const backendDate = raddisale.Date.date;
-    const formattedDate = moment(backendDate).format("YYYY-MM-DD");
+    const backendDate = raddisale.Date?.date;
 
     console.log(raddisale, "selected row of raddi sale");
     setDocNo(raddisale.DocNo);
-    setDate(formattedDate);
+    // setDate(formattedDate);
+    setsafedate(dayjs(backendDate));
     setNumber(raddisale.Number);
     setRate(raddisale.Rate);
     setBookId(raddisale.BookId);
@@ -256,6 +259,29 @@ function Raddisales() {
     setDeleteIndex(null);
   };
 
+  const [safedate, setsafedate] = useState(dayjs());
+  const [dateerror, setdateerror] = useState("");
+
+  const handleDateChange1 = (newValue) => {
+    if (!newValue || !dayjs(newValue).isValid()) {
+      setdateerror("Invalid date");
+      setsafedate(null);
+      return;
+    }
+
+    const today = dayjs();
+    const minDate = today.subtract(3, "day");
+    const maxDate = today.add(2, "day");
+
+    if (newValue.isBefore(minDate) || newValue.isAfter(maxDate)) {
+      setdateerror("You can select only 2 days before or after today");
+    } else {
+      setdateerror("");
+    }
+
+    setsafedate(newValue);
+  };
+
   const validateForm = () => {
     let formErrors = {};
     let isValid = true;
@@ -265,11 +291,15 @@ function Raddisales() {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault(); // Prevent the default form submission
+    e.preventDefault();
     if (!validateForm()) return;
 
-    const backendDate = raddisales.Date;
-    const formattedDate = moment(backendDate).format("YYYY-MM-DD"); // Prepare the data payload
+    if (!safedate || !dayjs(safedate).isValid() || dateerror) {
+      toast.error("Please correct all the date fields before submitting.");
+      return;
+    }
+
+    const formattedDate = dayjs(safedate).format("YYYY-MM-DD");
     const data = {
       Date: formattedDate,
       BookId: BookId,
@@ -387,8 +417,8 @@ function Raddisales() {
     <div className="raddisales-container">
       <h1>Raddi Sales</h1>
 
-      <div className="salesreturntable-master">
-        <div className="salesreturntable1-master">
+      <div className="raddisalestable-master">
+        <div className="raddisalestable1-master">
           <Button
             onClick={handleNewClick}
             style={{
@@ -399,10 +429,10 @@ function Raddisales() {
             }}>
             New
           </Button>
-          <div className="salesreturntable-container">
+          <div className="raddisalestable-container">
             <Box mt={2}>
               <MaterialReactTable table={table} />
-              <Menu
+              {/* <Menu
                 anchorEl={anchorEl}
                 open={Boolean(anchorEl)}
                 onClose={handleMenuClose}>
@@ -410,7 +440,7 @@ function Raddisales() {
                 <MenuItem onClick={handleDelete}>Delete</MenuItem>
 
                 <MenuItem onClick={handlePrint}>Print</MenuItem>
-              </Menu>
+              </Menu> */}
             </Box>{" "}
           </div>
 
@@ -491,17 +521,26 @@ function Raddisales() {
               <div>
                 <label className="raddisales-label">Date</label>
                 <div>
-                  <input
-                    type="date"
-                    id="Date"
-                    name="Date"
-                    value={Date}
-                    onChange={(e) => setDate(e.target.value)}
-                    // ref={accgroupcodeRef}
-                    // onKeyDown={(e) => handleKeyDown(e, accgroupnameRef)}
-                    placeholder="EnterDate"
-                    className="raddisales-control"
-                  />
+                  <LocalizationProvider dateAdapter={AdapterDayjs}>
+                    <DatePicker
+                      value={safedate}
+                      onChange={handleDateChange1}
+                      format="DD-MM-YYYY"
+                      slotProps={{
+                        textField: {
+                          size: "small",
+                          fullWidth: true,
+                          error: !!dateerror,
+                          helperText: dateerror,
+                        },
+                      }}
+                      sx={{
+                        marginTop: "10px",
+                        marginBottom: "5px",
+                        width: "165px",
+                      }}
+                    />
+                  </LocalizationProvider>
                 </div>
               </div>
 
@@ -527,7 +566,7 @@ function Raddisales() {
                         fullWidth
                       />
                     )}
-                    sx={{ mt: 1.25, mb: 0.625, width: 170 }} // Equivalent to 10px and 5px
+                    sx={{ mt: 1.25, mb: 0.625, width: 350 }}
                   />
                 </div>
               </div>

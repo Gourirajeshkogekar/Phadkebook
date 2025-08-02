@@ -50,7 +50,9 @@ import {
   DialogContent,
   DialogTitle,
 } from "@mui/material";
-
+import dayjs from "dayjs";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { LocalizationProvider } from "@mui/x-date-pickers";
 function Bookprintingordertopress() {
   const [userId, setUserId] = useState("");
   const [yearid, setYearId] = useState("");
@@ -82,7 +84,7 @@ function Bookprintingordertopress() {
   const [PressId, setPressid] = useState("");
   const [BookCode, setBookcode] = useState("");
   const [BookId, setBookId] = useState("");
-  const [StdId, setStdId] = useState("");
+  const [BookStandardId, setBookStandardId] = useState("");
   const [Copies_to_print, setCopiestoprint] = useState("");
   const [PaperId, setPaperId] = useState("");
   const [Ordertype, setOrdertype] = useState("New"); // Default to "new"
@@ -93,7 +95,7 @@ function Bookprintingordertopress() {
   //states for the Id's Array..
   const [pressOptions, setPressoptions] = useState([]);
   const [paperOptions, setPaperoptions] = useState([]);
-  const [stdOptions, setStdoptions] = useState([]);
+  const [bookstandardOptions, setBookstandardOptions] = useState([]);
   const [bookOptions, setBookoptions] = useState([]);
   const [platemakerOptions, setPlatemakeroptions] = useState([]);
 
@@ -194,11 +196,12 @@ function Bookprintingordertopress() {
       const response = await axios.get(
         "https://publication.microtechsolutions.net.in/php/Standardget.php"
       );
-      const stdOptions = response.data.map((std) => ({
+      const bookstandardOptions = response.data.map((std) => ({
         value: std.Id,
         label: std.StandardName,
       }));
-      setStdoptions(stdOptions);
+      console.log(bookstandardOptions, "standards");
+      setBookstandardOptions(bookstandardOptions);
     } catch (error) {
       // toast.error("Error fetching stds:", error);
     }
@@ -281,6 +284,30 @@ function Bookprintingordertopress() {
     } catch (error) {
       // toast.error("Error fetching plates:", error);
     }
+  };
+
+  const [transerror, setTranserror] = useState("");
+
+  const [transdate, setTransdate] = useState(dayjs());
+
+  const handleDateChange1 = (newValue) => {
+    if (!newValue || !dayjs(newValue).isValid()) {
+      setTranserror("Invalid date");
+      setTransdate(null);
+      return;
+    }
+
+    const today = dayjs();
+    const minDate = today.subtract(3, "day");
+    const maxDate = today.add(2, "day");
+
+    if (newValue.isBefore(minDate) || newValue.isAfter(maxDate)) {
+      setTranserror("You can select only 2 days before or after today");
+    } else {
+      setTranserror("");
+    }
+
+    setTransdate(newValue);
   };
 
   const handleInputChange = (index, field, value) => {
@@ -372,10 +399,12 @@ function Bookprintingordertopress() {
 
   const resetForm = () => {
     setOrderno("");
-    setTrans_dt("");
+    // setTrans_dt("");
+    setTransdate(dayjs());
+    setTranserror("");
     setPressid("");
     setBookId("");
-    setStdId("");
+    setBookStandardId("");
     setOrdertype("");
     setCopiestoprint("");
     setPaperId("");
@@ -442,15 +471,16 @@ function Bookprintingordertopress() {
       Id: detail.Id, // Include the detail Id in the mapped row for tracking
     }));
 
-    const transdate = convertDateForInput(bookprintingheader.Trans_dt?.date);
+    const transdate = dayjs(bookprintingheader.Trans_dt?.date);
 
     // Set the form fields
 
     setOrderno(bookprintingheader.OrderNo);
-    setTrans_dt(transdate);
+    // setTrans_dt(transdate);
+    setTransdate(transdate);
     setPressid(bookprintingheader.PressId);
     setBookId(bookprintingheader.BookId);
-    setStdId(bookprintingheader.StdId);
+    setBookStandardId(bookprintingheader.StdId);
     setOrdertype(bookprintingheader.Ordertype);
     setCopiestoprint(bookprintingheader.Copies_to_print);
     setPaperId(bookprintingheader.PaperId);
@@ -493,14 +523,19 @@ function Bookprintingordertopress() {
     e.preventDefault();
     if (!validateForm()) return;
 
-    const formattedtransdate = moment(Trans_dt).format("YYYY-MM-DD");
+    if (!transdate || !dayjs(transdate).isValid() || transerror) {
+      toast.error("Please correct all the date fields before submitting.");
+      return;
+    }
+
+    const formattedtransdate = dayjs(transdate).format("YYYY-MM-DD");
 
     const bookprintingData = {
       Id: isEditing ? id : "", // Include the Id for updating, null for new records
       Trans_dt: formattedtransdate,
       PressId: PressId,
       BookId: BookId,
-      StdId: StdId,
+      StdId: BookStandardId,
       Ordertype: Ordertype,
       Copies_to_print: Copies_to_print,
       PaperId: PaperId,
@@ -604,7 +639,7 @@ function Bookprintingordertopress() {
         ),
       },
     ],
-    [bookprintingorders, stdOptions]
+    [bookprintingorders, bookstandardOptions]
   );
 
   const table = useMaterialReactTable({
@@ -702,7 +737,7 @@ function Bookprintingordertopress() {
           PaperProps={{
             sx: {
               borderRadius: isSmallScreen ? "0" : "10px 0 0 10px",
-              width: isSmallScreen ? "100%" : "75%",
+              width: isSmallScreen ? "100%" : "88%",
               zIndex: 1000,
               paddingLeft: "16px",
             },
@@ -748,15 +783,26 @@ function Bookprintingordertopress() {
                 Transaction Date <b className="required">*</b>
               </label>
               <div>
-                <input
-                  type="date"
-                  id="Trans_dt"
-                  name="Trans_dt"
-                  value={Trans_dt}
-                  onChange={(e) => setTrans_dt(e.target.value)}
-                  className="bookprinting-control"
-                  placeholder="Enter Trans Date"
-                />
+                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                  <DatePicker
+                    value={transdate}
+                    onChange={handleDateChange1}
+                    format="DD-MM-YYYY"
+                    slotProps={{
+                      textField: {
+                        size: "small",
+                        fullWidth: true,
+                        error: !!transerror,
+                        helperText: transerror,
+                      },
+                    }}
+                    sx={{
+                      marginTop: "10px",
+                      marginBottom: "5px",
+                      width: "165px",
+                    }}
+                  />
+                </LocalizationProvider>
               </div>
 
               {/* <div>
@@ -788,13 +834,33 @@ function Bookprintingordertopress() {
                       fullWidth
                     />
                   )}
-                  sx={{ mt: 1.25, mb: 0.625, width: 170 }} // Equivalent to 10px and 5px
+                  sx={{ mt: 1.25, mb: 0.625, width: 280 }} // Equivalent to 10px and 5px
                 />
               </div>
 
               {/* <div>
                           {errors.RefrenceNo && <b className="error-text">{errors.RefrenceNo}</b>}
                         </div> */}
+            </div>
+
+            <div>
+              <label className="bookprinting-label">
+                Book Code <b className="required">*</b>
+              </label>
+              <div>
+                <input
+                  id="BookCode"
+                  name="BookCode"
+                  value={
+                    bookcodeoptions.find((option) => option.value === BookId)
+                      ?.label || ""
+                  }
+                  readOnly
+                  className="bookprinting-control"
+                  style={{ background: "#f5f5f5" }}
+                  placeholder="Book Code"
+                />
+              </div>
             </div>
 
             <div>
@@ -821,7 +887,7 @@ function Bookprintingordertopress() {
                       fullWidth
                     />
                   )}
-                  sx={{ mt: 1.25, mb: 0.625, width: 170 }} // Equivalent to 10px and 5px
+                  sx={{ mt: 1.25, mb: 0.625, width: 300 }} // Equivalent to 10px and 5px
                 />
               </div>
               {/* <div>
@@ -831,30 +897,44 @@ function Bookprintingordertopress() {
 
             <div>
               <label className="bookprinting-label">
-                Book Code <b className="required">*</b>
-              </label>
-              <div>
-                <input
-                  id="BookCode"
-                  name="BookCode"
-                  value={
-                    bookcodeoptions.find((option) => option.value === BookId)
-                      ?.label || ""
-                  }
-                  readOnly
-                  className="bookprinting-control"
-                  style={{ background: "#f5f5f5" }}
-                  placeholder="Book Code"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="bookprinting-label">
                 Standard<b className="required">*</b>
               </label>
               <div>
-                <Autocomplete
+                <Select
+                  id="BookStandardId"
+                  name="BookStandardId"
+                  // value={bookstandardOptions.find(
+                  //   (option) => option.value === BookStandardId
+                  // )}
+
+                  value={bookstandardOptions.find(
+                    (option) =>
+                      option.value.toString() === BookStandardId.toString()
+                  )}
+                  isClearable
+                  onChange={(option) =>
+                    setBookStandardId(option ? option.value : "")
+                  }
+                  // ref={bookstandardidRef}
+                  // onKeyDown={(e) => handleKeyDown(e, publicationRef)}
+                  options={bookstandardOptions}
+                  styles={{
+                    control: (base) => ({
+                      ...base,
+                      width: "170px",
+                      marginTop: "10px",
+                      marginBottom: "5px",
+                      border: "1px solid rgb(223, 222, 222)",
+                      borderRadius: "4px",
+                    }),
+                    menu: (base) => ({
+                      ...base,
+                      zIndex: 100,
+                    }),
+                  }}
+                  placeholder="Select Standard "
+                />
+                {/* <Autocomplete
                   options={stdOptions}
                   value={
                     stdOptions.find((option) => option.value === StdId) || null
@@ -862,7 +942,7 @@ function Bookprintingordertopress() {
                   onChange={(event, newValue) =>
                     setStdId(newValue ? newValue.value : null)
                   }
-                  getOptionLabel={(option) => option.label} // Display only label in dropdown
+                  getOptionLabel={(option) => option?.label || ""}
                   renderInput={(params) => (
                     <TextField
                       {...params}
@@ -872,8 +952,8 @@ function Bookprintingordertopress() {
                       fullWidth
                     />
                   )}
-                  sx={{ mt: 1.25, mb: 0.625, width: 170 }} // Equivalent to 10px and 5px
-                />
+                  sx={{ mt: 1.25, mb: 0.625, width: 170 }}
+                /> */}
               </div>
               {/* <div>
                           {errors.AccountId && <b className="error-text">{errors.AccountId}</b>}

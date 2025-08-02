@@ -175,7 +175,7 @@ function FeedadvAuthors() {
       {/* Back Button */}
       <Button
         onClick={() => navigate(-1)}
-        sx={{ marginBottom: 2, background: "#0a60bd", color: "white" }}>
+        sx={{ marginBottom: 2, background: "#0a60bd", color: "black" }}>
         Back
       </Button>
       {/* Heading */}

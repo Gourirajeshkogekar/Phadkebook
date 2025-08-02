@@ -54,6 +54,8 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { DatePicker } from "@mui/x-date-pickers";
 import { Edit, Delete, Add, MoreVert, Print } from "@mui/icons-material";
+import dayjs from "dayjs";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 
 function Salesinvoice() {
   const [userId, setUserId] = useState("");
@@ -132,7 +134,7 @@ function Salesinvoice() {
     {
       BookId: "",
       Copies: 0,
-      Price: 0,
+      Rate: 0, // ✅ Use 'Rate' instead of 'Price'
       DiscountPercentage: 0,
       DiscountAmount: 0,
       Amount: 0,
@@ -206,32 +208,36 @@ function Salesinvoice() {
   };
 
   const handleInputChange = (index, field, value) => {
-    const updatedRows = rows.map((row, i) => {
-      if (i === index) {
-        const updatedRow = { ...row, [field]: value };
+    const updatedRows = [...rows];
+    updatedRows[index][field] = value;
 
-        // Convert values to numbers
-        const copies = Number(updatedRow.Copies) || 0;
-        const price = Number(updatedRow.Price) || 0;
-        const discountPercentage = Number(updatedRow.DiscountPercentage) || 0;
+    // Always fetch rate based on BookId
+    const selectedBook = bookOptions.find(
+      (book) => book.value === updatedRows[index].BookId
+    );
+    updatedRows[index].Rate = selectedBook
+      ? parseFloat(selectedBook.price) || 0
+      : 0;
 
-        // Calculate Amount (Copies * Price)
-        updatedRow.Amount = copies * price;
+    // Parse copies and rate
+    const copies = parseFloat(updatedRows[index].Copies) || 0;
+    const rate = parseFloat(updatedRows[index].Rate) || 0;
 
-        // Calculate DiscountAmount (DiscountPercentage * Amount / 100)
-        updatedRow.DiscountAmount =
-          (updatedRow.Amount * discountPercentage) / 100;
+    // Calculate amount
+    updatedRows[index].Amount = copies * rate;
 
-        // Final Amount = Amount - DiscountAmount
-        updatedRow.FinalAmount = updatedRow.Amount - updatedRow.DiscountAmount;
+    // Calculate discount
+    const discountPercentage =
+      parseFloat(updatedRows[index].DiscountPercentage) || 0;
+    updatedRows[index].DiscountAmount =
+      (updatedRows[index].Amount * discountPercentage) / 100;
 
-        return updatedRow;
-      }
-      return row;
-    });
+    // Final amount
+    updatedRows[index].FinalAmount =
+      updatedRows[index].Amount - updatedRows[index].DiscountAmount;
 
+    // Update state
     setRows(updatedRows);
-    calculateTotals();
   };
 
   const handleAddRow = () => {
@@ -240,7 +246,7 @@ function Salesinvoice() {
       {
         BookId: "",
         Copies: 0,
-        Price: 0,
+        Rate: 0,
         DiscountPercentage: 0,
         DiscountAmount: 0,
         Amount: 0,
@@ -265,6 +271,7 @@ function Salesinvoice() {
         value: book.Id,
         label: book.BookName || book.BookNameMarathi,
         code: book.BookCode,
+        price: book.BookRate,
       }));
       setBookOptions(bookOptions);
     } catch (error) {
@@ -302,15 +309,33 @@ function Salesinvoice() {
     }
   };
 
+  const fetchChallanDetails = async (selectedChallanId) => {
+    // console.log(selectedChallanId, "sele challan id");
+    try {
+      const response = await axios.get(
+        `https://publication.microtechsolutions.net.in/php/get/getbycolm.php?Table=SellsChallanDetail&Colname=ChallanId&Colvalue=${selectedChallanId}`
+      );
+      setRows(response.data); // Set fetched data to table rows
+    } catch (error) {
+      toast.error("Error fetching challan details");
+    }
+  };
+
   const resetForm = () => {
     setInvoiceNo("");
-    setInvoiceDate("");
+    // setInvoiceDate("");
+    setInvoicesafedate(dayjs());
+    setInverror("");
     setAccountId("");
     setChallanId("");
     setOrderNo("");
-    setOrderDate("");
+    // setOrderDate("");
+    setOrdersafedate(dayjs());
+    setOrdererror("");
     setReceiptNo("");
-    setReceiptDate("");
+    // setReceiptDate("");
+    setReceiptsafedate(dayjs());
+    setReceipterror("");
     setWeight("");
     setBundles("");
     setFreight("");
@@ -328,7 +353,7 @@ function Salesinvoice() {
       {
         BookId: "",
         Copies: 0,
-        Price: 0,
+        Rate: 0,
         DiscountPercentage: 0,
         DiscountAmount: 0,
         Amount: 0,
@@ -349,92 +374,6 @@ function Salesinvoice() {
   };
 
   const [idwiseData, setIdwiseData] = useState("");
-
-  // const handleEdit = () => {
-
-  //   if (currentRow) {
-  //     console.log("Editing item with ID:", currentRow.original.Id);
-  //     setIdwiseData(currentRow.original.Id)
-  //   }
-
-  //   console.log(currentRow, 'row')
-
-  //   const invoiceheader = invoiceheaders[currentRow.index];
-  //   console.log(invoiceheader, 'invoice header')
-
-  //   // Filter purchase details to match the selected PurchaseId
-  //   const invoicedetail = invoicedetails.filter(detail => detail.InvoiceId === invoiceheader.Id);
-
-  //   // Map the details to rows
-  //   const mappedRows = invoicedetail.map(detail => ({
-
-  //     InvoiceId: detail.InvoiceId,
-  //     BookId: detail.BookId,
-  //     Copies: detail.Copies,
-  //     Price: detail.Price,
-  //     DiscountPercentage: detail.DiscountPercentage,
-  //     DiscountAmount: detail.DiscountAmount,
-  //     Amount: detail.Amount,
-  //     FinalAmount: detail.FinalAmount,
-  //     Id: detail.Id, // Include the detail Id in the mapped row for tracking
-  //   }));
-
-  //   // Convert date strings to DD-MM-YYYY format
-  //   const convertDateForInput = (dateStr) => {
-  //     if (typeof dateStr === 'string' && dateStr.includes('-')) {
-  //       const [year, month, day] = dateStr.split(' ')[0].split('-');
-  //       return `${year}-${month}-${day}`;
-  //     } else {
-  //       console.error('Invalid date format:', dateStr);
-  //       return ''; // Return an empty string or handle it as needed
-  //     }
-  //   };
-
-  //   const invoicedate = convertDateForInput(invoiceheader.InvoiceDate.date);
-  //   const receiptdate = convertDateForInput(invoiceheader.ReceiptDate.date);
-  //   const orderdate = convertDateForInput(invoiceheader.OrderDate.date);
-
-  //   // Set the form fields
-  //   setInvoiceNo(invoiceheader.InvoiceNo);
-  //   setInvoiceDate(invoicedate);
-  //   setAccountId(invoiceheader.AccountId);
-  //   setChallanId(invoiceheader.ChallanId);
-  //   setReceiptNo(invoiceheader.ReceiptNo);
-  //   setReceiptDate(receiptdate);
-  //   setWeight(invoiceheader.Weight);
-  //   setBundles(invoiceheader.Bundles);
-  //   setFreight(invoiceheader.Freight);
-  //   setPacking(invoiceheader.Packing)
-  //   setOrderNo(invoiceheader.OrderNo);
-  //   setOrderDate(orderdate);
-
-  //   setReceiptSendThrough(invoiceheader.ReceiptSendThrough);
-  //   setParcelSendThrough(invoiceheader.ParcelSendThrough);
-  //   setCGSTPercentage(invoiceheader.CGSTPercentage);
-  //   setCGSTAmount(invoiceheader.CGSTAmount);
-  //   setSGSTAmount(invoiceheader.SGSTAmount);
-  //   setSGSTPercentage(invoiceheader.SGSTPercentage);
-  //   setIGSTAmount(invoiceheader.IGSTAmount);
-  //   setIGSTPercentage(invoiceheader.IGSTPercentage);
-  //   setTotal(invoiceheader.Total);
-
-  //   setRows(mappedRows);
-
-  //   // Set editing state
-  //   setEditingIndex(row.index);
-  //   setIsModalOpen(true);
-  //   setIsEditing(true);
-  //   setId(invoiceheader.Id);
-  //   handleMenuClose()
-
-  //   // Determine which specific detail to edit
-  //   const specificDetail = invoicedetail.find(detail => detail.Id === currentRow.original.Id);
-  //   if (specificDetail) {
-  //     setInvoicedetailId(specificDetail.Id); // Set the specific detail Id
-  //   }
-
-  //   fetchInvoicedetails();
-  // };
 
   const [isLoading, setIsLoading] = useState(false);
 
@@ -461,7 +400,7 @@ function Salesinvoice() {
       InvoiceId: detail.InvoiceId,
       BookId: detail.BookId,
       Copies: detail.Copies,
-      Price: detail.Price,
+      Rate: detail.Price,
       DiscountPercentage: detail.DiscountPercentage,
       DiscountAmount: detail.DiscountAmount,
       Amount: detail.Amount,
@@ -480,23 +419,26 @@ function Salesinvoice() {
       }
     };
 
-    const invoicedate = convertDateForInput(invoiceheader.InvoiceDate.date);
-    const receiptdate = convertDateForInput(invoiceheader.ReceiptDate.date);
-    const orderdate = convertDateForInput(invoiceheader.OrderDate.date);
+    const invoicedate = dayjs(invoiceheader.InvoiceDate?.date);
+    const receiptdate = dayjs(invoiceheader.ReceiptDate?.date);
+    const orderdate = dayjs(invoiceheader.OrderDate?.date);
 
     // Set the form fields
     setInvoiceNo(invoiceheader.InvoiceNo);
-    setInvoiceDate(invoicedate);
+    // setInvoiceDate(invoicedate);
+    setInvoicesafedate(invoicedate);
     setAccountId(invoiceheader.AccountId);
     setChallanId(invoiceheader.ChallanId);
     setReceiptNo(invoiceheader.ReceiptNo);
-    setReceiptDate(receiptdate);
+    // setReceiptDate(receiptdate);
+    setReceiptsafedate(receiptdate);
     setWeight(invoiceheader.Weight);
     setBundles(invoiceheader.Bundles);
     setFreight(invoiceheader.Freight);
     setPacking(invoiceheader.Packing);
     setOrderNo(invoiceheader.OrderNo);
-    setOrderDate(orderdate);
+    // setOrderDate(orderdate);
+    setOrdersafedate(orderdate);
     setReceiptSendThrough(invoiceheader.ReceiptSendThrough);
     setParcelSendThrough(invoiceheader.ParcelSendThrough);
     setCGSTPercentage(invoiceheader.CGSTPercentage);
@@ -589,8 +531,8 @@ function Salesinvoice() {
     //   formErrors.InvoiceNo = "Invoice No  is required.";
     //   isValid = false;
     // }
-    if (!InvoiceDate) {
-      formErrors.InvoiceDate = "Invoice Date is required.";
+    if (!invoicesafedate) {
+      formErrors.invoicesafedate = "Invoice Date is required.";
       isValid = false;
     }
 
@@ -607,8 +549,8 @@ function Salesinvoice() {
       isValid = false;
     }
 
-    if (!ReceiptDate) {
-      formErrors.ReceiptDate = "Receipt Date is required.";
+    if (!receiptsafedate) {
+      formErrors.receiptsafedate = "Receipt Date is required.";
       isValid = false;
     }
     if (!Weight) {
@@ -637,8 +579,8 @@ function Salesinvoice() {
       formErrors.OrderNo = "Order No is required.";
       isValid = false;
     }
-    if (!OrderDate) {
-      formErrors.OrderDate = "Order Date is required.";
+    if (!ordersafedate) {
+      formErrors.ordersafedate = "Order Date is required.";
       isValid = false;
     }
 
@@ -651,13 +593,96 @@ function Salesinvoice() {
     return isValid;
   };
 
+  const [invoicesafedate, setInvoicesafedate] = useState(dayjs());
+  const [inverror, setInverror] = useState("");
+  const [ordersafedate, setOrdersafedate] = useState(dayjs());
+  const [ordererror, setOrdererror] = useState("");
+  const [receiptsafedate, setReceiptsafedate] = useState(dayjs());
+  const [receipterror, setReceipterror] = useState("");
+
+  const handleDateChange1 = (newValue) => {
+    if (!newValue || !dayjs(newValue).isValid()) {
+      setInverror("Invalid date");
+      setInvoicesafedate(null);
+      return;
+    }
+
+    const today = dayjs();
+    const minDate = today.subtract(3, "day");
+    const maxDate = today.add(2, "day");
+
+    if (newValue.isBefore(minDate) || newValue.isAfter(maxDate)) {
+      setInverror("You can select only 2 days before or after today");
+    } else {
+      setInverror("");
+    }
+
+    setInvoicesafedate(newValue);
+  };
+
+  const handleDateChange2 = (newValue) => {
+    if (!newValue || !dayjs(newValue).isValid()) {
+      setOrdererror("Invalid date");
+      setOrdersafedate(null);
+      return;
+    }
+
+    const today = dayjs();
+    const minDate = today.subtract(3, "day");
+    const maxDate = today.add(2, "day");
+
+    if (newValue.isBefore(minDate) || newValue.isAfter(maxDate)) {
+      setOrdererror("You can select only 2 days before or after today");
+    } else {
+      setOrdererror("");
+    }
+
+    setOrdersafedate(newValue);
+  };
+
+  const handleDateChange3 = (newValue) => {
+    if (!newValue || !dayjs(newValue).isValid()) {
+      setReceipterror("Invalid date");
+      setReceiptsafedate(null);
+      return;
+    }
+
+    const today = dayjs();
+    const minDate = today.subtract(3, "day");
+    const maxDate = today.add(2, "day");
+
+    if (newValue.isBefore(minDate) || newValue.isAfter(maxDate)) {
+      setReceipterror("You can select only 2 days before or after today");
+    } else {
+      setReceipterror("");
+    }
+
+    setReceiptsafedate(newValue);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
 
-    const formattedInvoiceDate = moment(InvoiceDate).format("YYYY-MM-DD");
-    const formattedReceiptDate = moment(ReceiptDate).format("YYYY-MM-DD");
-    const formattedOrderDate = moment(OrderDate).format("YYYY-MM-DD");
+    if (
+      !invoicesafedate ||
+      !dayjs(invoicesafedate).isValid() ||
+      !ordersafedate ||
+      !dayjs(ordersafedate).isValid() ||
+      !receiptsafedate ||
+      !dayjs(receiptsafedate).isValid() ||
+      dateError ||
+      inverror ||
+      ordererror ||
+      receipterror
+    ) {
+      toast.error("Please correct all the date fields before submitting.");
+      return;
+    }
+
+    const formattedInvoiceDate = dayjs(invoicesafedate).format("YYYY-MM-DD");
+    const formattedReceiptDate = dayjs(receiptsafedate).format("YYYY-MM-DD");
+    const formattedOrderDate = dayjs(ordersafedate).format("YYYY-MM-DD");
 
     const invoiceheaderData = {
       Id: isEditing ? id : "", // Include the Id for updating, null for new records
@@ -709,7 +734,7 @@ function Salesinvoice() {
           SerialNo: rows.indexOf(row) + 1,
           BookId: parseInt(row.BookId, 10),
           Copies: parseInt(row.Copies, 10),
-          Price: parseFloat(row.Price),
+          Price: parseFloat(row.Rate),
           DiscountPercentage: parseFloat(row.DiscountPercentage),
           DiscountAmount: parseFloat(row.DiscountAmount),
           Amount: parseFloat(row.Amount),
@@ -911,7 +936,7 @@ function Salesinvoice() {
                 margin: "2px",
                 fontSize: "27px",
               }}>
-              {editingIndex >= 0 ? "Edit Sells Invoice" : "Add Sells Invoice"}
+              {editingIndex >= 0 ? "Edit Sales Invoice" : "Add Sales Invoice"}
             </h2>
             <form className="salesinvoice-form">
               <div>
@@ -944,20 +969,31 @@ function Salesinvoice() {
                   Invoice Date <b className="required">*</b>
                 </label>
                 <div>
-                  <input
-                    type="date"
-                    id="InvoiceDate"
-                    name="InvoiceDate"
-                    value={InvoiceDate}
-                    onChange={(e) => setInvoiceDate(e.target.value)}
-                    className="salesinvoice-control"
-                    placeholder="Enter Invoice Date"
-                  />
+                  <LocalizationProvider dateAdapter={AdapterDayjs}>
+                    <DatePicker
+                      value={invoicesafedate}
+                      onChange={handleDateChange1}
+                      format="DD-MM-YYYY"
+                      slotProps={{
+                        textField: {
+                          size: "small",
+                          fullWidth: true,
+                          error: !!inverror,
+                          helperText: inverror,
+                        },
+                      }}
+                      sx={{
+                        marginTop: "10px",
+                        marginBottom: "5px",
+                        width: "250px",
+                      }}
+                    />
+                  </LocalizationProvider>
                 </div>
 
                 <div>
-                  {errors.InvoiceDate && (
-                    <b className="error-text">{errors.InvoiceDate}</b>
+                  {errors.invoicesafedate && (
+                    <b className="error-text">{errors.invoicesafedate}</b>
                   )}
                 </div>
               </div>
@@ -988,7 +1024,7 @@ function Salesinvoice() {
                         fullWidth
                       />
                     )}
-                    sx={{ mt: 1.25, mb: 0.625, width: 170 }} // Equivalent to 10px and 5px
+                    sx={{ mt: 1.25, mb: 0.625, width: 400 }} // Equivalent to 10px and 5px
                   />
                 </div>
                 <div>
@@ -1011,9 +1047,13 @@ function Salesinvoice() {
                         (option) => option.value === ChallanId
                       ) || null
                     }
-                    onChange={(event, newValue) =>
-                      setChallanId(newValue ? newValue.value : null)
-                    }
+                    onChange={(event, newValue) => {
+                      const selectedId = newValue ? newValue.value : null;
+                      setChallanId(selectedId);
+                      if (selectedId) {
+                        fetchChallanDetails(selectedId); // ← Call API on select
+                      }
+                    }}
                     getOptionLabel={(option) => option.label} // Display only label in dropdown
                     renderInput={(params) => (
                       <TextField
@@ -1063,20 +1103,30 @@ function Salesinvoice() {
                   Order Date <b className="required">*</b>
                 </label>
                 <div>
-                  <input
-                    type="date"
-                    id="OrderDate"
-                    name="ReceiptDate"
-                    value={OrderDate}
-                    onChange={(e) => setOrderDate(e.target.value)}
-                    className="salesinvoice-control"
-                    placeholder="Enter Order Date"
-                  />
+                  <LocalizationProvider dateAdapter={AdapterDayjs}>
+                    <DatePicker
+                      value={ordersafedate}
+                      onChange={handleDateChange2}
+                      format="DD-MM-YYYY"
+                      slotProps={{
+                        textField: {
+                          size: "small",
+                          fullWidth: true,
+                          error: !!ordererror,
+                          helperText: ordererror,
+                        },
+                      }}
+                      sx={{
+                        marginTop: "10px",
+                        marginBottom: "5px",
+                        width: "250px",
+                      }}
+                    />
+                  </LocalizationProvider>
                 </div>
-
                 <div>
-                  {errors.OrderDate && (
-                    <b className="error-text">{errors.OrderDate}</b>
+                  {errors.ordersafedate && (
+                    <b className="error-text">{errors.ordersafedate}</b>
                   )}
                 </div>
               </div>
@@ -1110,20 +1160,31 @@ function Salesinvoice() {
                   Receipt Date <b className="required">*</b>
                 </label>
                 <div>
-                  <input
-                    type="date"
-                    id="ReceiptDate"
-                    name="ReceiptDate"
-                    value={ReceiptDate}
-                    onChange={(e) => setReceiptDate(e.target.value)}
-                    className="salesinvoice-control"
-                    placeholder="Enter Receipt Date"
-                  />
+                  <LocalizationProvider dateAdapter={AdapterDayjs}>
+                    <DatePicker
+                      value={receiptsafedate}
+                      onChange={handleDateChange3}
+                      format="DD-MM-YYYY"
+                      slotProps={{
+                        textField: {
+                          size: "small",
+                          fullWidth: true,
+                          error: !!receipterror,
+                          helperText: receipterror,
+                        },
+                      }}
+                      sx={{
+                        marginTop: "10px",
+                        marginBottom: "5px",
+                        width: "250px",
+                      }}
+                    />
+                  </LocalizationProvider>
                 </div>
 
                 <div>
-                  {errors.ReceiptDate && (
-                    <b className="error-text">{errors.ReceiptDate}</b>
+                  {errors.receiptsafedate && (
+                    <b className="error-text">{errors.receiptsafedate}</b>
                   )}
                 </div>
               </div>
@@ -1300,8 +1361,8 @@ function Salesinvoice() {
             <div className="salesinvoice-table">
               <table>
                 <thead>
-                  <tr>
-                    <th>Serial No</th>
+                  <tr sx={{ height: "10px" }}>
+                    <th>Sr No</th>
                     <th>
                       Book Code<b className="required">*</b>
                     </th>
@@ -1328,136 +1389,6 @@ function Salesinvoice() {
                     <th>Actions</th>
                   </tr>
                 </thead>
-                {/* <tbody>
-                  
-                  {rows.map((row, index) => (
-                    <tr key={index}>
-                      <td>{index + 1}</td>
-
-                      <td>
-
-                        {
-                          bookOptions.find(option => option.value === row.BookId)?.code || ''
-                        }
-                      </td>
-                      <td>
-                        <Select
-                          value={bookOptions.find((option) => option.value === row.BookId)}
-                          onChange={(option) => handleInputChange(index, 'BookId', option.value)}
-                          options={bookOptions}
-                          placeholder="Select Book"
-                          styles={{
-                            control: (base) => ({
-                              ...base,
-                              width: "150px",
-                            }),
-
-                            menu: (base) => ({
-                              ...base,
-                              zIndex: 100,
-                            }),
-                          }}
-                        />
-                      </td>
-                      <td>
-                        <input
-                          type="number"
-                          value={row.Copies}
-                          onChange={(e) => handleInputChange(index, 'Copies', e.target.value)}
-                          placeholder="Copies"
-                          className="salesinvoice-control"
-
-                        />
-                      </td>
-                      <td>
-                        <input
-                          type="number"
-                          value={row.Price}
-                          onChange={(e) => {
-                            const value = e.target.value;
-                            // Regex to validate decimal numbers with at most 18 digits total and 2 decimal places
-                            const regex = /^\d{0,18}(\.\d{0,2})?$/;
-
-                            // Check if the value matches the regex
-                            if (value === '' || regex.test(value)) {
-                              handleInputChange(index, 'Price', value);
-                            }
-                          }} placeholder="Price"
-                          className="salesinvoice-control"
-
-                        />
-                      </td>
-                      <td>
-                        <input
-                          type="number"
-                          value={row.DiscountPercentage}
-                          onChange={(e) => {
-                            const value = e.target.value;
-                            // Regex to validate decimal numbers with at most 18 digits total and 2 decimal places
-                            const regex = /^\d{0,18}(\.\d{0,2})?$/;
-
-                            // Check if the value matches the regex
-                            if (value === '' || regex.test(value)) {
-                              handleInputChange(index, 'DiscountPercentage', value);
-                            }
-                          }} placeholder="Discount %"
-                          className="salesinvoice-control"
-
-                        />
-                      </td>
-                      <td>
-                        <input
-                          type="number"
-                          value={row.DiscountAmount}
-                          readOnly
-                          placeholder="Discount Amount"
-                          className="salesinvoice-control"
-
-                        />
-                      </td>
-                      <td>
-                        <input
-                          type="number"
-                          value={row.Amount}
-                          readOnly
-                          placeholder="Amount"
-                          className="salesinvoice-control"
-
-                        />
-
-
-                      </td>
-
-                      <td>
-                        <input
-                          type="number"
-                          value={row.FinalAmount}
-                          readOnly
-                          placeholder="Final Amount"
-                          className="salesinvoice-control"
-
-                        />
-
-
-                      </td>
-                      <td>
-                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-
-                          <Button
-                            onClick={handleAddRow}
-                            style={{ background: "#0a60bd", color: "white", marginRight: "5px" }}>
-                            Add
-                          </Button>
-                          <Button
-                            onClick={() => handleDeleteRow(index)}
-                            style={{ background: "red", color: "white" }}>
-                            <RiDeleteBin5Line />
-                          </Button></div>
-
-                      </td>
-                    </tr>
-                  ))}
-                </tbody> */}
 
                 <tbody>
                   {isLoading ? (
@@ -1510,7 +1441,7 @@ function Salesinvoice() {
                                 newValue ? newValue.value : ""
                               )
                             }
-                            sx={{ width: 250 }} // Set width
+                            sx={{ width: 500 }} // Set width
                             getOptionLabel={(option) => option.label}
                             renderInput={(params) => (
                               <TextField
@@ -1524,7 +1455,7 @@ function Salesinvoice() {
                                     // width: "200px", // Adjust height here
                                   },
                                   "& .MuiInputBase-input": {
-                                    padding: "14px", // Adjust padding for better alignment
+                                    padding: "16px", // Adjust padding for better alignment
                                   },
                                 }}
                               />
@@ -1539,29 +1470,22 @@ function Salesinvoice() {
                               handleInputChange(index, "Copies", e.target.value)
                             }
                             style={{
-                              width: "150px",
+                              width: "80px",
                             }}
                             placeholder="Copies"
                             className="salesinvoice-control"
                           />
                         </td>
                         <td>
-                          <input
-                            type="number"
-                            value={row.Price}
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              const regex = /^\d{0,18}(\.\d{0,2})?$/;
-                              if (value === "" || regex.test(value)) {
-                                handleInputChange(index, "Price", value);
-                              }
-                            }}
-                            style={{
-                              width: "150px",
-                            }}
-                            placeholder="Price"
-                            className="salesinvoice-control"
-                          />
+                          <td>
+                            <input
+                              type="number"
+                              value={row.Rate}
+                              readOnly
+                              style={{ width: "100px" }}
+                              className="salesinvoice-control"
+                            />
+                          </td>
                         </td>
                         <td>
                           <input
@@ -1579,7 +1503,7 @@ function Salesinvoice() {
                               }
                             }}
                             style={{
-                              width: "150px",
+                              width: "80px",
                             }}
                             placeholder="Discount %"
                             className="salesinvoice-control"
@@ -1591,7 +1515,7 @@ function Salesinvoice() {
                             value={row.DiscountAmount}
                             readOnly
                             style={{
-                              width: "150px",
+                              width: "120px",
                             }}
                             placeholder="Discount Amount"
                             className="salesinvoice-control"
@@ -1603,7 +1527,7 @@ function Salesinvoice() {
                             value={row.Amount}
                             readOnly
                             style={{
-                              width: "150px",
+                              width: "120px",
                             }}
                             placeholder="Amount"
                             className="salesinvoice-control"
@@ -1615,7 +1539,7 @@ function Salesinvoice() {
                             value={row.FinalAmount}
                             readOnly
                             style={{
-                              width: "150px",
+                              width: "120px",
                             }}
                             placeholder="Final Amount"
                             className="salesinvoice-control"

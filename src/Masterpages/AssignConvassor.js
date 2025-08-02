@@ -386,146 +386,150 @@ function Assignconvassor() {
                 : "Add Assign Canvassor"}
             </h1>
             <form onSubmit={handleSubmit} className="canvassor-form">
-              <div>
-                <label className="canvassor-label">
-                  Canvassor Name <b className="required">*</b>
-                </label>{" "}
+              <div className="firstcanv-row">
                 <div>
-                  <Tooltip
-                    title={
-                      <span style={{ fontSize: "14px", fontWeight: "bold" }}>
-                        {CanvassorName}
-                      </span>
-                    }
-                    arrow>
-                    <input
-                      type="text"
-                      id="CanvassorName"
-                      name="CanvassorName"
-                      value={CanvassorName || ""}
-                      onChange={(e) => setCanvassorName(e.target.value)}
-                      maxLength={50}
-                      ref={canvassornameRef}
-                      onKeyDown={(e) => handleKeyDown(e, stateRef)}
-                      className="canvassor-control"
-                      placeholder="Enter canvassor Name"
+                  <label className="canvassor-label">
+                    Canvassor Name <b className="required">*</b>
+                  </label>{" "}
+                  <div>
+                    <Tooltip
+                      title={
+                        <span style={{ fontSize: "14px", fontWeight: "bold" }}>
+                          {CanvassorName}
+                        </span>
+                      }
+                      arrow>
+                      <input
+                        type="text"
+                        id="CanvassorName"
+                        name="CanvassorName"
+                        value={CanvassorName || ""}
+                        onChange={(e) => setCanvassorName(e.target.value)}
+                        maxLength={50}
+                        ref={canvassornameRef}
+                        onKeyDown={(e) => handleKeyDown(e, stateRef)}
+                        className="canvassor-control"
+                        style={{ width: "500px" }}
+                        placeholder="Enter canvassor Name"
+                      />
+                    </Tooltip>
+
+                    <div>
+                      {errors.CanvassorName && (
+                        <b className="error-text">{errors.CanvassorName}</b>
+                      )}
+                    </div>
+                  </div>
+                </div>{" "}
+              </div>
+
+              <div className="othercanv-rows">
+                <div>
+                  <label className="canvassor-label">
+                    State <b className="required">*</b>
+                  </label>{" "}
+                  <div>
+                    <Select
+                      id="StateId"
+                      name="StateId"
+                      value={
+                        stateOptions.find(
+                          (option) => option.value === StateId
+                        ) || null
+                      }
+                      onChange={(option) => setStateId(option.value)}
+                      ref={stateRef}
+                      onKeyDown={(e) => handleKeyDown(e, cityRef)}
+                      options={stateOptions}
+                      styles={{
+                        control: (base) => ({
+                          ...base,
+                          width: "250px",
+                          marginTop: "10px",
+                          borderRadius: "4px",
+                          border: "1px solid rgb(223, 222, 222)",
+                          marginBottom: "5px",
+                        }),
+                      }}
+                      placeholder="Select State"
+                    />{" "}
+                    <div>
+                      {errors.StateId && (
+                        <b className="error-text">{errors.StateId}</b>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <label className="canvassor-label">
+                    City <b className="required">*</b>
+                  </label>{" "}
+                  <div>
+                    <Select
+                      id="CityId"
+                      name="CityId"
+                      value={
+                        cityOptions.find((option) => option.value === CityId) ||
+                        null
+                      }
+                      onChange={(option) => setCityId(option.value)}
+                      ref={cityRef}
+                      onKeyDown={(e) => handleKeyDown(e, areaRef)}
+                      options={cityOptions}
+                      styles={{
+                        control: (base) => ({
+                          ...base,
+                          width: "250px",
+                          marginTop: "10px",
+                          borderRadius: "4px",
+                          border: "1px solid rgb(223, 222, 222)",
+                          marginBottom: "5px",
+                        }),
+                      }}
+                      placeholder="Select City"
+                    />{" "}
+                    <div>
+                      {errors.CityId && (
+                        <b className="error-text">{errors.CityId}</b>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <label className="canvassor-label">
+                    Area <b className="required">*</b>
+                  </label>{" "}
+                  <div>
+                    <Select
+                      id="AreaId"
+                      name="AreaId"
+                      value={
+                        areaOptions.find((option) => option.value === AreaId) ||
+                        null
+                      }
+                      onChange={(option) => setAreadId(option.value)}
+                      ref={areaRef}
+                      onKeyDown={(e) => handleKeyDown(e, assignCanRef)}
+                      options={areaOptions}
+                      styles={{
+                        control: (base) => ({
+                          ...base,
+                          width: "250px",
+                          marginTop: "10px",
+                          borderRadius: "4px",
+                          border: "1px solid rgb(223, 222, 222)",
+                          marginBottom: "5px",
+                        }),
+                      }}
+                      placeholder="Enter Area"
                     />
-                  </Tooltip>
-
-                  <div>
-                    {errors.CanvassorName && (
-                      <b className="error-text">{errors.CanvassorName}</b>
-                    )}
+                    <div>
+                      {errors.AreaId && (
+                        <b className="error-text">{errors.AreaId}</b>
+                      )}
+                    </div>
                   </div>
-                </div>
-              </div>
-
-              <div>
-                <label className="canvassor-label">
-                  State <b className="required">*</b>
-                </label>{" "}
-                <div>
-                  <Select
-                    id="StateId"
-                    name="StateId"
-                    value={
-                      stateOptions.find((option) => option.value === StateId) ||
-                      null
-                    }
-                    onChange={(option) => setStateId(option.value)}
-                    ref={stateRef}
-                    onKeyDown={(e) => handleKeyDown(e, cityRef)}
-                    options={stateOptions}
-                    styles={{
-                      control: (base) => ({
-                        ...base,
-                        width: "170px",
-                        marginTop: "10px",
-                        borderRadius: "4px",
-                        border: "1px solid rgb(223, 222, 222)",
-                        marginBottom: "5px",
-                      }),
-                    }}
-                    placeholder="Select State"
-                  />{" "}
-                  <div>
-                    {errors.StateId && (
-                      <b className="error-text">{errors.StateId}</b>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <label className="canvassor-label">
-                  City <b className="required">*</b>
-                </label>{" "}
-                <div>
-                  <Select
-                    id="CityId"
-                    name="CityId"
-                    value={
-                      cityOptions.find((option) => option.value === CityId) ||
-                      null
-                    }
-                    onChange={(option) => setCityId(option.value)}
-                    ref={cityRef}
-                    onKeyDown={(e) => handleKeyDown(e, areaRef)}
-                    options={cityOptions}
-                    styles={{
-                      control: (base) => ({
-                        ...base,
-                        width: "170px",
-                        marginTop: "10px",
-                        borderRadius: "4px",
-                        border: "1px solid rgb(223, 222, 222)",
-                        marginBottom: "5px",
-                      }),
-                    }}
-                    placeholder="Select City"
-                  />{" "}
-                  <div>
-                    {errors.CityId && (
-                      <b className="error-text">{errors.CityId}</b>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <label className="canvassor-label">
-                  Area <b className="required">*</b>
-                </label>{" "}
-                <div>
-                  <Select
-                    id="AreaId"
-                    name="AreaId"
-                    value={
-                      areaOptions.find((option) => option.value === AreaId) ||
-                      null
-                    }
-                    onChange={(option) => setAreadId(option.value)}
-                    ref={areaRef}
-                    onKeyDown={(e) => handleKeyDown(e, assignCanRef)}
-                    options={areaOptions}
-                    styles={{
-                      control: (base) => ({
-                        ...base,
-                        width: "170px",
-                        marginTop: "10px",
-                        borderRadius: "4px",
-                        border: "1px solid rgb(223, 222, 222)",
-                        marginBottom: "5px",
-                      }),
-                    }}
-                    placeholder="Enter Area"
-                  />
-                  <div>
-                    {errors.AreaId && (
-                      <b className="error-text">{errors.AreaId}</b>
-                    )}
-                  </div>
-                </div>
+                </div>{" "}
               </div>
               <div>
                 <label className="canvassor-label">Assign Canvassor</label>{" "}

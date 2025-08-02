@@ -86,6 +86,16 @@ function AccountGroup() {
     }
   };
 
+  // Define the options
+  const typeCodeOptions = [
+    { value: "T", label: "T" },
+    { value: "P", label: "P" },
+    { value: "B", label: "B" },
+    { value: "S", label: "S" },
+    { value: "C", label: "C" },
+    { value: "O", label: "O" },
+  ];
+
   useEffect(() => {
     fetchAccgroups();
     fetchTds();
@@ -429,6 +439,7 @@ function AccountGroup() {
                       maxLength={100}
                       ref={accgroupnameRef}
                       onKeyDown={(e) => handleKeyDown(e, typecodeRef)}
+                      style={{ width: "300px" }}
                       placeholder="Enter Account Group Name"
                       className="accountgroup-control"
                     />
@@ -446,17 +457,33 @@ function AccountGroup() {
                   Type Code<b className="required">*</b>
                 </label>
                 <div>
-                  <input
-                    type="text"
+                  <Select
                     id="TypeCode"
                     name="TypeCode"
-                    value={TypeCode}
-                    onChange={(e) => setTypeCode(e.target.value)}
-                    maxLength={1}
-                    ref={typecodeRef}
+                    options={typeCodeOptions}
+                    value={
+                      typeCodeOptions.find(
+                        (option) => option.value === TypeCode
+                      ) || null
+                    }
+                    onChange={(selectedOption) =>
+                      setTypeCode(selectedOption?.value || "")
+                    }
+                    styles={{
+                      control: (base) => ({
+                        ...base,
+                        width: "300px",
+                        marginTop: "10px",
+                        marginBottom: "5px",
+                        borderRadius: "4px",
+                        border: "1px solid rgb(223, 222, 222)",
+                      }),
+                    }}
+                    placeholder="-- Select Type Code --"
+                    className="react-select-container"
+                    classNamePrefix="react-select"
                     onKeyDown={(e) => handleKeyDown(e, tdsidRef)}
-                    placeholder="Enter Type code"
-                    className="accountgroup-control"
+                    ref={typecodeRef}
                   />
                   <div>
                     {errors.TypeCode && (
@@ -482,7 +509,7 @@ function AccountGroup() {
                     styles={{
                       control: (base) => ({
                         ...base,
-                        width: "170px",
+                        width: "300px",
                         marginTop: "10px",
                         marginBottom: "5px",
                         borderRadius: "4px",

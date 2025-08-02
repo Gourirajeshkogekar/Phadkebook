@@ -18,7 +18,7 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import moment from "moment";
 import { RiDeleteBin5Line } from "react-icons/ri";
-import { Tooltip } from "@mui/material";
+import { Tooltip, TextField, Autocomplete } from "@mui/material";
 
 function TDS() {
   const [userId, setUserId] = useState("");
@@ -49,6 +49,7 @@ function TDS() {
   const [Heading, setHeading] = useState("");
   const [TDSPercentage, setTDSPercentage] = useState("");
   const [TDSAccountId, setTDSAccountId] = useState(null);
+  const [accountOptions, setAccountOptions] = useState([]);
   const [SurchargePercentage, setSurchargePercentage] = useState("");
   const [SurchargeAccountId, setSurchargeAccountId] = useState(null);
   const [EducationSellsPercentage, setEducationSellsPercentage] = useState("");
@@ -225,51 +226,51 @@ function TDS() {
       isValid = false;
     }
 
-    if (!SurchargePercentage) {
-      formErrors.SurchargePercentage = "Schrg % is required.";
-      isValid = false;
-    }
+    // if (!SurchargePercentage) {
+    //   formErrors.SurchargePercentage = "Schrg % is required.";
+    //   isValid = false;
+    // }
 
-    if (!SurchargeAccountId) {
-      formErrors.SurchargeAccountId = "Schrg Acc Id is required.";
-      isValid = false;
-    }
+    // if (!SurchargeAccountId) {
+    //   formErrors.SurchargeAccountId = "Schrg Acc Id is required.";
+    //   isValid = false;
+    // }
 
-    if (!EducationSellsPercentage) {
-      formErrors.EducationSellsPercentage = "Edu Cess %  is required.";
-      isValid = false;
-    }
+    // if (!EducationSellsPercentage) {
+    //   formErrors.EducationSellsPercentage = "Edu Cess %  is required.";
+    //   isValid = false;
+    // }
 
-    if (!EducationSellsAccountId) {
-      formErrors.EducationSellsAccountId = "Edu Cess Acc Id is required.";
-      isValid = false;
-    }
+    // if (!EducationSellsAccountId) {
+    //   formErrors.EducationSellsAccountId = "Edu Cess Acc Id is required.";
+    //   isValid = false;
+    // }
 
-    if (!HigherEducationSellsPercentage) {
-      formErrors.HigherEducationSellsPercentage = "H Edu Cess % is required.";
-      isValid = false;
-    }
+    // if (!HigherEducationSellsPercentage) {
+    //   formErrors.HigherEducationSellsPercentage = "H Edu Cess % is required.";
+    //   isValid = false;
+    // }
 
-    if (!HigherEducationPercentageSellsAccountId) {
-      formErrors.HigherEducationPercentageSellsAccountId =
-        "H Edu Cess Acc Id is required.";
-      isValid = false;
-    }
+    // if (!HigherEducationPercentageSellsAccountId) {
+    //   formErrors.HigherEducationPercentageSellsAccountId =
+    //     "H Edu Cess Acc Id is required.";
+    //   isValid = false;
+    // }
 
-    if (!Effectivedate) {
-      formErrors.Effectivedate = "Date is required.";
-      isValid = false;
-    }
+    // if (!Effectivedate) {
+    //   formErrors.Effectivedate = "Date is required.";
+    //   isValid = false;
+    // }
 
-    if (!TDSCode) {
-      formErrors.TDSCode = "Tds code is required.";
-      isValid = false;
-    }
+    // if (!TDSCode) {
+    //   formErrors.TDSCode = "Tds code is required.";
+    //   isValid = false;
+    // }
 
-    if (!NetPercentage) {
-      formErrors.NetPercentage = "Net% is required.";
-      isValid = false;
-    }
+    // if (!NetPercentage) {
+    //   formErrors.NetPercentage = "Net% is required.";
+    //   isValid = false;
+    // }
 
     setErrors(formErrors);
     return isValid;
@@ -286,13 +287,30 @@ function TDS() {
     }
   };
 
+  const fetchAccounts = async () => {
+    try {
+      const response = await axios.get(
+        "https://publication.microtechsolutions.net.in/php/Accountget.php"
+      );
+      const accountOptions = response.data.map((acc) => ({
+        value: acc.Id,
+        label: acc.AccountName,
+      }));
+      setAccountOptions(accountOptions);
+    } catch (error) {
+      // toast.error("Error fetching Accounts:", error);
+      console.error("Error fetching Accounts:", error);
+    }
+  };
+
   useEffect(() => {
     fetchTDSMasters();
+    fetchAccounts();
   }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!validateForm()) return;
+    // if (!validateForm()) return;
 
     // Format the date to YYYY-MM-DD HH:MM:SS if needed
     const formattedDate = moment(Effectivedate).format("YYYY-MM-DD");
@@ -304,16 +322,15 @@ function TDS() {
       Heading: Heading,
       TDSPercentage: TDSPercentage,
       TDSAccountId: TDSAccountId,
-      SurchargePercentage: SurchargePercentage,
-      SurchargeAccountId: SurchargeAccountId,
-      EducationSellsPercentage: EducationSellsPercentage,
-      EducationSellsAccountId: EducationSellsAccountId,
-      HigherEducationSellsPercentage: HigherEducationSellsPercentage,
-      HigherEducationPercentageSellsAccountId:
-        HigherEducationPercentageSellsAccountId,
-      Effectivedate: formattedDate,
-      TDSCode: TDSCode,
-      NetPercentage: NetPercentage,
+      SurchargePercentage: "10.00",
+      SurchargeAccountId: 2,
+      EducationSellsPercentage: "5.00",
+      EducationSellsAccountId: 3,
+      HigherEducationSellsPercentage: "10.00",
+      HigherEducationPercentageSellsAccountId: 2,
+      Effectivedate: "2025-01-01",
+      TDSCode: 2,
+      NetPercentage: "10.00",
       CreatedBy: userId,
     };
 
@@ -488,11 +505,11 @@ function TDS() {
                     />
                   </Tooltip>
 
-                  <div>
+                  {/* <div>
                     {errors.TDSHead && (
                       <b className="error-text">{errors.TDSHead}</b>
                     )}
-                  </div>
+                  </div> */}
                 </div>
               </div>
               <div>
@@ -512,11 +529,11 @@ function TDS() {
                     placeholder="Enter section"
                   />
 
-                  <div>
+                  {/* <div>
                     {errors.Section && (
                       <b className="error-text">{errors.Section}</b>
                     )}
-                  </div>
+                  </div> */}
                 </div>
               </div>
               <div>
@@ -536,11 +553,11 @@ function TDS() {
                     className="mastertds-control"
                     placeholder="Enter heading"
                   />
-                  <div>
+                  {/* <div>
                     {errors.Heading && (
                       <b className="error-text">{errors.Heading}</b>
                     )}
-                  </div>
+                  </div> */}
                 </div>
               </div>
               <div>
@@ -569,11 +586,11 @@ function TDS() {
                     className="mastertds-control"
                     placeholder="Enter tds"
                   />
-                  <div>
+                  {/* <div>
                     {errors.TDSPercentage && (
                       <b className="error-text">{errors.TDSPercentage}</b>
                     )}
-                  </div>
+                  </div> */}
                 </div>
               </div>
 
@@ -581,28 +598,40 @@ function TDS() {
                 <label className="mastertds-label">
                   TDS A/C <b className="required">*</b>
                 </label>
-                <div>
-                  <input
-                    type="number"
-                    id="TDSAccountId"
-                    name="TDSAccountId"
-                    value={TDSAccountId}
-                    onChange={(e) => setTDSAccountId(e.target.value)}
-                    ref={tdsaccRef}
-                    onKeyDown={(e) => handleKeyDown(e, schrgRef)}
-                    className="mastertds-control"
-                    placeholder="TDS A/C"
-                  />
 
-                  <div>
-                    {errors.TDSAccountId && (
-                      <b className="error-text">{errors.TDSAccountId}</b>
+                <div>
+                  <Autocomplete
+                    options={accountOptions}
+                    value={
+                      accountOptions.find(
+                        (option) => option.value === TDSAccountId
+                      ) || null
+                    }
+                    onChange={(event, newValue) =>
+                      setTDSAccountId(newValue ? newValue.value : null)
+                    }
+                    getOptionLabel={(option) => option.label} // Display only label in dropdown
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        placeholder="Select Account id"
+                        size="small"
+                        margin="none"
+                        fullWidth
+                      />
                     )}
-                  </div>
+                    sx={{ mt: 1.25, mb: 0.625, width: 300 }} // Equivalent to 10px and 5px
+                  />
                 </div>
+
+                {/* <div>
+                  {errors.TDSAccountId && (
+                    <b className="error-text">{errors.TDSAccountId}</b>
+                  )}
+                </div> */}
               </div>
 
-              <div>
+              <div style={{ display: "none" }}>
                 <label className="mastertds-label">
                   SCHRG % <b className="required">*</b>
                 </label>
@@ -636,7 +665,7 @@ function TDS() {
                 </div>
               </div>
 
-              <div>
+              <div style={{ display: "none" }}>
                 <label className="mastertds-label">
                   SCHRG A/C <b className="required">*</b>
                 </label>
@@ -661,7 +690,7 @@ function TDS() {
                 </div>
               </div>
 
-              <div>
+              <div style={{ display: "none" }}>
                 <label className="mastertds-label">
                   Edu Cess % <b className="required">*</b>
                 </label>
@@ -697,7 +726,7 @@ function TDS() {
                 </div>
               </div>
 
-              <div>
+              <div style={{ display: "none" }}>
                 <label className="mastertds-label">
                   Edu Cess A/C <b className="required">*</b>
                 </label>
@@ -724,7 +753,7 @@ function TDS() {
                 </div>
               </div>
 
-              <div>
+              <div style={{ display: "none" }}>
                 <label className="mastertds-label">
                   H Edu Cess % <b className="required">*</b>
                 </label>
@@ -761,7 +790,7 @@ function TDS() {
                 </div>
               </div>
 
-              <div>
+              <div style={{ display: "none" }}>
                 <label className="mastertds-label">
                   H Edu Cess A/C <b className="required">*</b>
                 </label>
@@ -789,7 +818,7 @@ function TDS() {
                 </div>
               </div>
 
-              <div>
+              <div style={{ display: "none" }}>
                 <label className="mastertds-label">
                   Effective date <b className="required">*</b>
                 </label>
@@ -814,7 +843,7 @@ function TDS() {
                 </div>
               </div>
 
-              <div>
+              <div style={{ display: "none" }}>
                 <label className="mastertds-label">
                   TDS code <b className="required">*</b>
                 </label>
@@ -839,7 +868,7 @@ function TDS() {
                 </div>
               </div>
 
-              <div>
+              <div style={{ display: "none" }}>
                 <label className="mastertds-label">
                   Net % <b className="required">*</b>
                 </label>

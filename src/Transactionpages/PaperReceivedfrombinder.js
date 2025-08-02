@@ -51,6 +51,8 @@ import {
   DialogContent,
   DialogTitle,
 } from "@mui/material";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import dayjs from "dayjs";
 
 function PaperReceivedfrombinder() {
   const [userId, setUserId] = useState("");
@@ -192,6 +194,7 @@ function PaperReceivedfrombinder() {
         value: pp.Id,
         label: pp.PaperSizeName,
         code: pp.SizeCode,
+        unit: pp.Unit,
       }));
       setPaperoptions(paperOptions);
     } catch (error) {
@@ -227,6 +230,52 @@ function PaperReceivedfrombinder() {
     } catch (error) {
       // toast.error("Error fetching godowns:", error);
     }
+  };
+
+  const [inwarddate, setinwarddate] = useState(dayjs());
+  const [dateerror, setdateerror] = useState("");
+
+  const [dcdate, setdcdate] = useState(dayjs());
+  const [dcdateerror, setdcdateerror] = useState("");
+
+  const handleDateChange1 = (newValue) => {
+    if (!newValue || !dayjs(newValue).isValid()) {
+      setdateerror("Invalid date");
+      setinwarddate(null);
+      return;
+    }
+
+    const today = dayjs();
+    const minDate = today.subtract(3, "day");
+    const maxDate = today.add(2, "day");
+
+    if (newValue.isBefore(minDate) || newValue.isAfter(maxDate)) {
+      setdateerror("You can select only 2 days before or after today");
+    } else {
+      setdateerror("");
+    }
+
+    setinwarddate(newValue);
+  };
+
+  const handleDateChange2 = (newValue) => {
+    if (!newValue || !dayjs(newValue).isValid()) {
+      setdcdateerror("Invalid date");
+      setdcdate(null);
+      return;
+    }
+
+    const today = dayjs();
+    const minDate = today.subtract(3, "day");
+    const maxDate = today.add(2, "day");
+
+    if (newValue.isBefore(minDate) || newValue.isAfter(maxDate)) {
+      setdcdateerror("You can select only 2 days before or after today");
+    } else {
+      setdcdateerror("");
+    }
+
+    setdcdate(newValue);
   };
 
   const handleInputChange = (index, field, value) => {
@@ -310,10 +359,14 @@ function PaperReceivedfrombinder() {
   };
 
   const resetForm = () => {
-    setInwarddate("");
+    // setInwarddate("");
+    setinwarddate(dayjs());
+    setdateerror("");
     setInwardno("");
     setPartydcNo("");
-    setDcdate("");
+    // setDcdate("");
+    setdcdate(dayjs());
+    setdcdateerror("");
     setAccountId("");
     setGodownId("");
     setStartingNo("");
@@ -375,15 +428,15 @@ function PaperReceivedfrombinder() {
       Id: detail.Id, // Include the detail Id in the mapped row for tracking
     }));
 
-    const date = convertDateForInput(paperreceivedheader.Date?.date);
-    const dcdate = convertDateForInput(paperreceivedheader.DC_date?.date);
+    const date = dayjs(paperreceivedheader.Date?.date);
+    const dcdate = dayjs(paperreceivedheader.DC_date?.date);
 
     // Set the form fields
     setInwardno(paperreceivedheader.InwardNo);
-    setInwarddate(date);
+    setinwarddate(date);
     setAccountId(paperreceivedheader.AccountId);
     setPartydcNo(paperreceivedheader.Party_dcno);
-    setDcdate(dcdate);
+    setdcdate(dcdate);
     setGodownId(paperreceivedheader.GodownId);
     setStartingNo(paperreceivedheader.StartingNo);
     setEndingNo(paperreceivedheader.EndingNo);
@@ -425,8 +478,20 @@ function PaperReceivedfrombinder() {
     e.preventDefault();
     if (!validateForm()) return;
 
-    const formatteddate = moment(InwardDate).format("YYYY-MM-DD");
-    const formatteddcdate = moment(DC_date).format("YYYY-MM-DD");
+    if (
+      !inwarddate ||
+      !dayjs(inwarddate).isValid() ||
+      dateerror ||
+      !dcdate ||
+      !dayjs(dcdate).isValid() ||
+      dcdateerror
+    ) {
+      toast.error("Please correct all the date fields before submitting.");
+      return;
+    }
+
+    const formatteddate = dayjs(inwarddate).format("YYYY-MM-DD");
+    const formatteddcdate = dayjs(dcdate).format("YYYY-MM-DD");
 
     const paperreceiveddata = {
       Id: isEditing ? id : "", // Include the Id for updating, null for new records
@@ -700,25 +765,74 @@ borderWidth: 1,
                   {" "}
                   Date
                 </Typography>
-                <LocalizationProvider dateAdapter={AdapterDateFns}>
-                  <DatePicker
-                    value={InwardDate ? new Date(InwardDate) : null} // Convert to Date object
-                    onChange={(newValue) => setInwarddate(newValue)}
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        error={!!errors.InwardDate}
-                        helperText={errors.InwardDate}
-                      />
-                    )}
-                    slotProps={{
-                      textField: { size: "small", fullWidth: true },
-                    }}
-                    format="dd-MM-yyyy"
-                  />
-                </LocalizationProvider>
+                <div>
+                  <LocalizationProvider dateAdapter={AdapterDayjs}>
+                    <DatePicker
+                      value={inwarddate}
+                      onChange={handleDateChange1}
+                      format="DD-MM-YYYY"
+                      slotProps={{
+                        textField: {
+                          size: "small",
+                          fullWidth: true,
+                          error: !!dateerror,
+                          helperText: dateerror,
+                        },
+                      }}
+                      sx={{
+                        marginTop: "10px",
+                        marginBottom: "5px",
+                        width: "165px",
+                      }}
+                    />
+                  </LocalizationProvider>
+                </div>
               </Box>
 
+              <Box flex={1}>
+                <Typography variant="body2" fontWeight="bold">
+                  Party's DC No
+                </Typography>
+                <TextField
+                  value={Party_dcno}
+                  onChange={(e) => setPartydcNo(e.target.value)}
+                  size="small"
+                  margin="none"
+                  placeholder="DC No"
+                  fullWidth
+                />
+              </Box>
+
+              <Box flex={1}>
+                <Typography variant="body2" fontWeight="bold">
+                  DC Date
+                </Typography>
+                <div>
+                  <LocalizationProvider dateAdapter={AdapterDayjs}>
+                    <DatePicker
+                      value={dcdate}
+                      onChange={handleDateChange2}
+                      format="DD-MM-YYYY"
+                      slotProps={{
+                        textField: {
+                          size: "small",
+                          fullWidth: true,
+                          error: !!dcdateerror,
+                          helperText: dcdateerror,
+                        },
+                      }}
+                      sx={{
+                        marginTop: "10px",
+                        marginBottom: "5px",
+                        width: "165px",
+                      }}
+                    />
+                  </LocalizationProvider>
+                </div>
+              </Box>
+            </Box>
+
+            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
               <Box flex={1}>
                 <Typography fontWeight="bold" variant="body2">
                   Party Name
@@ -734,6 +848,7 @@ borderWidth: 1,
                     setAccountId(newValue ? newValue.value : null)
                   }
                   getOptionLabel={(option) => option.label} // Display only label in dropdown
+                  sx={{ width: "500" }}
                   renderInput={(params) => (
                     <TextField
                       {...params}
@@ -760,6 +875,7 @@ borderWidth: 1,
                     setGodownId(newValue ? newValue.value : null)
                   }
                   getOptionLabel={(option) => option.label} // Display only label in dropdown
+                  sx={{ width: "500" }}
                   renderInput={(params) => (
                     <TextField
                       {...params}
@@ -770,45 +886,6 @@ borderWidth: 1,
                     />
                   )}
                 />
-              </Box>
-            </Box>
-
-            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-              <Box flex={1}>
-                <Typography variant="body2" fontWeight="bold">
-                  Party's DC No
-                </Typography>
-                <TextField
-                  value={Party_dcno}
-                  onChange={(e) => setPartydcNo(e.target.value)}
-                  size="small"
-                  margin="none"
-                  placeholder="DC No"
-                  fullWidth
-                />
-              </Box>
-
-              <Box flex={1}>
-                <Typography variant="body2" fontWeight="bold">
-                  DC Date
-                </Typography>
-                <LocalizationProvider dateAdapter={AdapterDateFns}>
-                  <DatePicker
-                    value={DC_date ? new Date(DC_date) : null} // Convert to Date object
-                    onChange={(newValue) => setDcdate(newValue)}
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        error={!!errors.DC_date}
-                        helperText={errors.DC_date}
-                      />
-                    )}
-                    slotProps={{
-                      textField: { size: "small", fullWidth: true },
-                    }}
-                    format="dd-MM-yyyy"
-                  />
-                </LocalizationProvider>
               </Box>
             </Box>
 
@@ -886,7 +963,7 @@ borderWidth: 1,
                                 newValue ? newValue.value : ""
                               )
                             }
-                            sx={{ width: "200px" }} // Set width
+                            sx={{ width: 400 }} // Set width
                             getOptionLabel={(option) => option.label}
                             renderInput={(params) => (
                               <TextField
@@ -897,7 +974,7 @@ borderWidth: 1,
                                 sx={{
                                   "& .MuiInputBase-root": {
                                     height: "50px",
-                                    width: "200px", // Adjust height here
+                                    // width: "200px", // Adjust height here
                                   },
                                   "& .MuiInputBase-input": {
                                     padding: "14px", // Adjust padding for better alignment
@@ -919,19 +996,15 @@ borderWidth: 1,
                                 e.target.value
                               )
                             }
+                            style={{ width: "100px" }}
                             placeholder="Quantity"
                           />
                         </td>
 
                         <td>
-                          <input
-                            type="number"
-                            value={row.Unit}
-                            onChange={(e) =>
-                              handleInputChange(index, "Unit", e.target.value)
-                            }
-                            placeholder="Unit"
-                          />
+                          {paperOptions.find(
+                            (option) => option.value === row.PaperId
+                          )?.unit || ""}
                         </td>
 
                         <td>

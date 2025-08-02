@@ -49,6 +49,7 @@ import {
   Drawer,
   Divider,
 } from "@mui/material";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import CloseIcon from "@mui/icons-material/Close";
 import { useTheme } from "@mui/material/styles";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
@@ -76,9 +77,23 @@ function Receiptvoucher() {
     fetchVouchers();
   }, [userId]);
 
+  useEffect(() => {
+    const today = new Date();
+    const formattedToday = today.toISOString().split("T")[0];
+    setVoucherDate(formattedToday);
+  }, []);
+
+  // Get today's date and max (today + 2 days)
+  const today = new Date().toISOString().split("T")[0];
+  const maxDate = new Date();
+  maxDate.setDate(maxDate.getDate() + 2);
+  const formattedMaxDate = maxDate.toISOString().split("T")[0];
+
   const [pageIndex, setPageIndex] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [dateError, setDateError] = useState(false);
+  const [chequedateerror, setchequedateerror] = useState(false);
+  const [kachipavatidateerror, setkachipavatidateerror] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
   const [currentIndex, setCurrentIndex] = useState(null);
   const [selectedIndex, setSelectedIndex] = useState(null);
@@ -91,13 +106,13 @@ function Receiptvoucher() {
   const [Towards, setTowards] = useState("");
   const [TowardsId, setTowardsId] = useState("");
   const [KachiPavatiNo, setKachiPavatiNo] = useState("");
-  const [KachiPavatiDate, setKachiPavatiDate] = useState(null);
+  const [KachiPavatiDate, setKachiPavatiDate] = useState(dayjs());
   const [VoucherType, setVoucherType] = useState("RE");
   const [PaymentType, setPaymenttype] = useState("");
   const [VoucherNo, setVoucherNo] = useState(null);
-  const [VoucherDate, setVoucherDate] = useState("");
+  const [VoucherDate, setVoucherDate] = useState(dayjs());
   const [ChequeNo, setChequeNo] = useState("");
-  const [ChequeDate, setChequeDate] = useState("");
+  const [ChequeDate, setChequeDate] = useState(dayjs());
   const [Narration, setNarration] = useState("");
 
   const [IsOldCheque, setIsoldcheque] = useState(false);
@@ -117,10 +132,115 @@ function Receiptvoucher() {
   const [receipts, setReceipts] = useState([]);
   const [receiptdetails, setReceiptdetails] = useState([]);
   const [accountOptions, setAccountOptions] = useState([]);
-
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm"));
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [weekstart, setWeekStart] = useState("");
+  const [weekend, setWeekEnd] = useState("");
+
+  // const handleDateChange1 = (newDate1) => {
+  //   if (!newDate1 || !dayjs.isDayjs(newDate1) || !newDate1.isValid()) return;
+  //   setVoucherDate(newDate1);
+  //   console.log("Selected date:", newDate1.format("YYYY-MM-DD"));
+
+  // };
+
+  const [receiptsafeDate, setReceiptsafeDate] = useState(dayjs());
+
+  // useEffect(() => {
+  //   if (!isEditing) {
+  //     setReceiptsafeDate(dayjs());
+  //   }
+  // }, [isEditing]);
+
+  const handleDateChange1 = (newValue) => {
+    if (!newValue || !dayjs(newValue).isValid()) {
+      setDateError("Invalid date");
+      setReceiptsafeDate(null);
+      return;
+    }
+
+    const today = dayjs();
+    const minDate = today.subtract(3, "day");
+    const maxDate = today.add(2, "day");
+
+    if (newValue.isBefore(minDate) || newValue.isAfter(maxDate)) {
+      setDateError("You can select only 2 days before or after today");
+    } else {
+      setDateError("");
+    }
+
+    setReceiptsafeDate(newValue);
+  };
+
+  // const handleDateChange2 = (newDate2) => {
+  //   if (!newDate2 || !dayjs.isDayjs(newDate2) || !newDate2.isValid()) return;
+  //   setChequeDate(newDate2);
+  //   console.log("Selected date:", newDate2.format("YYYY-MM-DD"));
+  // };
+
+  const [chequesafeDate, setchequesafeDate] = useState(dayjs());
+
+  const handleDateChange2 = (newValue) => {
+    if (!newValue || !dayjs(newValue).isValid()) {
+      setchequedateerror("Invalid date");
+      setchequesafeDate(null);
+      return;
+    }
+
+    const today = dayjs();
+    const minDate = today.subtract(3, "day");
+    const maxDate = today.add(2, "day");
+
+    if (newValue.isBefore(minDate) || newValue.isAfter(maxDate)) {
+      setchequedateerror("You can select only 2 days before or after today");
+    } else {
+      setchequedateerror("");
+    }
+
+    setchequesafeDate(newValue);
+  };
+
+  const [kachipavatisafeDate, setkachipavatisafeDate] = useState(dayjs());
+
+  const handleDateChange3 = (newValue) => {
+    if (!newValue || !dayjs(newValue).isValid()) {
+      setkachipavatidateerror("Invalid date");
+      setkachipavatisafeDate(null);
+      return;
+    }
+
+    const today = dayjs();
+    const minDate = today.subtract(3, "day");
+    const maxDate = today.add(2, "day");
+
+    if (newValue.isBefore(minDate) || newValue.isAfter(maxDate)) {
+      setkachipavatidateerror(
+        "You can select only 2 days before or after today"
+      );
+    } else {
+      setkachipavatidateerror("");
+    }
+
+    setkachipavatisafeDate(newValue);
+  };
+
+  // const handleDateChange3 = (newDate3) => {
+  //   if (!newDate3 || !dayjs.isDayjs(newDate3) || !newDate3.isValid()) return;
+  //   setKachiPavatiDate(newDate3);
+  //   console.log("Selected date:", newDate3.format("YYYY-MM-DD"));
+  // };
+
+  // const receiptsafeDate =
+  //   dayjs.isDayjs(VoucherDate) && VoucherDate.isValid() ? VoucherDate : dayjs();
+
+  // const chequesafeDate =
+  //   dayjs.isDayjs(ChequeDate) && ChequeDate.isValid() ? ChequeDate : dayjs();
+
+  // const kachipavatisafeDate =
+  //   dayjs.isDayjs(KachiPavatiDate) && KachiPavatiDate.isValid()
+  // ? KachiPavatiDate
+  //     : dayjs();
 
   const handleDrawerOpen = () => {
     setIsDrawerOpen(true);
@@ -202,16 +322,22 @@ function Receiptvoucher() {
 
   const resetForm = () => {
     setVoucherNo("");
-    setVoucherDate("");
+    // setVoucherDate("");
+    setReceiptsafeDate(dayjs());
+    setDateError("");
     setSelectedCashorbank("");
     setPartyid("");
     setBankId("");
     setAmount("");
     setChequeBankName("");
-    setChequeDate("");
+    // setChequeDate("");
+    setchequesafeDate(dayjs());
+    setchequedateerror("");
     setChequeNo("");
     setTowards("");
-    setKachiPavatiDate("");
+    // setKachiPavatiDate("");
+    setkachipavatisafeDate(dayjs());
+    setkachipavatidateerror("");
     setKachiPavatiNo("");
     setPaymenttype("");
   };
@@ -224,6 +350,13 @@ function Receiptvoucher() {
   };
 
   const [idwiseData, setIdwiseData] = useState("");
+
+  useEffect(() => {
+    if (isEditing && accountOptions.length > 0) {
+      setPartyid((prev) => prev); // Force state update to re-trigger Autocomplete value mapping
+      setBankId((prev) => prev);
+    }
+  }, [isEditing, accountOptions]);
 
   const handleEdit = () => {
     if (currentRow) {
@@ -240,15 +373,13 @@ function Receiptvoucher() {
     );
 
     console.log(voucherdetail, "voucherdetails");
-    // Convert date strings to DD-MM-YYYY format
+
     const convertDateForInput = (dateStr) => {
       if (typeof dateStr === "string" && dateStr.includes("-")) {
         const [year, month, day] = dateStr.split(" ")[0].split("-");
-        return `${year}-${month}-${day}`;
-      } else {
-        console.error("Invalid date format:", dateStr);
-        return ""; // Return an empty string or handle it as needed
+        return dayjs(`${year}-${month}-${day}`);
       }
+      return null;
     };
 
     const formattedchequedate = convertDateForInput(
@@ -260,12 +391,17 @@ function Receiptvoucher() {
     const formattedkachipavtidate = convertDateForInput(
       voucherheader.KachiPavatiDate?.date
     );
-    setVoucherNo(voucherheader.VoucherNo);
-    setVoucherDate(formattedvoucherdate); // Convert to Date object if needed
-    // setSelectedCashorbank(voucherheader.selectedCashorbank);
 
-    setPartyid(voucherdetail[0]?.AccountId);
-    setBankId(voucherdetail[1]?.AccountId);
+    setReceiptsafeDate(dayjs(formattedvoucherdate));
+    setchequesafeDate(dayjs(formattedchequedate));
+    setkachipavatisafeDate(dayjs(formattedkachipavtidate));
+
+    setVoucherNo(voucherheader.VoucherNo);
+    // setVoucherDate(formattedvoucherdate); // Convert to Date object if needed
+    // setSelectedCashorbank(voucherheader.selectedCashorbank);
+    setBankId(voucherdetail[0]?.AccountId);
+
+    setPartyid(voucherdetail[1]?.AccountId);
 
     // setPartyid(voucherdetail[1]?.AccountId);
     // setBankId(voucherdetail[0]?.AccountId);
@@ -276,8 +412,8 @@ function Receiptvoucher() {
     setTowards(Number(voucherheader.Towards));
     setNarration(voucherheader.Narration);
     setChequeNo(voucherheader.ChequeNo);
-    setChequeDate(formattedchequedate); // Convert to Date object
-    setKachiPavatiDate(formattedkachipavtidate);
+    // setChequeDate(formattedchequedate); // Convert to Date object
+    // setKachiPavatiDate(formattedkachipavtidate);
     setKachiPavatiNo(voucherheader.KachiPavatiNo);
     setPaymenttype(voucherheader.PaymentType);
     console.log(voucherheader, "voucher header");
@@ -363,15 +499,37 @@ function Receiptvoucher() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const formattedVoucherdate = moment(VoucherDate).format("YYYY-MM-DD");
-    const formattedchequedate = moment(ChequeDate).format("YYYY-MM-DD");
+    if (
+      !receiptsafeDate ||
+      !dayjs(receiptsafeDate).isValid() ||
+      dateError ||
+      !chequesafeDate ||
+      !dayjs(chequesafeDate).isValid() ||
+      chequedateerror ||
+      !kachipavatisafeDate ||
+      !dayjs(kachipavatisafeDate).isValid() ||
+      kachipavatidateerror
+    ) {
+      toast.error("Please correct all the date fields before submitting.");
+      return;
+    }
+
+    console.log("receiptsafeDate state before formatting:", receiptsafeDate);
+
+    const formattedVoucherdate = dayjs(receiptsafeDate).format("YYYY-MM-DD");
+    console.log(formattedVoucherdate, "format voucher date");
+    console.log(
+      "moment(receiptsafeDate).format:",
+      dayjs(receiptsafeDate).format("YYYY-MM-DD")
+    );
+    const formattedchequedate = dayjs(chequesafeDate).format("YYYY-MM-DD");
     const formattedkachipavtidate =
-      moment(KachiPavatiDate).format("YYYY-MM-DD");
+      dayjs(kachipavatisafeDate).format("YYYY-MM-DD");
 
     const headerData = {
       Id: isEditing ? id : "",
       VoucherType: "RE",
-      VoucherNo: VoucherNo ? VoucherNo : null, // Ensures it takes `null` if `VoucherNo` is not provided
+      VoucherNo: VoucherNo ? VoucherNo : null,
       VoucherDate: formattedVoucherdate,
       ChequeNo: ChequeNo,
       ChequeDate: formattedchequedate,
@@ -406,8 +564,8 @@ function Receiptvoucher() {
       const srn1Id = voucherId; // Same ID for SRN:1
       const srn2Id = srn1Id + 1; // Generate a different ID for SRN:2 (You can modify this logic)
 
-      const formattedVoucherdate = moment(VoucherDate).format("YYYY-MM-DD");
-      const formattedchequedate = moment(ChequeDate).format("YYYY-MM-DD");
+      const formattedVoucherdate = dayjs(receiptsafeDate).format("YYYY-MM-DD");
+      const formattedchequedate = dayjs(chequesafeDate).format("YYYY-MM-DD");
 
       const detailsData = [
         {
@@ -519,7 +677,7 @@ function Receiptvoucher() {
         header: "Voucher Date",
         size: 50,
         Cell: ({ cell }) => {
-          const date = moment(cell.getValue()).format("DD-MM-YYYY");
+          const date = dayjs(cell.getValue()).format("DD-MM-YYYY");
           return <span>{date}</span>;
         },
       },
@@ -592,7 +750,7 @@ function Receiptvoucher() {
           PaperProps={{
             sx: {
               borderRadius: isSmallScreen ? "0" : "10px 0 0 10px",
-              width: isSmallScreen ? "100%" : "65%",
+              width: isSmallScreen ? "100%" : "80%",
               zIndex: 1000,
             },
           }}>
@@ -655,21 +813,25 @@ function Receiptvoucher() {
                 <Typography variant="body2" fontWeight="bold">
                   Receipt Date
                 </Typography>
-                <LocalizationProvider dateAdapter={AdapterDateFns}>
+                <LocalizationProvider dateAdapter={AdapterDayjs}>
                   <DatePicker
-                    value={VoucherDate ? new Date(VoucherDate) : null}
-                    onChange={(newValue) => setVoucherDate(newValue)}
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        error={!!errors.VoucherDate}
-                        helperText={errors.VoucherDate}
-                      />
-                    )}
+                    // label="Receipt Date"
+                    value={receiptsafeDate || null}
+                    onChange={handleDateChange1}
+                    format="DD-MM-YYYY"
                     slotProps={{
-                      textField: { size: "small", fullWidth: true },
+                      textField: {
+                        size: "small",
+                        fullWidth: true,
+                        error: !!dateError,
+                        helperText: dateError,
+                      },
                     }}
-                    format="dd-MM-yyyy"
+                    sx={{
+                      marginTop: "10px",
+                      marginBottom: "5px",
+                      width: "250px",
+                    }}
                   />
                 </LocalizationProvider>
               </Box>
@@ -774,7 +936,7 @@ function Receiptvoucher() {
             <Box sx={{ display: "flex", gap: 1 }} mt={2} component="fieldset">
               <Box>
                 <Typography variant="body2" fontWeight="bold">
-                  Cheque/DD
+                  Cheque/DD/NEFT
                 </Typography>
                 <FormControl size="small" margin="none">
                   <RadioGroup
@@ -791,6 +953,12 @@ function Receiptvoucher() {
                       value="dd"
                       control={<Radio />}
                       label="DD"
+                      size="small"
+                    />
+                    <FormControlLabel
+                      value="neft"
+                      control={<Radio />}
+                      label="NEFT"
                       size="small"
                     />
                   </RadioGroup>
@@ -839,7 +1007,11 @@ function Receiptvoucher() {
                 {/* Cheque or DD No */}
                 <Box flex={2}>
                   <Typography fontWeight="bold" variant="body2">
-                    {ChequeorDDType === "cheque" ? "Cheque No" : "DD No"}
+                    {ChequeorDDType === "cheque"
+                      ? "Cheque No"
+                      : ChequeorDDType === "dd"
+                      ? "DD No"
+                      : "Transaction ID / UTR No"}
                   </Typography>
                   <TextField
                     value={ChequeNo}
@@ -847,7 +1019,11 @@ function Receiptvoucher() {
                     size="small"
                     margin="none"
                     placeholder={
-                      ChequeorDDType === "cheque" ? "Cheque No" : "DD No"
+                      ChequeorDDType === "cheque"
+                        ? "Enter Cheque No"
+                        : ChequeorDDType === "dd"
+                        ? "Enter DD No"
+                        : "Enter Transaction ID / UTR No"
                     }
                     fullWidth
                   />
@@ -855,23 +1031,25 @@ function Receiptvoucher() {
 
                 <Box flex={2}>
                   <Typography fontWeight="bold" variant="body2">
-                    Cheque Date{" "}
+                    {ChequeorDDType === "cheque"
+                      ? "Cheque Date"
+                      : ChequeorDDType === "dd"
+                      ? "DD Date"
+                      : "Transaction Date"}
                   </Typography>
-                  <LocalizationProvider dateAdapter={AdapterDateFns}>
+                  <LocalizationProvider dateAdapter={AdapterDayjs}>
                     <DatePicker
-                      value={ChequeDate ? new Date(ChequeDate) : null}
-                      onChange={(newValue) => setChequeDate(newValue)}
-                      renderInput={(params) => (
-                        <TextField
-                          {...params}
-                          error={!!errors.ChequeDate}
-                          helperText={errors.ChequeDate}
-                        />
-                      )}
+                      value={chequesafeDate}
+                      onChange={handleDateChange2}
+                      format="DD-MM-YYYY"
                       slotProps={{
-                        textField: { size: "small", fullWidth: true },
+                        textField: {
+                          size: "small",
+                          fullWidth: true,
+                          error: !!chequedateerror,
+                          helperText: chequedateerror,
+                        },
                       }}
-                      format="dd-MM-yyyy"
                     />
                   </LocalizationProvider>
                 </Box>
@@ -923,21 +1101,19 @@ function Receiptvoucher() {
                 <Typography fontWeight="bold" variant="body2">
                   Kachi Pavati Date
                 </Typography>
-                <LocalizationProvider dateAdapter={AdapterDateFns}>
+                <LocalizationProvider dateAdapter={AdapterDayjs}>
                   <DatePicker
-                    value={KachiPavatiDate ? new Date(KachiPavatiDate) : null} // Convert to Date object
-                    onChange={(newValue) => setKachiPavatiDate(newValue)}
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        error={!!errors.KachiPavatiDate}
-                        helperText={errors.KachiPavatiDate}
-                      />
-                    )}
+                    value={kachipavatisafeDate}
+                    onChange={handleDateChange3}
+                    format="DD-MM-YYYY"
                     slotProps={{
-                      textField: { size: "small", fullWidth: true },
+                      textField: {
+                        size: "small",
+                        fullWidth: true,
+                        error: !!kachipavatidateerror,
+                        helperText: kachipavatidateerror,
+                      },
                     }}
-                    format="dd-MM-yyyy"
                   />
                 </LocalizationProvider>
               </Box>

@@ -34,7 +34,7 @@ function Salesinvoiceprint() {
           `https://publication.microtechsolutions.net.in/php/getsellsinvoiceprintbyid.php?Id=${id}`
         );
         setInvoiceData(response.data);
-        console.log(invoiceData, "invoiceData");
+        console.log(response.data, "invoiceData"); // ✅ Log the actual response
       } catch (error) {
         console.error("Error fetching invoice data:", error);
       } finally {
@@ -156,7 +156,22 @@ function Salesinvoiceprint() {
   const handleCancel = () => {
     navigate("/transaction/salesinvoice");
   };
-  if (invoiceData.length === 0) {
+
+  if (loading) {
+    return (
+      <div
+        style={{
+          textAlign: "center",
+          marginTop: "50px",
+          fontSize: "18px",
+          color: "blue",
+        }}>
+        ⏳ Loading invoice data...
+      </div>
+    );
+  }
+
+  if (!loading && invoiceData.length === 0) {
     return (
       <div
         style={{
@@ -533,7 +548,7 @@ function Salesinvoiceprint() {
                 style={{
                   width: "10mm",
                   textAlign: "center",
-                  marginLeft: "13mm",
+                  marginLeft: "11mm",
                   marginTop: "1mm",
                   height: "3mm",
                   // border: "1px solid black",
@@ -627,6 +642,7 @@ function Salesinvoiceprint() {
         <Button
           onClick={handlePrint}
           variant="contained"
+          disabled={loading || invoiceData.length === 0} // ✅ Disable during load
           style={{ background: "#0a60bd", color: "white", marginRight: "5px" }}>
           Print
         </Button>

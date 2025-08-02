@@ -59,6 +59,9 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { DatePicker } from "@mui/x-date-pickers";
 import { Edit, Delete, Add, MoreVert, Print } from "@mui/icons-material";
+import dayjs from "dayjs";
+
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 
 function Bookpurchase() {
   const [userId, setUserId] = useState("");
@@ -74,8 +77,8 @@ function Bookpurchase() {
     fetchPurchases();
   }, []);
 
-  const [pageIndex, setPageIndex] = useState(1); // Current page
-  const [totalPages, setTotalPages] = useState(1);
+  // const [pageIndex, setPageIndex] = useState(1); // Current page
+  // const [totalPages, setTotalPages] = useState(1);
   const [PurchaseNo, setPurchaseNo] = useState(null);
   const [PurchaseDate, setPurchaseDate] = useState("");
   const [SupplierId, setSupplierId] = useState("");
@@ -83,6 +86,7 @@ function Bookpurchase() {
   const [BillDate, setBillDate] = useState("");
   const [PurchaseAccountId, setPurchaseAccountId] = useState("");
   const [TaxId, setTaxId] = useState("");
+  const [AccountId, setAccountid] = useState("");
   const [CGST, setCGST] = useState("");
   const [SGST, setSGST] = useState("");
   const [IGST, setIGST] = useState("");
@@ -96,7 +100,7 @@ function Bookpurchase() {
   const [RoundOff, setRoundOff] = useState("");
   const [Total, setTotal] = useState("");
   const [TotalCopies, setTotalCopies] = useState("");
-  const [IsPaperPurchase, setIsPaperPurchase] = useState("false");
+  const [IsPaperPurchase, setIsPaperPurchase] = useState(false);
   const [Remark, setRemark] = useState("");
 
   const [currentRow, setCurrentRow] = useState(null);
@@ -164,23 +168,23 @@ function Bookpurchase() {
   useEffect(() => {
     fetchPurchases();
     console.log("this function is called");
-  }, [pageIndex]); // Fetch data when page changes
+  }, []); // Fetch data when page changes
 
   const fetchPurchases = async () => {
     try {
       const response = await axios.get(
-        `https://publication.microtechsolutions.net.in/php/get/gettblpage.php?Table=PurchaseHeader&PageNo=${pageIndex}`
+        `https://publication.microtechsolutions.net.in/php/get/getbyid.php?Table=Purchaseheader&Colname=IsPaperPurchase&Colvalue=false&Colname2=Active&Colvalue2=true
+`
       );
-      // setSellschallans(response.data);
-      console.log(response.data, "response of sells challan header");
 
-      setPurchases(response.data.data);
-      setTotalPages(response.data.total_pages);
+      // setSellschallans(response.data);
+      console.log(response.data, "response of book purchase header");
+
+      setPurchases(response.data);
     } catch (error) {
-      // toast.error("Error fetching sells challans:", error);
+      console.error("Error fetching Book purchases:", error);
     }
   };
-
   // Fetch the purchase details
   const fetchPurchasesDetails = async () => {
     try {
@@ -202,6 +206,7 @@ function Bookpurchase() {
         value: book.Id,
         label: book.BookName || book.BookNameMarathi,
         code: book.BookCode,
+        price: book.BookRate,
       }));
       setBookOptions(bookOptions);
     } catch (error) {
@@ -256,51 +261,93 @@ function Bookpurchase() {
     setTotal(total);
   };
 
+  const [purchasesafedate, setPurchasesafedate] = useState(dayjs());
+  const [purchaseerror, setPurchaseerror] = useState("");
+  const [billsafedate, setBillsafedate] = useState(dayjs());
+  const [billerror, setBillerror] = useState("");
+
+  const handleDateChange1 = (newValue) => {
+    if (!newValue || !dayjs(newValue).isValid()) {
+      setPurchaseerror("Invalid date");
+      setPurchasesafedate(null);
+      return;
+    }
+
+    const today = dayjs();
+    const minDate = today.subtract(3, "day");
+    const maxDate = today.add(2, "day");
+
+    if (newValue.isBefore(minDate) || newValue.isAfter(maxDate)) {
+      setPurchaseerror("You can select only 2 days before or after today");
+    } else {
+      setPurchaseerror("");
+    }
+
+    setPurchasesafedate(newValue);
+  };
+
+  const handleDateChange2 = (newValue) => {
+    if (!newValue || !dayjs(newValue).isValid()) {
+      setBillerror("Invalid date");
+      setBillsafedate(null);
+      return;
+    }
+
+    const today = dayjs();
+    const minDate = today.subtract(3, "day");
+    const maxDate = today.add(2, "day");
+
+    if (newValue.isBefore(minDate) || newValue.isAfter(maxDate)) {
+      setBillerror("You can select only 2 days before or after today");
+    } else {
+      setBillerror("");
+    }
+
+    setBillsafedate(newValue);
+  };
+
   const handleInputChange = (index, field, value) => {
     const updatedRows = [...rows];
-
-    // Update the value of the current field
     updatedRows[index][field] = value;
 
-    if (field === "BookId") {
-      // Update BookId and BookCode when a book is selected
-      const selectedBook = bookOptions.find((option) => option.value === value);
-      if (selectedBook) {
-        updatedRows[index].BookCode = selectedBook.BookCode; // Assuming BookCode is available in the bookOptions
-      }
-    }
+    // Always fetch rate based on BookId
+    const selectedBook = bookOptions.find(
+      (book) => book.value === updatedRows[index].BookId
+    );
+    updatedRows[index].Rate = selectedBook
+      ? parseFloat(selectedBook.price) || 0
+      : 0;
 
-    // Calculate the Amount when Copies and Rate are entered
-    if (field === "Copies" || field === "Rate") {
-      const copies = updatedRows[index].Copies || 0;
-      const rate = updatedRows[index].Rate || 0;
-      updatedRows[index].Amount = copies * rate;
-    }
+    const copies = parseFloat(updatedRows[index].Copies) || 0;
+    const rate = parseFloat(updatedRows[index].Rate) || 0;
 
-    // Calculate the DiscountAmount and FinalAmount when DiscountPercentage is entered
-    if (
-      field === "DiscountPercentage" ||
-      field === "Copies" ||
-      field === "Rate"
-    ) {
-      const discountPercentage = updatedRows[index].DiscountPercentage || 0;
-      const amount = updatedRows[index].Amount || 0;
-      updatedRows[index].DiscountAmount = (amount * discountPercentage) / 100;
-      updatedRows[index].Amount = amount - updatedRows[index].DiscountAmount;
-    }
+    // Calculate original total
+    const originalAmount = copies * rate;
 
-    // Update the state with the new row data
+    // Discount logic
+    const discountPercentage =
+      parseFloat(updatedRows[index].DiscountPercentage) || 0;
+    const discountAmount = (originalAmount * discountPercentage) / 100;
+
+    // Amount after discount (final amount)
+    const finalAmount = originalAmount - discountAmount;
+
+    // Assign values
+    updatedRows[index].DiscountAmount = discountAmount;
+    updatedRows[index].Amount = finalAmount; // This will show in the "Amount" column
+
+    // Update state
     setRows(updatedRows);
-    calculateTotals();
   };
 
   const handleAddRow = () => {
     setRows([
       ...rows,
       {
+        SerialNo: "",
+
         BookCode: "",
         BookId: "", // This will be empty for new rows
-        SerialNo: "",
         Copies: "",
         Rate: "",
         DiscountPercentage: "",
@@ -320,10 +367,14 @@ function Bookpurchase() {
 
   const resetForm = () => {
     setPurchaseNo("");
-    setPurchaseDate("");
+    // setPurchaseDate("");
+    setPurchasesafedate(dayjs());
+    setPurchaseerror("");
     setSupplierId("");
     setBillNo("");
-    setBillDate("");
+    // setBillDate("");
+    setBillsafedate(dayjs());
+    setBillerror("");
     setPurchaseAccountId("");
     setTaxId("");
     setCGST("");
@@ -410,16 +461,18 @@ function Bookpurchase() {
       Id: detail.Id, // Include the detail Id in the mapped row for tracking
     }));
 
-    const purchaseDate = convertDateForInput(bookpurchase.PurchaseDate.date);
+    const purchaseDate = dayjs(bookpurchase.PurchaseDate?.date);
 
-    const billdate = convertDateForInput(bookpurchase.BillDate.date);
+    const billdate = dayjs(bookpurchase.BillDate?.date);
 
     // Set the form fields
     setPurchaseNo(bookpurchase.PurchaseNo);
-    setPurchaseDate(purchaseDate);
+    // setPurchaseDate(purchaseDate);
+    setPurchasesafedate(purchaseDate);
     setSupplierId(bookpurchase.SupplierId);
     setBillNo(bookpurchase.BillNo);
-    setBillDate(billdate);
+    // setBillDate(billdate);
+    setBillsafedate(billdate);
     setPurchaseAccountId(bookpurchase.PurchaseAccountId);
     setTaxId(bookpurchase.TaxId);
     setCGST(bookpurchase.CGST);
@@ -483,8 +536,12 @@ function Bookpurchase() {
     const myHeaders = new Headers();
     myHeaders.append("Content-Type", "application/x-www-form-urlencoded");
 
+    // Prepare URL with dynamic parameters
+    const url = `https://publication.microtechsolutions.net.in/php/deletetable.php?Id=${deleteId}&Table=Purchaseheader`;
+
     const urlencoded = new URLSearchParams();
     urlencoded.append("Id", deleteId);
+    urlencoded.append("Table", "Purchaseheader");
 
     const requestOptions = {
       method: "POST",
@@ -493,17 +550,19 @@ function Bookpurchase() {
       redirect: "follow",
     };
 
-    fetch(
-      "https://publication.microtechsolutions.net.in/php/Purchasedelete.php",
-      requestOptions
-    )
-      .then((response) => response.text())
-      .then((result) => console.log(result))
-      .catch((error) => console.error(error));
-    toast.success("Purchase Deleted Successfully");
-    setIsDeleteDialogOpen(false);
-    // setDeleteIndex(deleteIndex)
-    fetchPurchases();
+    // Send the request to the server with dynamic URL
+    fetch(url, requestOptions)
+      .then((response) => response.text()) // Handle the response
+      .then((result) => {
+        console.log(result);
+        toast.success("Book Purchase Deleted Successfully"); // Show success toast
+        setIsDeleteDialogOpen(false); // Close delete dialog
+        fetchPurchases(); // Refresh vouchers list
+      })
+      .catch((error) => {
+        console.error("Error:", error);
+        // toast.error('Failed to delete Sales challan'); // Show error toast if it fails
+      });
   };
 
   const cancelDelete = () => {
@@ -519,8 +578,8 @@ function Bookpurchase() {
     //   formErrors.PurchaseNo = "Purchase No  is required.";
     //   isValid = false;
     // }
-    if (!PurchaseDate) {
-      formErrors.PurchaseDate = "Purchase Date is required.";
+    if (!purchasesafedate) {
+      formErrors.purchasesafedate = "Purchase Date is required.";
       isValid = false;
     }
 
@@ -534,8 +593,8 @@ function Bookpurchase() {
       isValid = false;
     }
 
-    if (!BillDate) {
-      formErrors.BillDate = "Bill date is required.";
+    if (!billsafedate) {
+      formErrors.billsafedate = "Bill date is required.";
       isValid = false;
     }
 
@@ -544,8 +603,8 @@ function Bookpurchase() {
       isValid = false;
     }
 
-    if (!TaxId) {
-      formErrors.TaxId = "Tax Id is required.";
+    if (!AccountId) {
+      formErrors.AccountId = "Tax Id is required.";
       isValid = false;
     }
 
@@ -627,8 +686,20 @@ function Bookpurchase() {
     e.preventDefault();
     if (!validateForm()) return;
 
-    const formattedPurchaseDate = moment(PurchaseDate).format("YYYY-MM-DD");
-    const formattedBillDate = moment(BillDate).format("YYYY-MM-DD");
+    if (
+      !purchasesafedate ||
+      !dayjs(purchasesafedate).isValid() ||
+      purchaseerror ||
+      !billsafedate ||
+      !dayjs(billsafedate).isValid() ||
+      billerror
+    ) {
+      toast.error("Please correct all the date fields before submitting.");
+      return;
+    }
+
+    const formattedPurchaseDate = dayjs(purchasesafedate).format("YYYY-MM-DD");
+    const formattedBillDate = dayjs(billsafedate).format("YYYY-MM-DD");
 
     const purchaseData = {
       Id: isEditing ? id : "", // Include the Id for updating, null for new records
@@ -638,7 +709,7 @@ function Bookpurchase() {
       BillNo: BillNo,
       BillDate: formattedBillDate,
       PurchaseAccountId: PurchaseAccountId,
-      TaxId: TaxId,
+      TaxId: AccountId,
       CGST: CGST,
       SGST: SGST,
       IGST: IGST,
@@ -652,7 +723,7 @@ function Bookpurchase() {
       RoundOff: RoundOff,
       Total: Total,
       TotalCopies: TotalCopies,
-      IsPaperPurchase: IsPaperPurchase,
+      IsPaperPurchase: "false",
       Remark: Remark,
 
       CreatedBy: !isEditing ? userId : undefined,
@@ -661,8 +732,8 @@ function Bookpurchase() {
 
     try {
       const purchaseUrl = isEditing
-        ? "https://publication.microtechsolutions.net.in/php/Purchaseheaderupdate.php"
-        : "https://publication.microtechsolutions.net.in/php/Purchaseheaderpost.php";
+        ? "https://publication.microtechsolutions.net.in/php/Purchaseupdate.php"
+        : "https://publication.microtechsolutions.net.in/php/Purchasepost.php";
 
       // Submit purchase header data
       const response = await axios.post(
@@ -724,82 +795,6 @@ function Bookpurchase() {
       toast.error("Error saving record!");
     }
   };
-
-  // const handleSubmit = async (e) => {
-  //   e.preventDefault();
-  //   if (!validateForm()) return;
-
-  //   const formattedPurchaseDate = moment(PurchaseDate).format('YYYY-MM-DD');
-  //   const formattedBillDate = moment(BillDate).format('YYYY-MM-DD');
-
-  //   const purchaseData = {
-  //     PurchaseNo: PurchaseNo,
-  //     PurchaseDate: formattedPurchaseDate,
-  //     SupplierId: SupplierId,
-  //     BillNo: BillNo,
-  //     BillDate: formattedBillDate,
-  //     PurchaseAccountId: PurchaseAccountId,
-  //     TaxId: TaxId,
-  //     CGST: CGST,
-  //     SGST: SGST,
-  //     IGST: IGST,
-  //     SubTotal: SubTotal,
-  //     Extra1: Extra1,
-  //     Extra1Amount: Extra1Amount,
-  //     Extra2: Extra2,
-  //     Extra2Amount: Extra2Amount,
-  //     Extra3: Extra3,
-  //     Extra3Amount: Extra3Amount,
-  //     RoundOff: RoundOff,
-  //     Total: Total,
-  //     TotalCopies: TotalCopies,
-  //     IsPaperPurchase: IsPaperPurchase,
-  //     Remark: Remark
-  //   };
-
-  //   try {
-  //     const purchaseUrl = isEditing
-  //       ? "https://publication.microtechsolutions.net.in/php/Purchaseupdate.php"
-  //       : "https://publication.microtechsolutions.net.in/php/Purchasepost.php";
-
-  //     const response = await axios.post(purchaseUrl, purchaseData, {
-  //       headers: { "Content-Type": "application/x-www-form-urlencoded" },
-  //     });
-
-  //     const purchaseresp = response.data.Id;
-  //     const purchaseId = parseInt(purchaseresp);
-
-  //      for (const row of rows) {
-  //   const rowData = {
-  //         PurchaseId: purchaseId,
-  //         SerialNo: rows.indexOf(row) + 1,
-  //         BookId: parseInt(row.BookId, 10),
-  //         Copies: parseInt(row.Copies, 10),
-  //         Rate: parseFloat(row.Rate),
-  //         DiscountPercentage: parseFloat(row.DiscountPercentage),
-  //         DiscountAmount: parseFloat(row.DiscountAmount),
-  //         Amount: parseFloat(row.Amount)
-  //       };
-
-  //       const purchasedetailUrl = isEditing
-  //               ? "https://publication.microtechsolutions.net.in/php/Purchasedetailupdate.php"
-  //               : "https://publication.microtechsolutions.net.in/php/Purchasedetailpost.php";
-
-  //               await axios.post(purchasedetailUrl, qs.stringify(rowData), {
-  //                 headers: {
-  //                   "Content-Type": "application/x-www-form-urlencoded",
-  //                 },
-  //               });
-  //           }
-
-  //     toast.success(isEditing ? 'Purchase & Purchase Details updated successfully!' : 'Purchase & Purchase Details added successfully!');
-  //     setIsModalOpen(false);
-  //     fetchPurchases();
-  //   } catch (error) {
-  //     console.error("Error saving record:", error);
-  //     toast.error('Error saving record!');
-  //   }
-  // };
 
   const columns = useMemo(
     () => [
@@ -863,10 +858,10 @@ function Bookpurchase() {
   const table = useMaterialReactTable({
     columns,
     data: purchases,
-    enablePagination: false,
+    enablePagination: true, // ✅ default is true, can be omitted
     muiTableHeadCellProps: {
       style: {
-        backgroundColor: "#E9ECEF", // Replace with your desired color
+        backgroundColor: "#E9ECEF",
         color: "black",
         fontSize: "16px",
       },
@@ -904,7 +899,7 @@ function Bookpurchase() {
             </Box>{" "}
           </div>
           {/* Pagination Controls */}
-          <div
+          {/* <div
             style={{
               display: "flex",
               alignItems: "center",
@@ -937,7 +932,7 @@ function Bookpurchase() {
               Next ▶
             </Button>{" "}
             Total Pages : {totalPages}
-          </div>{" "}
+          </div>{" "} */}
         </div>
 
         {isModalOpen && (
@@ -970,7 +965,7 @@ function Bookpurchase() {
                     name="PurchaseNo"
                     value={PurchaseNo}
                     onChange={(e) => setPurchaseNo(e.target.value)}
-                    style={{ background: "#f5f5f5" }}
+                    style={{ background: "#f5f5f5", width: "120px" }}
                     className="bookpurchase-control"
                     placeholder="Auto-Incremented"
                     readOnly
@@ -989,15 +984,26 @@ function Bookpurchase() {
                   Purchase Date <b className="required">*</b>
                 </label>
                 <div>
-                  <input
-                    type="date"
-                    id="PurchaseDate"
-                    name="PurchaseDate"
-                    value={PurchaseDate}
-                    onChange={(e) => setPurchaseDate(e.target.value)}
-                    className="bookpurchase-control"
-                    placeholder="Enter Purchase Date"
-                  />
+                  <LocalizationProvider dateAdapter={AdapterDayjs}>
+                    <DatePicker
+                      value={purchasesafedate}
+                      onChange={handleDateChange1}
+                      format="DD-MM-YYYY"
+                      slotProps={{
+                        textField: {
+                          size: "small",
+                          fullWidth: true,
+                          error: !!purchaseerror,
+                          helperText: purchaseerror,
+                        },
+                      }}
+                      sx={{
+                        marginTop: "10px",
+                        marginBottom: "5px",
+                        width: "180px",
+                      }}
+                    />
+                  </LocalizationProvider>
                 </div>
 
                 <div>
@@ -1032,7 +1038,7 @@ function Bookpurchase() {
                         fullWidth
                       />
                     )}
-                    sx={{ mt: 1.25, mb: 0.625, width: 170 }} // Equivalent to 10px and 5px
+                    sx={{ mt: 1.25, mb: 0.625, width: 235 }} // Equivalent to 10px and 5px
                   />
                 </div>
 
@@ -1054,6 +1060,7 @@ function Bookpurchase() {
                     value={BillNo}
                     onChange={(e) => setBillNo(e.target.value)}
                     maxLength={15}
+                    style={{ width: "100px" }}
                     className="bookpurchase-control"
                     placeholder="Enter Bill No"
                   />
@@ -1071,15 +1078,26 @@ function Bookpurchase() {
                   Bill Date <b className="required">*</b>
                 </label>
                 <div>
-                  <input
-                    type="date"
-                    id="BillDate"
-                    name="BillDate"
-                    value={BillDate}
-                    onChange={(e) => setBillDate(e.target.value)}
-                    className="bookpurchase-control"
-                    placeholder="Enter Bill date"
-                  />
+                  <LocalizationProvider dateAdapter={AdapterDayjs}>
+                    <DatePicker
+                      value={billsafedate}
+                      onChange={handleDateChange2}
+                      format="DD-MM-YYYY"
+                      slotProps={{
+                        textField: {
+                          size: "small",
+                          fullWidth: true,
+                          error: !!billerror,
+                          helperText: billerror,
+                        },
+                      }}
+                      sx={{
+                        marginTop: "10px",
+                        marginBottom: "5px",
+                        width: "180px",
+                      }}
+                    />
+                  </LocalizationProvider>
                 </div>
 
                 <div>
@@ -1114,7 +1132,7 @@ function Bookpurchase() {
                         fullWidth
                       />
                     )}
-                    sx={{ mt: 1.25, mb: 0.625, width: 170 }} // Equivalent to 10px and 5px
+                    sx={{ mt: 1.25, mb: 0.625, width: 245 }} // Equivalent to 10px and 5px
                   />
                 </div>
 
@@ -1204,7 +1222,7 @@ function Bookpurchase() {
                                 newValue ? newValue.value : ""
                               )
                             }
-                            sx={{ width: 250 }} // Set width
+                            sx={{ width: 500 }} // Set width
                             getOptionLabel={(option) => option.label}
                             renderInput={(params) => (
                               <TextField
@@ -1233,13 +1251,13 @@ function Bookpurchase() {
                               handleInputChange(index, "Copies", e.target.value)
                             }
                             style={{
-                              width: "150px",
+                              width: "100px",
                             }}
                             placeholder="Copies"
                           />
                         </td>
                         <td>
-                          <input
+                          {/* <input
                             type="number"
                             value={row.Rate}
                             onChange={(e) => {
@@ -1256,6 +1274,14 @@ function Bookpurchase() {
                               width: "150px",
                             }}
                             placeholder="Rate"
+                          /> */}
+
+                          <input
+                            type="number"
+                            value={row.Rate}
+                            readOnly
+                            style={{ width: "100px" }}
+                            className="bookpurchase-control"
                           />
                         </td>
                         <td>
@@ -1277,7 +1303,7 @@ function Bookpurchase() {
                               }
                             }}
                             style={{
-                              width: "150px",
+                              width: "100px",
                             }}
                             placeholder="Discount %"
                           />
@@ -1288,7 +1314,7 @@ function Bookpurchase() {
                             value={row.DiscountAmount}
                             readOnly
                             style={{
-                              width: "150px",
+                              width: "100px",
                             }}
                             placeholder="Discount Amount"
                           />
@@ -1299,7 +1325,7 @@ function Bookpurchase() {
                             value={row.Amount}
                             readOnly
                             style={{
-                              width: "150px",
+                              width: "100px",
                             }}
                             placeholder="Amount"
                           />
@@ -1339,11 +1365,13 @@ function Bookpurchase() {
                 </label>
                 <div>
                   <Select
-                    id="TaxId"
-                    name="TaxId"
-                    value={tdsOptions.find((option) => option.value === TaxId)}
+                    id="AccountId"
+                    name="AccountId"
+                    value={accountOptions.find(
+                      (option) => option.value === AccountId
+                    )}
                     onChange={(option) => setTaxId(option.value)}
-                    options={tdsOptions}
+                    options={accountOptions}
                     styles={{
                       control: (base) => ({
                         ...base,
@@ -1358,12 +1386,14 @@ function Bookpurchase() {
                         zIndex: 100,
                       }),
                     }}
-                    placeholder="Select Tax id"
+                    placeholder="Select Tax Id"
                   />
                 </div>
 
                 <div>
-                  {errors.TaxId && <b className="error-text">{errors.TaxId}</b>}
+                  {errors.AccountId && (
+                    <b className="error-text">{errors.AccountId}</b>
+                  )}
                 </div>
               </div>
               <div>
@@ -1741,7 +1771,7 @@ function Bookpurchase() {
                 </div>
               </div>
 
-              <div>
+              {/* <div>
                 <label className="bookpurchase-label">Is Paper Puchase:</label>
                 <div>
                   <input
@@ -1754,12 +1784,12 @@ function Bookpurchase() {
                     placeholder="Select Is paper purchase"
                   />
                 </div>
-                {/* <div>
+                <div>
                   {errors.IsPaperPurchase && (
                     <b className="error-text">{errors.IsPaperPurchase}</b>
                   )}
-                </div> */}
-              </div>
+                </div> 
+              </div> */}
 
               <div>
                 <label className="bookpurchase-label">

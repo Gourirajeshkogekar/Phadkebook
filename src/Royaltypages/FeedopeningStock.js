@@ -45,6 +45,13 @@ function FeedOpeningStock() {
 
   const handleBookcodechange = (e) => {
     const value = e.target.value;
+
+    if (value.trim() === "") {
+      // Reset all fields if input is cleared
+      resetForm();
+      return; // Don't fetch
+    }
+
     setBookCode(value);
     if (value.length >= 0 || 2 || 3) {
       fetchBookcodedata(value);

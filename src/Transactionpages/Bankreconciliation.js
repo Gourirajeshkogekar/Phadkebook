@@ -55,6 +55,8 @@ import {
   DialogContent,
   DialogTitle,
 } from "@mui/material";
+import dayjs from "dayjs";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 
 function BankReconciliation() {
   const [userId, setUserId] = useState("");
@@ -168,6 +170,16 @@ function BankReconciliation() {
     console.log("this function is called");
   }, [pageIndex]); // Fetch data when page changes
 
+  const initializeRows = (fetchedData) => {
+    const today = new Date().toISOString().split("T")[0];
+    const filledRows = fetchedData.map((row) => ({
+      ...row,
+      Trans_dt: row.Trans_dt || today,
+      Passing_dt: row.Passing_dt || today,
+    }));
+    setRows(filledRows);
+  };
+
   const fetchBankreconcils = async () => {
     try {
       const response = await axios.get(
@@ -177,6 +189,8 @@ function BankReconciliation() {
       console.log(response.data, "response of bank reconcil header");
 
       setBankreconcils(response.data.data);
+      initializeRows(response.data); // ✅ Set cleaned-up data into state
+
       setTotalPages(response.data.total_pages);
     } catch (error) {
       // toast.error("Error fetching bank reconcils:", error);
@@ -197,34 +211,136 @@ function BankReconciliation() {
     }
   };
 
-  const handleInputChange = (index, field, value) => {
-    const updatedRows = [...rows];
+  const [startsafedate, setStartsafedate] = useState(dayjs());
 
-    // Update the value of the current field
-    updatedRows[index][field] = value;
-
-    // Ensure numeric fields are converted correctly
-    if (field === "Cr_Amt" || field === "Deb_Amt") {
-      updatedRows[index][field] = value ? parseFloat(value) || 0 : "";
+  const handleDateChange1 = (newValue) => {
+    if (!newValue || !dayjs(newValue).isValid()) {
+      setDateError("Invalid date");
+      setStartsafedate(null);
+      return;
     }
 
-    // Update the state with the new row data
+    const today = dayjs();
+    const minDate = today.subtract(3, "day");
+    const maxDate = today.add(2, "day");
+
+    if (newValue.isBefore(minDate) || newValue.isAfter(maxDate)) {
+      setDateError("You can select only 2 days before or after today");
+    } else {
+      setDateError("");
+    }
+
+    setStartsafedate(newValue);
+  };
+
+  const [endsafedate, setEndsafedate] = useState(dayjs());
+  const [enddateerror, setEnddateerror] = useState("");
+  const handleDateChange2 = (newValue) => {
+    if (!newValue || !dayjs(newValue).isValid()) {
+      setEnddateerror("Invalid date");
+      setEndsafedate(null);
+      return;
+    }
+
+    const today = dayjs();
+    const minDate = today.subtract(3, "day");
+    const maxDate = today.add(2, "day");
+
+    if (newValue.isBefore(minDate) || newValue.isAfter(maxDate)) {
+      setEnddateerror("You can select only 2 days before or after today");
+    } else {
+      setEnddateerror("");
+    }
+
+    setEndsafedate(newValue);
+  };
+
+  const [bankrecosafedate, setBankrecostartingdate] = useState(dayjs());
+  const [bankrecoerror, setBankrecoerror] = useState("");
+
+  const handleDateChange3 = (newValue) => {
+    if (!newValue || !dayjs(newValue).isValid()) {
+      setBankrecoerror("Invalid date");
+      setBankrecostartingdate(null);
+      return;
+    }
+
+    const today = dayjs();
+    const minDate = today.subtract(3, "day");
+    const maxDate = today.add(2, "day");
+
+    if (newValue.isBefore(minDate) || newValue.isAfter(maxDate)) {
+      setBankrecoerror("You can select only 2 days before or after today");
+    } else {
+      setBankrecoerror("");
+    }
+
+    setBankrecostartingdate(newValue);
+  };
+
+  const [rowErrors, setRowErrors] = useState([]); // array of objects per row
+
+  // const handleInputChange = (index, field, value) => {
+  //   const updatedRows = [...rows];
+
+  //   // Update the value of the current field
+  //   updatedRows[index][field] = value;
+
+  //   // Ensure numeric fields are converted correctly
+  //   if (field === "Cr_Amt" || field === "Deb_Amt") {
+  //     updatedRows[index][field] = value ? parseFloat(value) || 0 : "";
+  //   }
+
+  //   // Update the state with the new row data
+  //   setRows(updatedRows);
+  // };
+
+  const handleInputChange = (index, field, value) => {
+    const updatedRows = [...rows];
+    updatedRows[index][field] = value;
+
+    const selectedDate = dayjs(value);
+    const today = dayjs();
+    const minDate = today.subtract(3, "day");
+    const maxDate = today.add(2, "day");
+
+    const updatedErrors = [...rowErrors];
+    if (!updatedErrors[index]) {
+      updatedErrors[index] = {};
+    }
+
+    if (field === "Trans_dt" || field === "Passing_dt") {
+      if (!selectedDate.isValid()) {
+        updatedErrors[index][field] = "Invalid date";
+      } else if (
+        selectedDate.isBefore(minDate) ||
+        selectedDate.isAfter(maxDate)
+      ) {
+        updatedErrors[index][field] =
+          "You can select only 2 days before or after today";
+      } else {
+        updatedErrors[index][field] = ""; // Clear error
+      }
+    }
+
+    setRowErrors(updatedErrors);
     setRows(updatedRows);
   };
 
   const handleAddRow = () => {
+    const today = new Date().toISOString().split("T")[0];
     setRows([
       ...rows,
       {
         SerialNo: "",
 
-        Trans_dt: "",
+        Trans_dt: today,
         CheqNo: "",
         TrCc: "",
         AccountId: "",
         Cr_Amt: "",
         Deb_Amt: "",
-        Passing_dt: "",
+        Passing_dt: today,
       },
     ]);
   };
@@ -323,8 +439,12 @@ function BankReconciliation() {
 
   const resetForm = () => {
     setBankId("");
-    setStartdate("");
-    setEnddate("");
+    // setStartdate("");
+    setStartsafedate(dayjs());
+    setDateError("");
+    // setEnddate("");
+    setEndsafedate(dayjs());
+    setEnddateerror("");
     setOpbalperledger("");
     setOpbalperpassbook("");
     setBalperledger("");
@@ -333,6 +453,9 @@ function BankReconciliation() {
     setBalaspassbook("");
     setSelectedOption("");
     setBankrecostartingDate("");
+    setBankrecostartingdate(dayjs());
+    setBankrecoerror("");
+    setRowErrors([]);
     setRows([
       {
         SerialNo: "",
@@ -478,11 +601,45 @@ function BankReconciliation() {
     e.preventDefault();
     if (!validateForm()) return;
 
-    const formattedStartDate = moment(Startdate).format("YYYY-MM-DD");
-    const formattedEndDate = moment(Enddate).format("YYYY-MM-DD");
-    const formattedbankrecoStartingdate = moment(Bank_Reco_starting_dt).format(
-      "YYYY-MM-DD"
+    if (!startsafedate || !dayjs(startsafedate).isValid()) {
+      toast.error("Please enter a valid Start Date.");
+      return;
+    }
+
+    if (!endsafedate || !dayjs(endsafedate).isValid()) {
+      toast.error("Please enter a valid End Date.");
+      return;
+    }
+
+    if (!bankrecosafedate || !dayjs(bankrecosafedate).isValid()) {
+      toast.error("Please enter a valid Bank Reco Date.");
+      return;
+    }
+
+    if (dateError || enddateerror || bankrecoerror) {
+      toast.error("Please fix all date-related errors before submitting.");
+      return;
+    }
+
+    // ✅ Check for row-level date errors: ChequeDate, Trans_dt, Passing_dt
+    const hasRowDateErrors = Object.values(rowErrors).some(
+      (row) => row?.ChequeDate || row?.Trans_dt || row?.Passing_dt
     );
+
+    if (hasRowDateErrors) {
+      toast.error("Please fix all Date errors in the table before submitting.");
+      return;
+    }
+
+    const formattedStartDate = startsafedate
+      ? dayjs(startsafedate).format("YYYY-MM-DD")
+      : "";
+    const formattedEndDate = endsafedate
+      ? dayjs(endsafedate).format("YYYY-MM-DD")
+      : "";
+    const formattedbankrecoStartingdate = bankrecosafedate
+      ? dayjs(bankrecosafedate).format("YYYY-MM-DD")
+      : "";
 
     const bankreconcilData = {
       Id: isEditing ? id : "", // Include the Id for updating, null for new records
@@ -525,14 +682,14 @@ function BankReconciliation() {
           BankReconcilationId: bankreconcilId,
           SerialNo: rows.indexOf(row) + 1,
           // Trans_dt: row.Trans_dt ? moment(row.Trans_dt).format('YYYY-MM-DD') : '',
-          Trans_dt: row.Trans_dt || "",
+          Trans_dt: row.Trans_dt || new Date().toISOString().split("T")[0],
           CheqNo: row.CheqNo || "",
           TrCc: row.TrCc || "",
           AccountId: row.AccountId || "",
           Cr_Amt: parseFloat(row.Cr_Amt) || 0, // Ensuring it's a float
           Deb_Amt: parseFloat(row.Deb_Amt) || 0, // Ensuring it's a float
           // Passing_dt: row.Passing_dt ? moment(row.Passing_dt).format('YYYY-MM-DD') : '',
-          Passing_dt: row.Passing_dt,
+          Passing_dt: row.Passing_dt || new Date().toISOString().split("T")[0],
           Id: row.Id,
           CreatedBy: !isEditing ? userId : undefined,
           UpdatedBy: isEditing ? userId : undefined,
@@ -583,6 +740,17 @@ function BankReconciliation() {
       //   header: "Bank Name",
       //   size: 50,
       // },
+
+      {
+        accessorKey: "Bank_Reco_starting_dt.date",
+        header: "Bank Renconcilation Date",
+        size: 50,
+        Cell: ({ cell }) => {
+          // Using moment.js to format the date
+          const date = moment(cell.getValue()).format("DD-MM-YYYY");
+          return <span>{date}</span>;
+        },
+      },
 
       {
         accessorKey: "Startdate.date",
@@ -713,7 +881,7 @@ function BankReconciliation() {
           PaperProps={{
             sx: {
               borderRadius: isSmallScreen ? "0" : "10px 0 0 10px",
-              width: isSmallScreen ? "100%" : "80%",
+              width: isSmallScreen ? "100%" : "85%",
               zIndex: 1000,
               paddingLeft: "16px", // Adjust this value as needed
             },
@@ -747,7 +915,7 @@ function BankReconciliation() {
                   onChange={(event, newValue) =>
                     setBankId(newValue ? newValue.value : null)
                   }
-                  sx={{ width: "250px", mt: "10px", mb: "5px" }}
+                  sx={{ width: "400px", mt: "10px", mb: "5px" }}
                   getOptionLabpxel={(option) => option.label} // Display only label in dropdown
                   renderInput={(params) => (
                     <TextField
@@ -791,37 +959,24 @@ function BankReconciliation() {
             <div>
               <label className="bankreconcil-label">Start Date</label>
               <div>
-                {/* <input
-                    type="date" //mm-dd-yyyy
-                    id="Startdate"
-                     name="Startdate"
-                      value={Startdate}  
-
-                   onChange={(e)=> setStartdate(e.target.value)}
-                    className="bankreconcil-control"
-                    placeholder="dd-mm-yyyy"                    /> */}
-
-                <LocalizationProvider dateAdapter={AdapterDateFns}>
+                <LocalizationProvider dateAdapter={AdapterDayjs}>
                   <DatePicker
-                    value={Startdate ? new Date(Startdate) : null} // Convert to Date object
-                    // value={VoucherDate}
-                    onChange={(newValue) => setStartdate(newValue)}
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        error={!!errors.Startdate}
-                        helperText={errors.Startdate}
-                      />
-                    )}
+                    value={startsafedate}
+                    onChange={handleDateChange1}
+                    format="DD-MM-YYYY"
                     slotProps={{
-                      textField: { size: "small", fullWidth: true },
+                      textField: {
+                        size: "small",
+                        fullWidth: true,
+                        error: !!dateError,
+                        helperText: dateError,
+                      },
                     }}
-                    format="dd/MM/yyyy"
                     sx={{
                       marginTop: "10px",
                       marginBottom: "5px",
                       width: "250px",
-                    }} // Apply margins here
+                    }}
                   />
                 </LocalizationProvider>
               </div>
@@ -833,27 +988,24 @@ function BankReconciliation() {
             <div>
               <label className="bankreconcil-label">End Date</label>
               <div>
-                <LocalizationProvider dateAdapter={AdapterDateFns}>
+                <LocalizationProvider dateAdapter={AdapterDayjs}>
                   <DatePicker
-                    value={Enddate ? new Date(Enddate) : null} // Convert to Date object
-                    // value={VoucherDate}
-                    onChange={(newValue) => setEnddate(newValue)}
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        error={!!errors.Enddate}
-                        helperText={errors.Enddate}
-                      />
-                    )}
+                    value={endsafedate}
+                    onChange={handleDateChange2}
+                    format="DD-MM-YYYY"
                     slotProps={{
-                      textField: { size: "small", fullWidth: true },
+                      textField: {
+                        size: "small",
+                        fullWidth: true,
+                        error: !!enddateerror,
+                        helperText: enddateerror,
+                      },
                     }}
-                    format="dd/MM/yyyy"
                     sx={{
                       marginTop: "10px",
                       marginBottom: "5px",
                       width: "250px",
-                    }} // Apply margins here
+                    }}
                   />
                 </LocalizationProvider>
               </div>
@@ -1028,31 +1180,24 @@ function BankReconciliation() {
                 Bank reco starting date
               </label>
               <div>
-                <LocalizationProvider dateAdapter={AdapterDateFns}>
+                <LocalizationProvider dateAdapter={AdapterDayjs}>
                   <DatePicker
-                    value={
-                      Bank_Reco_starting_dt
-                        ? new Date(Bank_Reco_starting_dt)
-                        : null
-                    } // Convert to Date object
-                    // value={VoucherDate}
-                    onChange={(newValue) => setBankrecostartingDate(newValue)}
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        error={!!errors.Bank_Reco_starting_dt}
-                        helperText={errors.Bank_Reco_starting_dt}
-                      />
-                    )}
+                    value={bankrecosafedate}
+                    onChange={handleDateChange3}
+                    format="DD-MM-YYYY"
                     slotProps={{
-                      textField: { size: "small", fullWidth: true },
+                      textField: {
+                        size: "small",
+                        fullWidth: true,
+                        error: !!bankrecoerror,
+                        helperText: bankrecoerror,
+                      },
                     }}
-                    format="dd/MM/yyyy"
                     sx={{
                       marginTop: "10px",
                       marginBottom: "5px",
                       width: "250px",
-                    }} // Apply margins here
+                    }}
                   />
                 </LocalizationProvider>
               </div>
@@ -1074,7 +1219,7 @@ function BankReconciliation() {
                     Tr.cc<b className="required">*</b>
                   </th>
                   <th>
-                    Acc<b className="required">*</b>
+                    Account<b className="required">*</b>
                   </th>
                   <th>
                     Cr. Amt<b className="required">*</b>
@@ -1119,15 +1264,32 @@ function BankReconciliation() {
                       <td>{index + 1}</td>
 
                       <td>
-                        <input
-                          type="date"
-                          value={row.Trans_dt}
-                          onChange={(e) =>
-                            handleInputChange(index, "Trans_dt", e.target.value)
-                          }
-                          style={{ width: "150px" }}
-                        />
+                        <div
+                          style={{ display: "flex", flexDirection: "column" }}>
+                          <input
+                            type="date"
+                            value={
+                              row.Trans_dt ||
+                              new Date().toISOString().split("T")[0]
+                            }
+                            onChange={(e) =>
+                              handleInputChange(
+                                index,
+                                "Trans_dt",
+                                e.target.value
+                              )
+                            }
+                            style={{ width: "150px" }}
+                            className="bankreconcilation-control"
+                          />
+                          {rowErrors[index]?.Trans_dt && (
+                            <span style={{ color: "red", fontSize: "12px" }}>
+                              {rowErrors[index].Trans_dt}
+                            </span>
+                          )}
+                        </div>
                       </td>
+
                       <td>
                         <input
                           type="text"
@@ -1165,7 +1327,7 @@ function BankReconciliation() {
                               newValue ? newValue.value : ""
                             )
                           }
-                          sx={{ width: "200px" }} // Set width
+                          sx={{ width: "500px" }} // Set width
                           getOptionLabel={(option) => option.label} // Fix the typo
                           renderInput={(params) => (
                             <TextField
@@ -1205,7 +1367,7 @@ function BankReconciliation() {
                           onChange={(e) =>
                             handleInputChange(index, "Cr_Amt", e.target.value)
                           }
-                          style={{ width: "150px" }}
+                          style={{ width: "110px" }}
                           placeholder="Enter Cr Amount"
                         />
                       </td>
@@ -1216,24 +1378,41 @@ function BankReconciliation() {
                           onChange={(e) =>
                             handleInputChange(index, "Deb_Amt", e.target.value)
                           }
-                          style={{ width: "150px" }}
+                          style={{ width: "110px" }}
                           placeholder="Enter Dr Amount"
                         />
                       </td>
+
                       <td>
-                        <input
-                          type="date"
-                          value={row.Passing_dt}
-                          onChange={(e) =>
-                            handleInputChange(
-                              index,
-                              "Passing_dt",
-                              e.target.value
-                            )
-                          }
-                          style={{ width: "150px" }}
-                        />
+                        <div
+                          style={{
+                            display: "flex",
+                            flexDirection: "column",
+                          }}>
+                          <input
+                            type="date"
+                            value={
+                              row.Passing_dt ||
+                              new Date().toISOString().split("T")[0]
+                            }
+                            onChange={(e) =>
+                              handleInputChange(
+                                index,
+                                "Passing_dt",
+                                e.target.value
+                              )
+                            }
+                            style={{ width: "150px" }}
+                            className="bankreconcilation-control"
+                          />
+                          {rowErrors[index]?.Passing_dt && (
+                            <span style={{ color: "red", fontSize: "12px" }}>
+                              {rowErrors[index].Passing_dt}
+                            </span>
+                          )}
+                        </div>
                       </td>
+
                       <td>
                         <div
                           style={{

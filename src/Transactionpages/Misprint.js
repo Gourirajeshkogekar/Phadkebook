@@ -55,6 +55,9 @@ import {
   DialogContent,
   DialogTitle,
 } from "@mui/material";
+import { LocalizationProvider } from "@mui/x-date-pickers";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import dayjs from "dayjs";
 
 function Misprint() {
   const [userId, setUserId] = useState("");
@@ -111,7 +114,7 @@ function Misprint() {
   const [rows, setRows] = useState([
     {
       SerialNo: "",
-
+      BookCode: "",
       BookId: "", // Default value for the first row
       Copies: 0,
       BookRate: 0,
@@ -188,6 +191,7 @@ function Misprint() {
         value: book.Id,
         label: book.BookName || book.BookNameMarathi,
         code: book.BookCode,
+        price: book.BookRate,
       }));
       setBookOptions(bookOptions);
     } catch (error) {
@@ -210,20 +214,54 @@ function Misprint() {
     }
   };
 
-  const handleInputChange = (index, field, value) => {
-    const updatedRows = [...rows];
+  const [safedate, setSafedate] = useState(dayjs());
+  const [dateerror, setdateerror] = useState("");
 
-    // Update the value of the current field
-    updatedRows[index][field] = value;
-
-    // Calculate the Amount when Copies and Rate are entered
-    if (field === "Copies" || field === "BookRate") {
-      const copies = updatedRows[index].Copies || 0;
-      const rate = updatedRows[index].BookRate || 0;
-      updatedRows[index].Amount = copies * rate;
+  const handleDateChange1 = (newValue) => {
+    if (!newValue || !dayjs(newValue).isValid()) {
+      setdateerror("Invalid date");
+      setSafedate(null);
+      return;
     }
 
-    // Update the state with the new row data
+    const today = dayjs();
+    const minDate = today.subtract(3, "day");
+    const maxDate = today.add(2, "day");
+
+    if (newValue.isBefore(minDate) || newValue.isAfter(maxDate)) {
+      setdateerror("You can select only 2 days before or after today");
+    } else {
+      setdateerror("");
+    }
+
+    setSafedate(newValue);
+  };
+
+  const handleInputChange = (index, field, value) => {
+    const updatedRows = [...rows];
+    updatedRows[index][field] = value;
+
+    // Fetch selected book based on updated BookId
+    const selectedBook = bookOptions.find(
+      (book) =>
+        book.value === (field === "BookId" ? value : updatedRows[index].BookId)
+    );
+
+    // Update rate based on selected book
+    updatedRows[index].BookRate = selectedBook
+      ? parseFloat(selectedBook.price) || 0
+      : 0;
+
+    // Recalculate amount
+    const copies = parseFloat(updatedRows[index].Copies) || 0;
+    const rate = parseFloat(updatedRows[index].BookRate) || 0;
+
+    const originalAmount = copies * rate;
+
+    // You can add discount logic here if needed
+    updatedRows[index].Amount = originalAmount;
+
+    // Update the rows state
     setRows(updatedRows);
   };
 
@@ -232,6 +270,7 @@ function Misprint() {
       ...rows,
       {
         SerialNo: "",
+        BookCode: "",
         BookId: "", // Default value for the first row
         Copies: 0,
         BookRate: 0,
@@ -302,11 +341,13 @@ function Misprint() {
   const resetForm = () => {
     setAccountId("");
     setChallanNo("");
-    setDate("");
+    // setDate("");
+    setSafedate(dayjs());
+    setdateerror("");
     setParticulars("");
     setRows([
       {
-        SerialNo: "",
+        BookCode: "",
         BookId: "", // Default value for the first row
         Copies: 0,
         BookRate: 0,
@@ -334,6 +375,7 @@ function Misprint() {
     console.log(currentRow, "row");
     const misprint = misprints[currentRow.index];
 
+    console.log(misprint, "misprint to edit ");
     // Filter purchase details to match the selected PurchaseId
     const misprintdetail = misprintdetails.filter(
       (detail) => detail.MissprintId === misprint.Id
@@ -363,11 +405,12 @@ function Misprint() {
       Id: detail.Id, // Include the detail Id in the mapped row for tracking
     }));
 
-    const date = convertDateForInput(misprint.Date?.date);
+    const date = dayjs(misprint.Date?.date);
 
     // Set the form fields
     setChallanNo(misprint.ChallanNo);
-    setDate(date);
+    // setDate(date);
+    setSafedate(date);
     setParticulars(misprint.Particulars);
     setAccountId(misprint.AccountId);
 
@@ -413,7 +456,12 @@ function Misprint() {
     e.preventDefault();
     if (!validateForm()) return;
 
-    const formattedDate = moment(Date).format("YYYY-MM-DD");
+    if (!safedate || !dayjs(safedate).isValid() || dateerror) {
+      toast.error("Please correct all the date fields before submitting.");
+      return;
+    }
+
+    const formattedDate = dayjs(safedate).format("YYYY-MM-DD");
 
     const misprintData = {
       Id: isEditing ? id : "", // Include the Id for updating, null for new records
@@ -447,6 +495,7 @@ function Misprint() {
         const rowData = {
           MissprintId: missprintId,
           SerialNo: rows.indexOf(row) + 1,
+          // BookCode: row.BookCode,
           BookId: row.BookId,
           Copies: row.Copies,
           BookRate: row.BookRate,
@@ -648,15 +697,26 @@ function Misprint() {
             <div>
               <label className="misprint-label">Date:</label>
               <div>
-                <input
-                  type="date"
-                  id="Date"
-                  name="Date"
-                  value={Date}
-                  onChange={(e) => setDate(e.target.value)}
-                  className="misprint-control"
-                  placeholder="Enter Date"
-                />
+                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                  <DatePicker
+                    value={safedate}
+                    onChange={handleDateChange1}
+                    format="DD-MM-YYYY"
+                    slotProps={{
+                      textField: {
+                        size: "small",
+                        fullWidth: true,
+                        error: !!dateerror,
+                        helperText: dateerror,
+                      },
+                    }}
+                    sx={{
+                      marginTop: "10px",
+                      marginBottom: "5px",
+                      width: "165px",
+                    }}
+                  />
+                </LocalizationProvider>
               </div>
 
               {/* <div>
@@ -673,6 +733,7 @@ function Misprint() {
                   name="Particulars"
                   value={Particulars}
                   onChange={(e) => setParticulars(e.target.value)}
+                  style={{ width: "300px" }}
                   className="misprint-control"
                   placeholder="Enter Particulars"
                 />
@@ -706,7 +767,7 @@ function Misprint() {
                       fullWidth
                     />
                   )}
-                  sx={{ mt: 1.25, mb: 0.625, width: 170 }} // Equivalent to 10px and 5px
+                  sx={{ mt: 1.25, mb: 0.625, width: 350 }} // Equivalent to 10px and 5px
                 />
               </div>
               {/* <div>
@@ -789,7 +850,7 @@ function Misprint() {
                               newValue ? newValue.value : ""
                             )
                           }
-                          sx={{ width: 250 }} // Set width
+                          sx={{ width: 500 }} // Set width
                           getOptionLabel={(option) => option.label}
                           renderInput={(params) => (
                             <TextField
@@ -818,7 +879,7 @@ function Misprint() {
                             handleInputChange(index, "Copies", e.target.value)
                           }
                           style={{
-                            width: "150px",
+                            width: "100px",
                           }}
                           placeholder="Copies"
                         />
@@ -827,13 +888,9 @@ function Misprint() {
                         <input
                           type="number"
                           value={row.BookRate}
-                          onChange={(e) =>
-                            handleInputChange(index, "BookRate", e.target.value)
-                          }
-                          style={{
-                            width: "150px",
-                          }}
-                          placeholder="Book Rate"
+                          readOnly
+                          style={{ width: "100px" }}
+                          className="misprint-control"
                         />
                       </td>
                       <td>
@@ -842,7 +899,7 @@ function Misprint() {
                           value={row.Amount}
                           readOnly
                           style={{
-                            width: "150px",
+                            width: "100px",
                           }}
                           placeholder="Amount"
                         />

@@ -95,9 +95,9 @@
   
   .salesinvoice-form {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr  ;
+    grid-template-columns: 1fr 1fr 1fr 1fr  ;
     margin: 1px;
-    gap: 10px;
+    gap: 5px;
     margin-top: 20px;
   }
   

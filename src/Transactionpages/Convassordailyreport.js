@@ -55,6 +55,10 @@ import {
   DialogContent,
   DialogTitle,
 } from "@mui/material";
+import dayjs from "dayjs";
+
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { LocalizationProvider } from "@mui/x-date-pickers";
 
 function Convassordailyreport() {
   const [userId, setUserId] = useState("");
@@ -214,6 +218,52 @@ function Convassordailyreport() {
     }
   };
 
+  const [reportdate, setreportdate] = useState(dayjs());
+  const [reporterror, setReporterror] = useState("");
+
+  const [feedingdate, setfeedingdate] = useState(dayjs());
+  const [feedingerror, setfeedingerror] = useState("");
+
+  const handleDateChange1 = (newValue) => {
+    if (!newValue || !dayjs(newValue).isValid()) {
+      setReporterror("Invalid date");
+      setreportdate(null);
+      return;
+    }
+
+    const today = dayjs();
+    const minDate = today.subtract(3, "day");
+    const maxDate = today.add(2, "day");
+
+    if (newValue.isBefore(minDate) || newValue.isAfter(maxDate)) {
+      setReporterror("You can select only 2 days before or after today");
+    } else {
+      setReporterror("");
+    }
+
+    setreportdate(newValue);
+  };
+
+  const handleDateChange2 = (newValue) => {
+    if (!newValue || !dayjs(newValue).isValid()) {
+      setfeedingerror("Invalid date");
+      setfeedingdate(null);
+      return;
+    }
+
+    const today = dayjs();
+    const minDate = today.subtract(3, "day");
+    const maxDate = today.add(2, "day");
+
+    if (newValue.isBefore(minDate) || newValue.isAfter(maxDate)) {
+      setfeedingerror("You can select only 2 days before or after today");
+    } else {
+      setfeedingerror("");
+    }
+
+    setfeedingdate(newValue);
+  };
+
   const handleInputChange = (index, field, value) => {
     const updatedRows = [...rows];
 
@@ -296,8 +346,12 @@ function Convassordailyreport() {
 
   const resetForm = () => {
     setReportNo("");
-    setReportdate("");
-    setFeedingdate("");
+    // setReportdate("");
+    setreportdate(dayjs());
+    setReporterror("");
+    // setFeedingdate("");
+    setfeedingdate(dayjs());
+    setfeedingerror("");
     setConvassorid("");
     setPlacetovisit("");
     setHSC("");
@@ -367,13 +421,15 @@ function Convassordailyreport() {
       Id: detail.Id, // Include the detail Id in the mapped row for tracking
     }));
 
-    const reportdate = convertDateForInput(convdailyreport.ReportDate?.date);
-    const feedingdate = convertDateForInput(convdailyreport.FeedingDate?.date);
+    const reportdate = dayjs(convdailyreport.ReportDate?.date);
+    const feedingdate = dayjs(convdailyreport.FeedingDate?.date);
 
     // Set the form fields
     setReportNo(convdailyreport.ReportNo);
-    setReportdate(reportdate);
-    setFeedingdate(feedingdate);
+    // setReportdate(reportdate);
+    setreportdate(reportdate);
+    // setFeedingdate(feedingdate);
+    setfeedingdate(feedingdate);
     setConvassorid(convdailyreport.CanvassorId);
     setPlacetovisit(convdailyreport.Place_to_visit);
     setHSC(convdailyreport.HSC);
@@ -421,6 +477,11 @@ function Convassordailyreport() {
     let formErrors = {};
     let isValid = true;
 
+    if (!ConvassorId) {
+      isValid = false;
+      formErrors.ConvassorId = "Convassor is required";
+    }
+
     setErrors(formErrors);
     return isValid;
   };
@@ -429,8 +490,20 @@ function Convassordailyreport() {
     e.preventDefault();
     if (!validateForm()) return;
 
-    const formattedfeedingdate = moment(FeedingDate).format("YYYY-MM-DD");
-    const formattedreportdate = moment(ReportDate).format("YYYY-MM-DD");
+    if (
+      !reportdate ||
+      !dayjs(reportdate).isValid() ||
+      reporterror ||
+      !feedingdate ||
+      !dayjs(feedingdate).isValid() ||
+      feedingerror
+    ) {
+      toast.error("Please correct all the date fields before submitting.");
+      return;
+    }
+
+    const formattedfeedingdate = dayjs(feedingdate).format("YYYY-MM-DD");
+    const formattedreportdate = dayjs(reportdate).format("YYYY-MM-DD");
 
     const convdailyreportdata = {
       Id: isEditing ? id : "", // Include the Id for updating, null for new records
@@ -569,7 +642,7 @@ function Convassordailyreport() {
 
   return (
     <div className="convassordailyreport-container">
-      <h1>Canvassor Daily Report</h1>
+      <h1>Convassor Daily Report</h1>
 
       <div className="convassordailyreporttable-master">
         <div className="convassordailyreporttable1-master">
@@ -665,8 +738,8 @@ function Convassordailyreport() {
             <Typography variant="h6">
               <b>
                 {isEditing
-                  ? "Edit Canvassor Daily Report Details"
-                  : "Create Canvassor Daily Report "}
+                  ? "Edit Convassor Daily Report Details"
+                  : "Create Convassor Daily Report "}
               </b>
             </Typography>{" "}
             <CloseIcon sx={{ cursor: "pointer" }} onClick={handleDrawerClose} />
@@ -696,15 +769,26 @@ function Convassordailyreport() {
                 Report Date<b className="required">*</b>
               </label>
               <div>
-                <input
-                  type="date"
-                  id="ReportDate"
-                  name="ReportDate"
-                  value={ReportDate}
-                  onChange={(e) => setReportdate(e.target.value)}
-                  className="convassordailyreport-control"
-                  placeholder="Enter Report date"
-                />
+                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                  <DatePicker
+                    value={reportdate}
+                    onChange={handleDateChange1}
+                    format="DD-MM-YYYY"
+                    slotProps={{
+                      textField: {
+                        size: "small",
+                        fullWidth: true,
+                        error: !!reporterror,
+                        helperText: reporterror,
+                      },
+                    }}
+                    sx={{
+                      marginTop: "10px",
+                      marginBottom: "5px",
+                      width: "165px",
+                    }}
+                  />
+                </LocalizationProvider>
               </div>
 
               {/* <div>
@@ -716,15 +800,26 @@ function Convassordailyreport() {
                 Feeding Date<b className="required">*</b>
               </label>
               <div>
-                <input
-                  type="date"
-                  id="FeedingDate"
-                  name="FeedingDate"
-                  value={FeedingDate}
-                  onChange={(e) => setFeedingdate(e.target.value)}
-                  className="convassordailyreport-control"
-                  placeholder="Enter Feeding Date"
-                />
+                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                  <DatePicker
+                    value={feedingdate}
+                    onChange={handleDateChange2}
+                    format="DD-MM-YYYY"
+                    slotProps={{
+                      textField: {
+                        size: "small",
+                        fullWidth: true,
+                        error: !!feedingerror,
+                        helperText: feedingerror,
+                      },
+                    }}
+                    sx={{
+                      marginTop: "10px",
+                      marginBottom: "5px",
+                      width: "165px",
+                    }}
+                  />
+                </LocalizationProvider>
               </div>
 
               {/* <div>
@@ -757,12 +852,14 @@ function Convassordailyreport() {
                       fullWidth
                     />
                   )}
-                  sx={{ mt: 1.25, mb: 0.625, width: 170 }} // Equivalent to 10px and 5px
+                  sx={{ mt: 1.25, mb: 0.625, width: 300 }} // Equivalent to 10px and 5px
                 />
               </div>
-              {/* <div>
-                          {errors.ConvassorId && <b className="error-text">{errors.ConvassorId}</b>}
-                        </div> */}
+              <div>
+                {errors.ConvassorId && (
+                  <b className="error-text">{errors.ConvassorId}</b>
+                )}
+              </div>
             </div>
 
             <div>
@@ -985,7 +1082,7 @@ function Convassordailyreport() {
                               newValue ? newValue.value : ""
                             )
                           }
-                          sx={{ width: "200px" }} // Set width
+                          sx={{ width: 450 }}
                           getOptionLabel={(option) => option.label}
                           renderInput={(params) => (
                             <TextField
@@ -996,7 +1093,7 @@ function Convassordailyreport() {
                               sx={{
                                 "& .MuiInputBase-root": {
                                   height: "50px",
-                                  width: "200px", // Adjust height here
+                                  // width: "200px", // Adjust height here
                                 },
                                 "& .MuiInputBase-input": {
                                   padding: "14px", // Adjust padding for better alignment
@@ -1099,7 +1196,7 @@ function Convassordailyreport() {
           <DialogContent>
             Are you sure you want to delete this{" "}
             <b style={{ color: "red" }}>
-              <u>Canvassor Daily Report</u>
+              <u>Convassor Daily Report</u>
             </b>
             ?
           </DialogContent>

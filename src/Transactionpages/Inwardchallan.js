@@ -54,6 +54,8 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { DatePicker } from "@mui/x-date-pickers";
 import { Edit, Delete, Add, MoreVert, Print } from "@mui/icons-material";
+import dayjs from "dayjs";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 
 function Invertchallan() {
   const [userId, setUserId] = useState("");
@@ -189,6 +191,7 @@ function Invertchallan() {
         value: book.Id,
         label: book.BookName || book.BookNameMarathi,
         code: book.BookCode,
+        price: book.BookRate,
       }));
       setBookOptions(bookOptions);
     } catch (error) {
@@ -224,34 +227,84 @@ function Invertchallan() {
     setTotalAmount(total);
   };
 
+  const [inwarddate, setInwarddate] = useState(dayjs());
+  const [inwarderror, setInwarderror] = useState("");
+
+  const [supplierdate, setSupplierdate] = useState(dayjs());
+  const [supplierdateerror, setSupplierdateerror] = useState("");
+
+  const handleDateChange1 = (newValue) => {
+    if (!newValue || !dayjs(newValue).isValid()) {
+      setInwarderror("Invalid date");
+      setInwarddate(null);
+      return;
+    }
+
+    const today = dayjs();
+    const minDate = today.subtract(3, "day");
+    const maxDate = today.add(2, "day");
+
+    if (newValue.isBefore(minDate) || newValue.isAfter(maxDate)) {
+      setInwarderror("You can select only 2 days before or after today");
+    } else {
+      setInwarderror("");
+    }
+
+    setInwarddate(newValue);
+  };
+
+  const handleDateChange2 = (newValue) => {
+    if (!newValue || !dayjs(newValue).isValid()) {
+      setSupplierdateerror("Invalid date");
+      setSupplierdate(null);
+      return;
+    }
+
+    const today = dayjs();
+    const minDate = today.subtract(3, "day");
+    const maxDate = today.add(2, "day");
+
+    if (newValue.isBefore(minDate) || newValue.isAfter(maxDate)) {
+      setSupplierdateerror("You can select only 2 days before or after today");
+    } else {
+      setSupplierdateerror("");
+    }
+
+    setSupplierdate(newValue);
+  };
+
   const handleInputChange = (index, field, value) => {
     const updatedRows = [...rows];
-
-    // Update the value of the current field
     updatedRows[index][field] = value;
 
-    // Calculate the Amount when Copies and Rate are entered
-    if (field === "Copies" || field === "Rate") {
-      const copies = updatedRows[index].Copies || 0;
-      const rate = updatedRows[index].Rate || 0;
-      updatedRows[index].Amount = copies * rate;
-    }
+    // Always fetch rate based on BookId
+    const selectedBook = bookOptions.find(
+      (book) => book.value === updatedRows[index].BookId
+    );
+    updatedRows[index].Rate = selectedBook
+      ? parseFloat(selectedBook.price) || 0
+      : 0;
 
-    // Calculate the DiscountAmount and FinalAmount when DiscountPercentage is entered
-    if (
-      field === "DiscountPercentage" ||
-      field === "Copies" ||
-      field === "Rate"
-    ) {
-      const discountPercentage = updatedRows[index].DiscountPercentage || 0;
-      const amount = updatedRows[index].Amount || 0;
-      updatedRows[index].DiscountAmount = (amount * discountPercentage) / 100;
-      updatedRows[index].Amount = amount - updatedRows[index].DiscountAmount;
-    }
+    // Parse inputs
+    const copies = parseFloat(updatedRows[index].Copies) || 0;
+    const rate = parseFloat(updatedRows[index].Rate) || 0;
+    const discountPercentage =
+      parseFloat(updatedRows[index].DiscountPercentage) || 0;
 
-    // Update the state with the new row data
+    // Calculate original amount
+    const originalAmount = copies * rate;
+
+    // Calculate discount
+    const discountAmount = (originalAmount * discountPercentage) / 100;
+
+    // Final amount after discount
+    const amountAfterDiscount = originalAmount - discountAmount;
+
+    // Set values
+    updatedRows[index].DiscountAmount = discountAmount;
+    updatedRows[index].Amount = amountAfterDiscount;
+
     setRows(updatedRows);
-    calculateTotals();
   };
 
   const handleAddRow = () => {
@@ -278,11 +331,15 @@ function Invertchallan() {
   };
 
   const resetForm = () => {
-    setInvertDate("");
+    // setInvertDate("");
+    setInwarddate(dayjs());
+    setInwarderror("");
     setInvertNo("");
     setAccountId("");
     setDcno("");
-    setDcdate("");
+    // setDcdate("");
+    setSupplierdate(dayjs());
+    setSupplierdateerror("");
 
     setTotalAmount("");
     setTotalCopies("");
@@ -352,16 +409,19 @@ function Invertchallan() {
       }
     };
 
-    const invertdate = convertDateForInput(invertchallan.InvertDate.date);
-    const dcdate = convertDateForInput(invertchallan.DCDate.date);
+    const invertdate = dayjs(invertchallan.InvertDate.date);
+    const dcdate = dayjs(invertchallan.DCDate.date);
 
     // Set the form fields
-    setInvertDate(invertdate);
+    // setInvertDate(invertdate);
+    setInwarddate(invertdate);
     setInvertNo(invertchallan.InvertNo);
 
     setAccountId(invertchallan.AccountId);
     setDcno(invertchallan.DCNo);
-    setDcdate(dcdate);
+    // setDcdate(dcdate);
+
+    setSupplierdate(dcdate);
     setTotalAmount(invertchallan.TotalAmount);
     setTotalCopies(invertchallan.TotalCopies);
     setRemark(invertchallan.Remark);
@@ -448,8 +508,8 @@ function Invertchallan() {
     //   formErrors.InvertNo = "Inward No  is required.";
     //   isValid = false;
     // }
-    if (!InvertDate) {
-      formErrors.InvertDate = "Inward Date is required.";
+    if (!inwarddate) {
+      formErrors.inwarddate = "Inward Date is required.";
       isValid = false;
     }
 
@@ -461,8 +521,8 @@ function Invertchallan() {
       formErrors.AccountId = "Account Id is required.";
       isValid = false;
     }
-    if (!DCDate) {
-      formErrors.DCDate = "DC Date is required.";
+    if (!supplierdate) {
+      formErrors.supplierdate = "DC Date is required.";
       isValid = false;
     }
 
@@ -487,7 +547,20 @@ function Invertchallan() {
     e.preventDefault();
     if (!validateForm()) return;
 
-    const formattedInvertDate = moment(InvertDate).format("YYYY-MM-DD");
+    if (
+      !inwarddate ||
+      !dayjs(inwarddate).isValid() ||
+      inwarderror ||
+      !supplierdate ||
+      !dayjs(supplierdate).isValid() ||
+      supplierdateerror
+    ) {
+      toast.error("Please correct all the date fields before submitting.");
+      return;
+    }
+
+    const formattedInvertDate = dayjs(inwarddate).format("YYYY-MM-DD");
+    const formattedsupplierdate = dayjs(supplierdate).format("YYYY-MM-DD");
 
     const invertchallandata = {
       Id: isEditing ? id : "", // Include the Id for updating, null for new records
@@ -495,7 +568,7 @@ function Invertchallan() {
       // InvertNo: InvertNo,
       AccountId: AccountId,
       DCNo: DCNo,
-      DCDate: DCDate,
+      DCDate: formattedsupplierdate,
       TotalAmount: TotalAmount,
       TotalCopies: TotalCopies,
       Remark: Remark,
@@ -751,20 +824,31 @@ function Invertchallan() {
                   Inward Date <b className="required">*</b>
                 </label>
                 <div>
-                  <input
-                    type="date"
-                    id="InvertDate"
-                    name="InvertDate"
-                    value={InvertDate}
-                    onChange={(e) => setInvertDate(e.target.value)}
-                    className="invertc-control"
-                    placeholder="Enter Inward Date"
-                  />
+                  <LocalizationProvider dateAdapter={AdapterDayjs}>
+                    <DatePicker
+                      value={inwarddate}
+                      onChange={handleDateChange1}
+                      format="DD-MM-YYYY"
+                      slotProps={{
+                        textField: {
+                          size: "small",
+                          fullWidth: true,
+                          error: !!inwarderror,
+                          helperText: inwarderror,
+                        },
+                      }}
+                      sx={{
+                        marginTop: "10px",
+                        marginBottom: "5px",
+                        width: "180px",
+                      }}
+                    />
+                  </LocalizationProvider>
                 </div>
 
                 <div>
-                  {errors.InvertDate && (
-                    <b className="error-text">{errors.InvertDate}</b>
+                  {errors.inwarddate && (
+                    <b className="error-text">{errors.inwarddate}</b>
                   )}
                 </div>
               </div>
@@ -795,7 +879,7 @@ function Invertchallan() {
                         fullWidth
                       />
                     )}
-                    sx={{ mt: 1.25, mb: 0.625, width: 170 }} // Equivalent to 10px and 5px
+                    sx={{ mt: 1.25, mb: 0.625, width: 450 }} // Equivalent to 10px and 5px
                   />
                 </div>
 
@@ -808,7 +892,7 @@ function Invertchallan() {
 
               <div>
                 <label className="invertc-label">
-                  DC No <b className="required">*</b>
+                  Supplier DC No <b className="required">*</b>
                 </label>
                 <div>
                   <input
@@ -830,22 +914,33 @@ function Invertchallan() {
 
               <div>
                 <label className="invertc-label">
-                  DC Date <b className="required">*</b>
+                  Supplier DC Date <b className="required">*</b>
                 </label>
                 <div>
-                  <input
-                    type="date"
-                    id="DCDate"
-                    name="DCDate"
-                    value={DCDate}
-                    onChange={(e) => setDcdate(e.target.value)}
-                    className="invertc-control"
-                    placeholder="Enter DC Date"
-                  />
+                  <LocalizationProvider dateAdapter={AdapterDayjs}>
+                    <DatePicker
+                      value={supplierdate}
+                      onChange={handleDateChange2}
+                      format="DD-MM-YYYY"
+                      slotProps={{
+                        textField: {
+                          size: "small",
+                          fullWidth: true,
+                          error: !!supplierdateerror,
+                          helperText: supplierdateerror,
+                        },
+                      }}
+                      sx={{
+                        marginTop: "10px",
+                        marginBottom: "5px",
+                        width: "165px",
+                      }}
+                    />
+                  </LocalizationProvider>
                 </div>
                 <div>
-                  {errors.DCDate && (
-                    <b className="error-text">{errors.DCDate}</b>
+                  {errors.supplierdate && (
+                    <b className="error-text">{errors.supplierdate}</b>
                   )}
                 </div>
               </div>
@@ -931,7 +1026,7 @@ function Invertchallan() {
                                 newValue ? newValue.value : ""
                               )
                             }
-                            sx={{ width: 250 }} // Set width
+                            sx={{ width: 500 }} // Set width
                             getOptionLabel={(option) => option.label}
                             renderInput={(params) => (
                               <TextField
@@ -959,6 +1054,7 @@ function Invertchallan() {
                             onChange={(e) =>
                               handleInputChange(index, "Copies", e.target.value)
                             }
+                            style={{ width: "120px" }}
                             placeholder="Copies"
                           />
                         </td>
@@ -966,17 +1062,9 @@ function Invertchallan() {
                           <input
                             type="number"
                             value={row.Rate}
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              // Regex to validate decimal numbers with at most 18 digits total and 2 decimal places
-                              const regex = /^\d{0,18}(\.\d{0,2})?$/;
-
-                              // Check if the value matches the regex
-                              if (value === "" || regex.test(value)) {
-                                handleInputChange(index, "Rate", value);
-                              }
-                            }}
-                            placeholder="Rate"
+                            readOnly
+                            style={{ width: "100px" }}
+                            className="invertc-control"
                           />
                         </td>
                         <td>
@@ -1013,6 +1101,7 @@ function Invertchallan() {
                             type="number"
                             value={row.Amount}
                             readOnly
+                            style={{ width: "100px" }}
                             placeholder="Amount"
                           />
                         </td>

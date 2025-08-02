@@ -11,6 +11,7 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  Grid,
 } from "@mui/material";
 import axios from "axios";
 import Select from "react-select";
@@ -105,6 +106,7 @@ function Book() {
 
   const [CurrentEdition, setCurrentEdition] = useState("");
   const [BookRate, setBookRate] = useState("");
+  const [MRP, setMRP] = useState("");
   const [BookPages, setBookPages] = useState("");
   const [BookForms, setBookForms] = useState("");
   const [FillingDate, setFilingDate] = useState("");
@@ -351,6 +353,7 @@ function Book() {
     setBookMediumId("");
     setCurrentEdition("");
     setBookRate("");
+    setMRP("");
     setBookPages("");
     setBookForms("");
     setFilingDate("");
@@ -1033,775 +1036,803 @@ function Book() {
               }}>
               {editingIndex >= 0 ? "Edit Book" : "Add Book"}
             </h2>
+
             <form
               onSubmit={handleSubmit}
               className="masterbook-form"
               noValidate>
-              <div>
-                <label className="book-label">Book Code</label>{" "}
+              <div className="first-row">
                 <div>
-                  <input
-                    type="text"
-                    id="BookCode"
-                    name="BookCode"
-                    value={BookCode}
-                    onChange={handleBookcodechange}
-                    placeholder="Auto-Incremented" // dynamically passed value
-                    // readOnly
-                    style={{ background: "	#D0D0D0" }}
-                    ref={bookcodeRef}
-                    onKeyDown={(e) => handleKeyDown(e, booknameRef)}
-                    className="masterbook-control"
-                  />
+                  <label className="book-label">Book Code</label>{" "}
+                  <div>
+                    <input
+                      type="text"
+                      id="BookCode"
+                      name="BookCode"
+                      value={BookCode}
+                      onChange={handleBookcodechange}
+                      placeholder="Auto-Incremented" // dynamically passed value
+                      // readOnly
+                      style={{ background: "	#D0D0D0" }}
+                      ref={bookcodeRef}
+                      onKeyDown={(e) => handleKeyDown(e, booknameRef)}
+                      className="masterbook-control"
+                    />
 
-                  {/* <div>
+                    {/* <div>
                     {errors.BookCode && (
                       <b className="error-text">{errors.BookCode}</b>
                     )}
                   </div> */}
+                  </div>
                 </div>
-              </div>
-              <div>
-                <label className="book-label">Book Name</label>
                 <div>
-                  <Tooltip
-                    title={
-                      <span style={{ fontSize: "14px", fontWeight: "bold" }}>
-                        {BookName}
-                      </span>
-                    }
-                    arrow>
-                    <input
-                      type="text"
-                      id="BookName"
-                      name="BookName"
-                      value={BookName}
-                      onChange={(e) => setBookName(e.target.value)}
-                      maxLength={100}
-                      ref={booknameRef}
-                      onKeyDown={(e) => handleKeyDown(e, booknamemarathiRef)}
-                      className="masterbook-control"
-                      placeholder="Enter Book Name"
-                      title={BookName} // Shows full text on hover
-                    />
-                  </Tooltip>
+                  <label className="book-label">Book Name</label>
+                  <div>
+                    <Tooltip
+                      title={
+                        <span style={{ fontSize: "14px", fontWeight: "bold" }}>
+                          {BookName}
+                        </span>
+                      }
+                      arrow>
+                      <input
+                        type="text"
+                        id="BookName"
+                        name="BookName"
+                        value={BookName}
+                        onChange={(e) => setBookName(e.target.value)}
+                        maxLength={100}
+                        ref={booknameRef}
+                        onKeyDown={(e) => handleKeyDown(e, booknamemarathiRef)}
+                        className="masterbook-control"
+                        style={{ width: "500px" }}
+                        placeholder="Enter Book Name"
+                        title={BookName} // Shows full text on hover
+                      />
+                    </Tooltip>
 
-                  {/* <div>
+                    {/* <div>
                     {errors.BookName && (
                       <b className="error-text">{errors.BookName}</b>
                     )}
                   </div> */}
+                  </div>
                 </div>
-              </div>
-              <div>
-                <label className="book-label">Book Name Marathi</label>
                 <div>
-                  <Tooltip
-                    title={
-                      <span style={{ fontSize: "14px", fontWeight: "bold" }}>
-                        {BookNameMarathi}
+                  <label className="book-label">Book Name Marathi</label>
+                  <div>
+                    <Tooltip
+                      title={
+                        <span style={{ fontSize: "14px", fontWeight: "bold" }}>
+                          {BookNameMarathi}
+                        </span>
+                      }
+                      arrow>
+                      <span>
+                        {" "}
+                        <ReactTransliterate
+                          key={isEditing ? "edit" : "new"} // Force re-mount on mode switch
+                          value={BookNameMarathi}
+                          onChangeText={(text) => {
+                            console.log("Transliterated Text:", text); // Log the transliterated text
+                            setBookNameMarathi(text); // Update the state with the new text
+                          }}
+                          lang="mr"
+                          renderComponent={(props) => (
+                            <input
+                              {...props}
+                              type="text"
+                              id="BookNameMarathi"
+                              name="BookNameMarathi"
+                              maxLength={200}
+                              style={{ width: "500px" }}
+                              className="marathibook-control"
+                              placeholder="पुस्तकाचे नाव प्रविष्ट करा"
+                            />
+                          )}
+                        />
                       </span>
-                    }
-                    arrow>
-                    {/* <input
-            type="text"
-            id="BookNameMarathi" // Must match ID in makeTransliteratable()
-            name="BookNameMarathi"
-            value={BookNameMarathi}
-            onInput={handleInput} // ✅ Capture input events
-            maxLength={200}
-            className="marathibook-control"
-            ref={booknamemarathiRef}
-            lang="mr"
-            placeholder="पुस्तकाचे नाव प्रविष्ट करा"
-          /> */}
-                    <span>
-                      {" "}
-                      <ReactTransliterate
-                        key={isEditing ? "edit" : "new"} // Force re-mount on mode switch
-                        value={BookNameMarathi}
-                        onChangeText={(text) => {
-                          console.log("Transliterated Text:", text); // Log the transliterated text
-                          setBookNameMarathi(text); // Update the state with the new text
-                        }}
-                        lang="mr"
-                        renderComponent={(props) => (
-                          <input
-                            {...props}
-                            type="text"
-                            id="BookNameMarathi"
-                            name="BookNameMarathi"
-                            maxLength={200}
-                            className="marathibook-control"
-                            placeholder="पुस्तकाचे नाव प्रविष्ट करा"
-                          />
-                        )}
-                      />
-                    </span>
-                  </Tooltip>
-                  {/* <div>
+                    </Tooltip>
+                    {/* <div>
                     {errors.BookNameMarathi && (
                       <b className="error-text">{errors.BookNameMarathi}</b>
                     )}
                   </div> */}
+                  </div>
                 </div>
               </div>
-              <div>
-                <label className="book-label">Book Group</label>
+              <div className="other-rows">
                 <div>
-                  {/* <Tooltip title={<span style={{ fontSize: "14px", fontWeight: "bold" }}>{BookGroupId}</span>} arrow> */}
+                  <label className="book-label">Book Group</label>
+                  <div>
+                    {/* <Tooltip title={<span style={{ fontSize: "14px", fontWeight: "bold" }}>{BookGroupId}</span>} arrow> */}
 
-                  <Select
-                    id="BookGroupId"
-                    name="BookGroupId"
-                    value={bookgroupOptions.find(
-                      (option) => option.value === BookGroupId
-                    )}
-                    isClearable
-                    onChange={(option) =>
-                      setBookGroupId(option ? option.value : "")
-                    }
-                    ref={bookgroupIdRef}
-                    onKeyDown={(e) => handleKeyDown(e, bookstandardidRef)}
-                    options={bookgroupOptions}
-                    styles={{
-                      control: (base) => ({
-                        ...base,
-                        width: "170px",
-                        marginTop: "10px",
-                        borderRadius: "4px",
-                        border: "1px solid rgb(223, 222, 222)",
-                        marginBottom: "5px",
-                      }),
-                      menu: (base) => ({
-                        ...base,
-                        zIndex: 100,
-                      }),
-                    }}
-                    placeholder="Select  Group"
-                  />
+                    <Select
+                      id="BookGroupId"
+                      name="BookGroupId"
+                      value={bookgroupOptions.find(
+                        (option) => option.value === BookGroupId
+                      )}
+                      isClearable
+                      onChange={(option) =>
+                        setBookGroupId(option ? option.value : "")
+                      }
+                      ref={bookgroupIdRef}
+                      onKeyDown={(e) => handleKeyDown(e, bookstandardidRef)}
+                      options={bookgroupOptions}
+                      styles={{
+                        control: (base) => ({
+                          ...base,
+                          width: "170px",
+                          marginTop: "10px",
+                          borderRadius: "4px",
+                          border: "1px solid rgb(223, 222, 222)",
+                          marginBottom: "5px",
+                        }),
+                        menu: (base) => ({
+                          ...base,
+                          zIndex: 100,
+                        }),
+                      }}
+                      placeholder="Select  Group"
+                    />
 
-                  {/* </Tooltip> */}
+                    {/* </Tooltip> */}
 
-                  {/* <div>
+                    {/* <div>
                     {errors.BookGroupId && (
                       <b className="error-text">{errors.BookGroupId}</b>
                     )}
                   </div> */}
+                  </div>
                 </div>
-              </div>
-              <div>
-                <label className="book-label">Book Standard</label>
                 <div>
-                  {/* <Tooltip title={<span style={{ fontSize: "14px", fontWeight: "bold" }}>{BookStandardId}</span>} arrow> */}
+                  <label className="book-label">Book Standard</label>
+                  <div>
+                    {/* <Tooltip title={<span style={{ fontSize: "14px", fontWeight: "bold" }}>{BookStandardId}</span>} arrow> */}
 
-                  <Select
-                    id="BookStandardId"
-                    name="BookStandardId"
-                    // value={bookstandardOptions.find(
-                    //   (option) => option.value === BookStandardId
-                    // )}
+                    <Select
+                      id="BookStandardId"
+                      name="BookStandardId"
+                      // value={bookstandardOptions.find(
+                      //   (option) => option.value === BookStandardId
+                      // )}
 
-                    value={bookstandardOptions.find(
-                      (option) =>
-                        option.value.toString() === BookStandardId.toString()
-                    )}
-                    isClearable
-                    onChange={(option) =>
-                      setBookStandardId(option ? option.value : "")
-                    }
-                    ref={bookstandardidRef}
-                    onKeyDown={(e) => handleKeyDown(e, publicationRef)}
-                    options={bookstandardOptions}
-                    styles={{
-                      control: (base) => ({
-                        ...base,
-                        width: "170px",
-                        marginTop: "10px",
-                        marginBottom: "5px",
-                        border: "1px solid rgb(223, 222, 222)",
-                        borderRadius: "4px",
-                      }),
-                      menu: (base) => ({
-                        ...base,
-                        zIndex: 100,
-                      }),
-                    }}
-                    placeholder="Select Standard "
-                  />
-                  {/* </Tooltip> */}
-                  {/* <div>
+                      value={bookstandardOptions.find(
+                        (option) =>
+                          option.value.toString() === BookStandardId.toString()
+                      )}
+                      isClearable
+                      onChange={(option) =>
+                        setBookStandardId(option ? option.value : "")
+                      }
+                      ref={bookstandardidRef}
+                      onKeyDown={(e) => handleKeyDown(e, publicationRef)}
+                      options={bookstandardOptions}
+                      styles={{
+                        control: (base) => ({
+                          ...base,
+                          width: "170px",
+                          marginTop: "10px",
+                          marginBottom: "5px",
+                          border: "1px solid rgb(223, 222, 222)",
+                          borderRadius: "4px",
+                        }),
+                        menu: (base) => ({
+                          ...base,
+                          zIndex: 100,
+                        }),
+                      }}
+                      placeholder="Select Standard "
+                    />
+                    {/* </Tooltip> */}
+                    {/* <div>
                     {errors.BookStandardId && (
                       <b className="error-text">{errors.BookStandardId}</b>
                     )}
                   </div> */}
+                  </div>
                 </div>
-              </div>
-              <div>
-                <label className="book-label">Publication</label>{" "}
                 <div>
-                  {/* <Tooltip title={<span style={{ fontSize: "14px", fontWeight: "bold" }}>{PublicationId}</span>} arrow> */}
+                  <label className="book-label">Publication</label>{" "}
+                  <div>
+                    {/* <Tooltip title={<span style={{ fontSize: "14px", fontWeight: "bold" }}>{PublicationId}</span>} arrow> */}
 
-                  <Select
-                    id="PublicationId"
-                    name="PublicationId"
-                    value={publicationOptions.find(
-                      (option) => option.value === PublicationId
-                    )}
-                    isClearable
-                    onChange={(option) =>
-                      setPublicationId(option ? option.value : "")
-                    }
-                    ref={publicationRef}
-                    onKeyDown={(e) => handleKeyDown(e, universityRef)}
-                    options={publicationOptions}
-                    styles={{
-                      control: (base) => ({
-                        ...base,
-                        width: "170px",
-                        marginTop: "10px",
-                        borderRadius: "4px",
-                        border: "1px solid rgb(223, 222, 222)",
-                        marginBottom: "5px",
-                      }),
-                      menu: (base) => ({
-                        ...base,
-                        zIndex: 100,
-                      }),
-                    }}
-                    placeholder="Publication "
-                  />
-                  {/* </Tooltip> */}
+                    <Select
+                      id="PublicationId"
+                      name="PublicationId"
+                      value={publicationOptions.find(
+                        (option) => option.value === PublicationId
+                      )}
+                      isClearable
+                      onChange={(option) =>
+                        setPublicationId(option ? option.value : "")
+                      }
+                      ref={publicationRef}
+                      onKeyDown={(e) => handleKeyDown(e, universityRef)}
+                      options={publicationOptions}
+                      styles={{
+                        control: (base) => ({
+                          ...base,
+                          width: "170px",
+                          marginTop: "10px",
+                          borderRadius: "4px",
+                          border: "1px solid rgb(223, 222, 222)",
+                          marginBottom: "5px",
+                        }),
+                        menu: (base) => ({
+                          ...base,
+                          zIndex: 100,
+                        }),
+                      }}
+                      placeholder="Publication "
+                    />
+                    {/* </Tooltip> */}
 
-                  {/* <div>
+                    {/* <div>
                     {errors.PublicationId && (
                       <b className="error-text">{errors.PublicationId}</b>
                     )}
                   </div> */}
+                  </div>
                 </div>
-              </div>
-              <div>
-                <label className="book-label">
-                  University
-                  {/* <b className="required">*</b> */}
-                </label>
                 <div>
-                  {/* <Tooltip title={<span style={{ fontSize: "14px", fontWeight: "bold" }}>{UniversityId}</span>} arrow> */}
+                  <label className="book-label">
+                    University
+                    {/* <b className="required">*</b> */}
+                  </label>
+                  <div>
+                    {/* <Tooltip title={<span style={{ fontSize: "14px", fontWeight: "bold" }}>{UniversityId}</span>} arrow> */}
 
-                  <Select
-                    id="UniversityId"
-                    name="UniversityId"
-                    value={universityOptions.find(
-                      (option) => option.value === UniversityId
-                    )}
-                    isClearable
-                    onChange={(option) =>
-                      setUniversityId(option ? option.value : "")
-                    }
-                    ref={universityRef}
-                    onKeyDown={(e) => handleKeyDown(e, bookmediumRef)}
-                    options={universityOptions}
-                    getOptionLabel={(e) => (
-                      <div>
-                        <span
-                          data-tooltip-id={`tooltip-${e.value}`}
-                          data-tooltip-content={e.label}
-                          style={{ display: "flex" }}>
-                          {e.label}
-                        </span>
-                        <Tooltip id={`tooltip-${e.label}`} />
-                      </div>
-                    )}
-                    styles={{
-                      control: (base) => ({
-                        ...base,
-                        width: "170px",
-                        marginTop: "10px",
-                        borderRadius: "4px",
-                        border: "1px solid rgb(223, 222, 222)",
-                        marginBottom: "5px",
-                      }),
-                      menu: (base) => ({
-                        ...base,
-                        zIndex: 100,
-                      }),
-                    }}
-                    placeholder="Select University "
-                  />
-                  {/* </Tooltip> */}
+                    <Select
+                      id="UniversityId"
+                      name="UniversityId"
+                      value={universityOptions.find(
+                        (option) => option.value === UniversityId
+                      )}
+                      isClearable
+                      onChange={(option) =>
+                        setUniversityId(option ? option.value : "")
+                      }
+                      ref={universityRef}
+                      onKeyDown={(e) => handleKeyDown(e, bookmediumRef)}
+                      options={universityOptions}
+                      getOptionLabel={(e) => (
+                        <div>
+                          <span
+                            data-tooltip-id={`tooltip-${e.value}`}
+                            data-tooltip-content={e.label}
+                            style={{ display: "flex" }}>
+                            {e.label}
+                          </span>
+                          <Tooltip id={`tooltip-${e.label}`} />
+                        </div>
+                      )}
+                      styles={{
+                        control: (base) => ({
+                          ...base,
+                          width: "170px",
+                          marginTop: "10px",
+                          borderRadius: "4px",
+                          border: "1px solid rgb(223, 222, 222)",
+                          marginBottom: "5px",
+                        }),
+                        menu: (base) => ({
+                          ...base,
+                          zIndex: 100,
+                        }),
+                      }}
+                      placeholder="Select University "
+                    />
+                    {/* </Tooltip> */}
 
-                  {/* <div>
+                    {/* <div>
                     {errors.UniversityId && (
                       <b className="error-text">{errors.UniversityId}</b>
                     )}
                   </div> */}
+                  </div>
                 </div>
-              </div>
-              <div>
-                <label className="book-label">Book Medium</label>
                 <div>
-                  {/* <Tooltip title={<span style={{ fontSize: "14px", fontWeight: "bold" }}>{BookMediumId}</span>} arrow> */}
+                  <label className="book-label">Book Medium</label>
+                  <div>
+                    {/* <Tooltip title={<span style={{ fontSize: "14px", fontWeight: "bold" }}>{BookMediumId}</span>} arrow> */}
 
-                  <Select
-                    id="BookMediumId"
-                    name="BookMediumId"
-                    value={bookmediumOptions.find(
-                      (option) => option.value === BookMediumId
-                    )}
-                    isClearable
-                    onChange={(option) =>
-                      setBookMediumId(option ? option.value : "")
-                    }
-                    ref={bookmediumRef}
-                    onKeyDown={(e) => handleKeyDown(e, currenteditionRef)}
-                    options={bookmediumOptions}
-                    styles={{
-                      control: (base) => ({
-                        ...base,
-                        width: "170px",
-                        marginTop: "10px",
-                        borderRadius: "4px",
-                        border: "1px solid rgb(223, 222, 222)",
-                        marginBottom: "5px",
-                      }),
-                      menu: (base) => ({
-                        ...base,
-                        zIndex: 100,
-                      }),
-                    }}
-                    placeholder="Select Medium "
-                  />
-                  {/* </Tooltip> */}
+                    <Select
+                      id="BookMediumId"
+                      name="BookMediumId"
+                      value={bookmediumOptions.find(
+                        (option) => option.value === BookMediumId
+                      )}
+                      isClearable
+                      onChange={(option) =>
+                        setBookMediumId(option ? option.value : "")
+                      }
+                      ref={bookmediumRef}
+                      onKeyDown={(e) => handleKeyDown(e, currenteditionRef)}
+                      options={bookmediumOptions}
+                      styles={{
+                        control: (base) => ({
+                          ...base,
+                          width: "170px",
+                          marginTop: "10px",
+                          borderRadius: "4px",
+                          border: "1px solid rgb(223, 222, 222)",
+                          marginBottom: "5px",
+                        }),
+                        menu: (base) => ({
+                          ...base,
+                          zIndex: 100,
+                        }),
+                      }}
+                      placeholder="Select Medium "
+                    />
+                    {/* </Tooltip> */}
 
-                  {/* <div>
+                    {/* <div>
                     {errors.BookMediumId && (
                       <b className="error-text">{errors.BookMediumId}</b>
                     )}
                   </div> */}
+                  </div>
                 </div>
-              </div>
-              <div>
-                <label className="book-label">Current Edition</label>
                 <div>
-                  <input
-                    type="text"
-                    id="CurrentEdition"
-                    name="CurrentEdition"
-                    value={CurrentEdition}
-                    onChange={(e) => setCurrentEdition(e.target.value)}
-                    maxLength={20}
-                    ref={currenteditionRef}
-                    onKeyDown={(e) => handleKeyDown(e, bookrateRef)}
-                    className="masterbook-control"
-                    placeholder="Enter Current Edition"
-                  />
+                  <label className="book-label">Current Edition</label>
+                  <div>
+                    <input
+                      type="text"
+                      id="CurrentEdition"
+                      name="CurrentEdition"
+                      value={CurrentEdition}
+                      onChange={(e) => setCurrentEdition(e.target.value)}
+                      maxLength={20}
+                      ref={currenteditionRef}
+                      onKeyDown={(e) => handleKeyDown(e, bookrateRef)}
+                      className="masterbook-control"
+                      placeholder="Enter Current Edition"
+                    />
 
-                  {/* <div>
+                    {/* <div>
                     {errors.CurrentEdition && (
                       <b className="error-text">{errors.CurrentEdition}</b>
                     )}
                   </div> */}
+                  </div>
                 </div>
-              </div>
-              <div>
-                <label className="book-label">Book Rate</label>{" "}
                 <div>
-                  <input
-                    type="text" // Change to "text" to handle decimal input more flexibly
-                    id="BookRate"
-                    name="BookRate"
-                    value={BookRate}
-                    onChange={(e) => {
-                      const value = e.target.value;
+                  <label className="book-label">Book Rate</label>{" "}
+                  <div>
+                    <input
+                      type="text" // Change to "text" to handle decimal input more flexibly
+                      id="BookRate"
+                      name="BookRate"
+                      value={BookRate}
+                      onChange={(e) => {
+                        const value = e.target.value;
 
-                      // Regex to validate decimal numbers with at most 18 digits total and 2 decimal places
-                      const regex = /^\d{0,18}(\.\d{0,2})?$/;
+                        // Regex to validate decimal numbers with at most 18 digits total and 2 decimal places
+                        const regex = /^\d{0,18}(\.\d{0,2})?$/;
 
-                      // Check if the value matches the regex
-                      if (value === "" || regex.test(value)) {
-                        setBookRate(value);
-                      }
-                    }}
-                    ref={bookrateRef}
-                    onKeyDown={(e) => handleKeyDown(e, bookpagesRef)}
-                    className="masterbook-control"
-                    placeholder="Enter Book Rate"
-                  />
+                        // Check if the value matches the regex
+                        if (value === "" || regex.test(value)) {
+                          setBookRate(value);
+                        }
+                      }}
+                      ref={bookrateRef}
+                      onKeyDown={(e) => handleKeyDown(e, bookpagesRef)}
+                      className="masterbook-control"
+                      placeholder="Enter Book Rate"
+                    />
 
-                  {/* <div>
+                    {/* <div>
                     {errors.BookRate && (
                       <b className="error-text">{errors.BookRate}</b>
                     )}
                   </div> */}
+                  </div>
                 </div>
-              </div>
-              <div>
-                <label className="book-label">Book Pages</label>
                 <div>
-                  <input
-                    type="number"
-                    id="BookPages"
-                    name="BookPages"
-                    value={BookPages}
-                    onChange={(e) => setBookPages(e.target.value)}
-                    ref={bookpagesRef}
-                    onKeyDown={(e) => handleKeyDown(e, bookformsRef)}
-                    className="masterbook-control"
-                    placeholder="Enter Book Pages"
-                  />
+                  <label className="book-label">MRP</label>{" "}
+                  <div>
+                    <input
+                      type="text" // Change to "text" to handle decimal input more flexibly
+                      id="MRP"
+                      name="MRP"
+                      value={MRP}
+                      onChange={(e) => {
+                        const value = e.target.value;
 
-                  {/* <div>
+                        // Regex to validate decimal numbers with at most 18 digits total and 2 decimal places
+                        const regex = /^\d{0,18}(\.\d{0,2})?$/;
+
+                        // Check if the value matches the regex
+                        if (value === "" || regex.test(value)) {
+                          setMRP(value);
+                        }
+                      }}
+                      ref={bookrateRef}
+                      onKeyDown={(e) => handleKeyDown(e, bookpagesRef)}
+                      className="masterbook-control"
+                      placeholder="Enter Book Rate"
+                    />
+
+                    {/* <div>
+                    {errors.BookRate && (
+                      <b className="error-text">{errors.BookRate}</b>
+                    )}
+                  </div> */}
+                  </div>
+                </div>
+                <div style={{ display: "none" }}>
+                  <label className="book-label">Book Pages</label>
+                  <div>
+                    <input
+                      type="number"
+                      id="BookPages"
+                      name="BookPages"
+                      value={BookPages}
+                      onChange={(e) => setBookPages(e.target.value)}
+                      ref={bookpagesRef}
+                      onKeyDown={(e) => handleKeyDown(e, bookformsRef)}
+                      className="masterbook-control"
+                      placeholder="Enter Book Pages"
+                    />
+
+                    {/* <div>
                     {errors.BookPages && (
                       <b className="error-text">{errors.BookPages}</b>
                     )}
                   </div> */}
+                  </div>
                 </div>
-              </div>
-              <div>
-                <label className="book-label">Book Forms</label>
-                <div>
-                  <input
-                    type="number"
-                    id="BookForms"
-                    name="BookForms"
-                    value={BookForms}
-                    onChange={(e) => setBookForms(e.target.value)}
-                    ref={bookformsRef}
-                    onKeyDown={(e) => handleKeyDown(e, fillingdateRef)}
-                    className="masterbook-control"
-                    placeholder="Enter Book Forms"
-                  />
-                  {/* <div>
+                <div style={{ display: "none" }}>
+                  <label className="book-label">Book Forms</label>
+                  <div>
+                    <input
+                      type="number"
+                      id="BookForms"
+                      name="BookForms"
+                      value={BookForms}
+                      onChange={(e) => setBookForms(e.target.value)}
+                      ref={bookformsRef}
+                      onKeyDown={(e) => handleKeyDown(e, fillingdateRef)}
+                      className="masterbook-control"
+                      placeholder="Enter Book Forms"
+                    />
+                    {/* <div>
                     {errors.BookForms && (
                       <b className="error-text">{errors.BookForms}</b>
                     )}
                   </div> */}
+                  </div>
                 </div>
-              </div>
-              <div>
-                <label className="book-label">Filling Date</label>
                 <div>
-                  <input
-                    type="date"
-                    id="FillingDate"
-                    name="FillingDate"
-                    value={FillingDate}
-                    onChange={(e) => setFilingDate(e.target.value)}
-                    ref={fillingdateRef}
-                    onKeyDown={(e) => handleKeyDown(e, titlepagesRef)}
-                    className="masterbook-control"
-                    placeholder="Enter Filing Date"
-                  />
+                  <label className="book-label">Filling Date</label>
+                  <div>
+                    <input
+                      type="date"
+                      id="FillingDate"
+                      name="FillingDate"
+                      value={FillingDate}
+                      onChange={(e) => setFilingDate(e.target.value)}
+                      ref={fillingdateRef}
+                      onKeyDown={(e) => handleKeyDown(e, titlepagesRef)}
+                      className="masterbook-control"
+                      placeholder="Enter Filing Date"
+                    />
 
-                  {/* <div>
+                    {/* <div>
                     {errors.FillingDate && (
                       <b className="error-text">{errors.FillingDate}</b>
                     )}
                   </div> */}
+                  </div>
                 </div>
-              </div>
-              <div>
-                <label className="book-label">Title Pages</label>
                 <div>
-                  <input
-                    type="number"
-                    id="TitlePages"
-                    name="TitlePages"
-                    value={TitlePages}
-                    onChange={(e) => setTitlePages(e.target.value)}
-                    ref={titlepagesRef}
-                    onKeyDown={(e) => handleKeyDown(e, titlepressRef)}
-                    className="masterbook-control"
-                    placeholder="Enter Title pages"
-                  />
-                  {/* 
+                  <label className="book-label">Title Pages</label>
+                  <div>
+                    <input
+                      type="number"
+                      id="TitlePages"
+                      name="TitlePages"
+                      value={TitlePages}
+                      onChange={(e) => setTitlePages(e.target.value)}
+                      ref={titlepagesRef}
+                      onKeyDown={(e) => handleKeyDown(e, titlepressRef)}
+                      className="masterbook-control"
+                      placeholder="Enter Title pages"
+                    />
+                    {/* 
                   <div>
                     {errors.TitlePages && (
                       <b className="error-text">{errors.TitlePages}</b>
                     )}
                   </div> */}
+                  </div>
                 </div>
-              </div>
-              <div>
-                <label className="book-label">Title Press</label>{" "}
                 <div>
-                  <Select
-                    id="TitlePressId"
-                    name="TitlePressId"
-                    value={titlepressOptions.find(
-                      (option) => option.value === TitlePressId
-                    )}
-                    isClearable
-                    onChange={(option) =>
-                      setTitlePressId(option ? option.value : "")
-                    }
-                    ref={titlepressRef}
-                    onKeyDown={(e) => handleKeyDown(e, papersizeRef)}
-                    options={titlepressOptions}
-                    styles={{
-                      control: (base) => ({
-                        ...base,
-                        width: "170px",
-                        marginTop: "10px",
-                        borderRadius: "4px",
-                        border: "1px solid rgb(223, 222, 222)",
-                        marginBottom: "5px",
-                      }),
-                      menu: (base) => ({
-                        ...base,
-                        zIndex: 100,
-                      }),
-                    }}
-                    placeholder="Select title press "
-                  />
+                  <label className="book-label">Title Press</label>{" "}
+                  <div>
+                    <Select
+                      id="TitlePressId"
+                      name="TitlePressId"
+                      value={titlepressOptions.find(
+                        (option) => option.value === TitlePressId
+                      )}
+                      isClearable
+                      onChange={(option) =>
+                        setTitlePressId(option ? option.value : "")
+                      }
+                      ref={titlepressRef}
+                      onKeyDown={(e) => handleKeyDown(e, papersizeRef)}
+                      options={titlepressOptions}
+                      styles={{
+                        control: (base) => ({
+                          ...base,
+                          width: "170px",
+                          marginTop: "10px",
+                          borderRadius: "4px",
+                          border: "1px solid rgb(223, 222, 222)",
+                          marginBottom: "5px",
+                        }),
+                        menu: (base) => ({
+                          ...base,
+                          zIndex: 100,
+                        }),
+                      }}
+                      placeholder="Select title press "
+                    />
 
-                  {/* <div>
+                    {/* <div>
                     {errors.TitlePressId && (
                       <b className="error-text">{errors.TitlePressId}</b>
                     )}
                   </div> */}
+                  </div>
                 </div>
-              </div>
-              <div>
-                <label className="book-label">Paper Size</label>
                 <div>
-                  {/* <Tooltip title={<span style={{ fontSize: "14px", fontWeight: "bold" }}>{PaperSizeId}</span>} arrow> */}
+                  <label className="book-label">Paper Size</label>
+                  <div>
+                    {/* <Tooltip title={<span style={{ fontSize: "14px", fontWeight: "bold" }}>{PaperSizeId}</span>} arrow> */}
 
-                  <Select
-                    id="PaperSizeId"
-                    name="PaperSizeId"
-                    value={papersizeOptions.find(
-                      (option) => option.value === PaperSizeId
-                    )}
-                    isClearable
-                    onChange={(option) =>
-                      setPaperSizeId(option ? option.value : "")
-                    }
-                    ref={papersizeRef}
-                    onKeyDown={(e) => handleKeyDown(e, pressRef)}
-                    options={papersizeOptions}
-                    styles={{
-                      control: (base) => ({
-                        ...base,
-                        width: "170px",
-                        marginTop: "10px",
-                        borderRadius: "4px",
-                        border: "1px solid rgb(223, 222, 222)",
-                        marginBottom: "5px",
-                      }),
-                      menu: (base) => ({
-                        ...base,
-                        zIndex: 100,
-                      }),
-                    }}
-                    placeholder="Select papersize "
-                  />
-                  {/* </Tooltip> */}
+                    <Select
+                      id="PaperSizeId"
+                      name="PaperSizeId"
+                      value={papersizeOptions.find(
+                        (option) => option.value === PaperSizeId
+                      )}
+                      isClearable
+                      onChange={(option) =>
+                        setPaperSizeId(option ? option.value : "")
+                      }
+                      ref={papersizeRef}
+                      onKeyDown={(e) => handleKeyDown(e, pressRef)}
+                      options={papersizeOptions}
+                      styles={{
+                        control: (base) => ({
+                          ...base,
+                          width: "170px",
+                          marginTop: "10px",
+                          borderRadius: "4px",
+                          border: "1px solid rgb(223, 222, 222)",
+                          marginBottom: "5px",
+                        }),
+                        menu: (base) => ({
+                          ...base,
+                          zIndex: 100,
+                        }),
+                      }}
+                      placeholder="Select papersize "
+                    />
+                    {/* </Tooltip> */}
 
-                  {/* <div>
+                    {/* <div>
                     {errors.PaperSizeId && (
                       <b className="error-text">{errors.PaperSizeId}</b>
                     )}
                   </div> */}
+                  </div>
                 </div>
-              </div>
-              <div>
-                <label className="book-label">Press</label>
                 <div>
-                  <Select
-                    id="PressId"
-                    name="PressId"
-                    value={
-                      pressOptions.find((option) => option.value === PressId) ||
-                      null
-                    } // Ensure it does not break if `PressId` is null
-                    isClearable
-                    onChange={(option) =>
-                      setPressId(option ? option.value : "")
-                    }
-                    ref={pressRef}
-                    onKeyDown={(e) => handleKeyDown(e, statusRef)}
-                    options={pressOptions}
-                    styles={{
-                      control: (base) => ({
-                        ...base,
-                        width: "170px",
-                        marginTop: "10px",
-                        borderRadius: "4px",
-                        border: "1px solid rgb(223, 222, 222)",
-                        marginBottom: "5px",
-                      }),
-                      menu: (base) => ({
-                        ...base,
-                        zIndex: 100,
-                      }),
-                    }}
-                    getOptionLabel={(e) => e.label} // Ensures correct display of names
-                    getOptionValue={(e) => e.value} // Ensures correct value selection
-                    placeholder="Select Press"
-                  />
+                  <label className="book-label">Press</label>
+                  <div>
+                    <Select
+                      id="PressId"
+                      name="PressId"
+                      value={
+                        pressOptions.find(
+                          (option) => option.value === PressId
+                        ) || null
+                      } // Ensure it does not break if `PressId` is null
+                      isClearable
+                      onChange={(option) =>
+                        setPressId(option ? option.value : "")
+                      }
+                      ref={pressRef}
+                      onKeyDown={(e) => handleKeyDown(e, statusRef)}
+                      options={pressOptions}
+                      styles={{
+                        control: (base) => ({
+                          ...base,
+                          width: "170px",
+                          marginTop: "10px",
+                          borderRadius: "4px",
+                          border: "1px solid rgb(223, 222, 222)",
+                          marginBottom: "5px",
+                        }),
+                        menu: (base) => ({
+                          ...base,
+                          zIndex: 100,
+                        }),
+                      }}
+                      getOptionLabel={(e) => e.label} // Ensures correct display of names
+                      getOptionValue={(e) => e.value} // Ensures correct value selection
+                      placeholder="Select Press"
+                    />
 
-                  {/* <div>
+                    {/* <div>
                     {errors.PressId && (
                       <b className="error-text">{errors.PressId}</b>
                     )}
                   </div> */}
-                </div>
-              </div>{" "}
-              <div>
-                <label className="book-label">Status</label>
+                  </div>
+                </div>{" "}
                 <div>
-                  <input
-                    type="text"
-                    id="Status"
-                    name="Status"
-                    value={Status}
-                    onChange={(e) => setStatus(e.target.value)}
-                    maxLength={50}
-                    ref={statusRef}
-                    onKeyDown={(e) => handleKeyDown(e, openingstockRef)}
-                    className="masterbook-control"
-                    placeholder="Enter Status"
-                  />
+                  <label className="book-label">Status</label>
+                  <div>
+                    <input
+                      type="text"
+                      id="Status"
+                      name="Status"
+                      value={Status}
+                      onChange={(e) => setStatus(e.target.value)}
+                      maxLength={50}
+                      ref={statusRef}
+                      onKeyDown={(e) => handleKeyDown(e, openingstockRef)}
+                      className="masterbook-control"
+                      placeholder="Enter Status"
+                    />
 
-                  {/* <div>
+                    {/* <div>
                     {errors.Status && (
                       <b className="error-text">{errors.Status}</b>
                     )}
                   </div> */}
+                  </div>
                 </div>
-              </div>
-              <div>
-                <label className="book-label">Opening stock</label>
-                <div>
-                  <input
-                    type="number"
-                    id="OpeningStock"
-                    name="OpeningStock"
-                    value={OpeningStock}
-                    onChange={(e) => setOpeningStock(e.target.value)}
-                    ref={openingstockRef}
-                    onKeyDown={(e) => handleKeyDown(e, reprintflagRef)}
-                    className="masterbook-control"
-                    placeholder="Enter Opening Stock"
-                  />
+                <div style={{ display: "none" }}>
+                  <label className="book-label">Opening stock</label>
+                  <div>
+                    <input
+                      type="number"
+                      id="OpeningStock"
+                      name="OpeningStock"
+                      value={OpeningStock}
+                      onChange={(e) => setOpeningStock(e.target.value)}
+                      ref={openingstockRef}
+                      onKeyDown={(e) => handleKeyDown(e, reprintflagRef)}
+                      className="masterbook-control"
+                      placeholder="Enter Opening Stock"
+                    />
 
-                  {/* <div>
+                    {/* <div>
                     {errors.OpeningStock && (
                       <b className="error-text">{errors.OpeningStock}</b>
                     )}
                   </div> */}
+                  </div>
                 </div>
-              </div>
-              <div>
-                <label className="book-label">Reprint Flag</label>
-                <div>
-                  <input
-                    type="text"
-                    id="ReprintFlag"
-                    name="ReprintFlag"
-                    value={ReprintFlag}
-                    onChange={(e) => setReprintFlag(e.target.value)}
-                    maxLength={1}
-                    ref={reprintflagRef}
-                    onKeyDown={(e) => handleKeyDown(e, printorderRef)}
-                    className="masterbook-control"
-                    placeholder="Enter Reprint Flag"
-                  />
+                <div style={{ display: "none" }}>
+                  <label className="book-label">Reprint Flag</label>
+                  <div>
+                    <input
+                      type="text"
+                      id="ReprintFlag"
+                      name="ReprintFlag"
+                      value={ReprintFlag}
+                      onChange={(e) => setReprintFlag(e.target.value)}
+                      maxLength={1}
+                      ref={reprintflagRef}
+                      onKeyDown={(e) => handleKeyDown(e, printorderRef)}
+                      className="masterbook-control"
+                      placeholder="Enter Reprint Flag"
+                    />
 
-                  {/* <div>
+                    {/* <div>
                     {errors.ReprintFlag && (
                       <b className="error-text">{errors.ReprintFlag}</b>
                     )}
                   </div> */}
+                  </div>
                 </div>
-              </div>
-              <div>
-                <label className="book-label">Print Order</label>
                 <div>
-                  <input
-                    type="number"
-                    id="PrintOrder"
-                    name="PrintOrder"
-                    value={PrintOrder}
-                    onChange={(e) => setPrintOrder(e.target.value)}
-                    ref={printorderRef}
-                    onKeyDown={(e) => handleKeyDown(e, bookidRef)}
-                    className="masterbook-control"
-                    placeholder="Enter Print Order"
-                  />
+                  <label className="book-label">Print Order</label>
+                  <div>
+                    <input
+                      type="number"
+                      id="PrintOrder"
+                      name="PrintOrder"
+                      value={PrintOrder}
+                      onChange={(e) => setPrintOrder(e.target.value)}
+                      ref={printorderRef}
+                      onKeyDown={(e) => handleKeyDown(e, bookidRef)}
+                      className="masterbook-control"
+                      placeholder="Enter Print Order"
+                    />
 
-                  {/* <div>
+                    {/* <div>
                     {errors.PrintOrder && (
                       <b className="error-text">{errors.PrintOrder}</b>
                     )}
                   </div> */}
+                  </div>
                 </div>
-              </div>
-              <div>
-                <label className="book-label">Book Id</label>
                 <div>
-                  <input
-                    type="text"
-                    id="BookId"
-                    name="BookId"
-                    value={BookId}
-                    onChange={(e) => setBookId(e.target.value)}
-                    ref={bookidRef}
-                    onKeyDown={(e) => handleKeyDown(e, creationdateRef)}
-                    className="masterbook-control"
-                    placeholder="Enter Book Id"
-                  />
+                  <label className="book-label">Book Id</label>
+                  <div>
+                    <input
+                      type="text"
+                      id="BookId"
+                      name="BookId"
+                      value={BookId}
+                      onChange={(e) => setBookId(e.target.value)}
+                      ref={bookidRef}
+                      onKeyDown={(e) => handleKeyDown(e, creationdateRef)}
+                      className="masterbook-control"
+                      placeholder="Enter Book Id"
+                    />
 
-                  {/* <div>
+                    {/* <div>
                     {errors.BookId && (
                       <b className="error-text">{errors.BookId}</b>
                     )}
                   </div> */}
+                  </div>
                 </div>
-              </div>
-              <div>
-                <label className="book-label">Creation Date</label>
                 <div>
-                  <input
-                    type="date"
-                    id="CreationDate"
-                    name="CreationDate"
-                    value={CreationDate}
-                    onChange={(e) => setCreationDate(e.target.value)}
-                    ref={creationdateRef}
-                    onKeyDown={(e) => handleKeyDown(e, curreditiondateRef)}
-                    className="masterbook-control"
-                    placeholder="Enter Creation Date"
-                  />
+                  <label className="book-label">Creation Date</label>
+                  <div>
+                    <input
+                      type="date"
+                      id="CreationDate"
+                      name="CreationDate"
+                      value={CreationDate}
+                      onChange={(e) => setCreationDate(e.target.value)}
+                      ref={creationdateRef}
+                      onKeyDown={(e) => handleKeyDown(e, curreditiondateRef)}
+                      className="masterbook-control"
+                      placeholder="Enter Creation Date"
+                    />
 
-                  {/* <div>
+                    {/* <div>
                     {errors.CreationDate && (
                       <b className="error-text">{errors.CreationDate}</b>
                     )}
                   </div> */}
+                  </div>
                 </div>
-              </div>
-              <div>
-                <label className="book-label">Current Edition Date</label>
                 <div>
-                  <input
-                    type="date"
-                    id="CurrentEditionDate"
-                    name="CurrentEditionDate"
-                    value={CurrentEditionDate}
-                    onChange={(e) => setCurrentEditionDate(e.target.value)}
-                    ref={curreditiondateRef}
-                    onKeyDown={(e) => handleKeyDown(e, saveRef)}
-                    className="masterbook-control"
-                    placeholder="Enter Current Edition Date"
-                  />
+                  <label className="book-label">Current Edition Date</label>
+                  <div>
+                    <input
+                      type="date"
+                      id="CurrentEditionDate"
+                      name="CurrentEditionDate"
+                      value={CurrentEditionDate}
+                      onChange={(e) => setCurrentEditionDate(e.target.value)}
+                      ref={curreditiondateRef}
+                      onKeyDown={(e) => handleKeyDown(e, saveRef)}
+                      className="masterbook-control"
+                      placeholder="Enter Current Edition Date"
+                    />
 
-                  {/* <div>
+                    {/* <div>
                     {errors.CurrentEditionDate && (
                       <b className="error-text">{errors.CurrentEditionDate}</b>
                     )}
                   </div> */}
+                  </div>
                 </div>
               </div>
             </form>

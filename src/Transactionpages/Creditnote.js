@@ -53,6 +53,8 @@ import {
   DialogContent,
   DialogTitle,
 } from "@mui/material";
+import dayjs from "dayjs";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 
 function Creditnote() {
   const [userId, setUserId] = useState("");
@@ -219,14 +221,63 @@ function Creditnote() {
     }
   };
 
+  const [rowErrors, setRowErrors] = useState([]); // array of objects per row
+
+  const [safedate, setSafedate] = useState(dayjs());
+
+  const handleDateChange1 = (newValue) => {
+    if (!newValue || !dayjs(newValue).isValid()) {
+      setDateError("Invalid date");
+      setSafedate(null);
+      return;
+    }
+
+    const today = dayjs();
+    const minDate = today.subtract(3, "day");
+    const maxDate = today.add(2, "day");
+
+    if (newValue.isBefore(minDate) || newValue.isAfter(maxDate)) {
+      setDateError("You can select only 2 days before or after today");
+    } else {
+      setDateError("");
+    }
+
+    setSafedate(newValue);
+  };
+
   const handleInputChange = (index, field, value) => {
     const updatedRows = [...rows];
 
     // Update the value of the current field
     updatedRows[index][field] = value;
 
+    const selectedDate = dayjs(value);
+    const today = dayjs();
+    const minDate = today.subtract(3, "day");
+    const maxDate = today.add(2, "day");
+
+    const updatedErrors = [...rowErrors];
+    if (!updatedErrors[index]) {
+      updatedErrors[index] = {};
+    }
+
+    if (field === "ChequeDate") {
+      if (!selectedDate.isValid()) {
+        updatedErrors[index][field] = "Invalid date";
+      } else if (
+        selectedDate.isBefore(minDate) ||
+        selectedDate.isAfter(maxDate)
+      ) {
+        updatedErrors[index][field] =
+          "You can select only 2 days before or after today";
+      } else {
+        updatedErrors[index][field] = ""; // Clear error
+      }
+    }
+
     // Update the state with the new row data
     setRows(updatedRows);
+    setRowErrors(updatedErrors);
   };
 
   const handleAddRow = () => {
@@ -296,8 +347,11 @@ function Creditnote() {
 
   const resetForm = () => {
     setCreditNoteNo("");
-    setVoucherDate("");
+    // setVoucherDate("");
+    setSafedate(dayjs());
+    setDateError("");
     setNarration("");
+    setRowErrors([]);
     setRows([
       {
         AccountId: "",
@@ -332,14 +386,15 @@ function Creditnote() {
       (detail) => detail.VoucherId === cnheader.Id
     );
 
-    // Convert date strings to DD-MM-YYYY format
     const convertDateForInput = (dateStr) => {
       if (typeof dateStr === "string" && dateStr.includes("-")) {
         const [year, month, day] = dateStr.split(" ")[0].split("-");
         return `${year}-${month}-${day}`;
+      } else if (dateStr?.date) {
+        const [year, month, day] = dateStr.date.split(" ")[0].split("-");
+        return `${year}-${month}-${day}`;
       } else {
-        console.error("Invalid date format:", dateStr);
-        return ""; // Return an empty string or handle it as needed
+        return null;
       }
     };
 
@@ -358,8 +413,8 @@ function Creditnote() {
       CostCenterId: detail.CostCenterId,
       ChequeNo: detail.ChequeNo,
       ChequeAmount: detail.ChequeAmount,
-      ChequeDate: detail.ChequeDate
-        ? convertDateForInput(detail.ChequeDate.date)
+      ChequeDate: detail.ChequeDate.date
+        ? convertDateForInput(detail.ChequeDate?.date)
         : "", // Ensure valid date
       MICRCode: detail.MICRCode,
       BankName: detail.BankName,
@@ -371,7 +426,8 @@ function Creditnote() {
 
     // Set the form fields
     setCreditNoteNo(cnheader.VoucherNo);
-    setVoucherDate(voucherdate);
+    // setVoucherDate(voucherdate);
+    setSafedate(voucherdate ? dayjs(voucherdate) : null);
     setNarration(cnheader.Narration);
     // setRefNo(cnheader.RefNo);
 
@@ -410,7 +466,21 @@ function Creditnote() {
     e.preventDefault();
     // if (!validateForm()) return;
 
-    const formattedVoucherDate = moment(VoucherDate).format("YYYY-MM-DD");
+    if (!safedate || !dayjs(safedate).isValid() || dateError) {
+      toast.error("Please correct all the date fields before submitting.");
+      return;
+    }
+
+    // ✅ Check for row-level ChequeDate errors
+    const hasChequeDateErrors = Object.values(rowErrors).some(
+      (row) => row?.ChequeDate
+    );
+    if (hasChequeDateErrors) {
+      toast.error("Please fix all Date errors in the table before submitting.");
+      return;
+    }
+
+    const formattedVoucherDate = dayjs(safedate).format("YYYY-MM-DD");
 
     const voucherData = {
       Id: isEditing ? id : "", // Include the Id for updating, null for new records
@@ -446,14 +516,16 @@ function Creditnote() {
           VoucherType: "CN",
           SRN: rows.indexOf(row) + 1,
           VoucherNo: CreditNoteNo ? CreditNoteNo : null, // Hardcoded VoucherNo
-          VoucherDate: VoucherDate, // Hardcoded VoucherDate
+          VoucherDate: formattedVoucherDate, // Hardcoded VoucherDate
           AccountId: parseInt(row.AccountId, 10),
           Amount: parseFloat(row.Amount),
           DOrC: row.DOrC, // Set to 'D' for the first row
           Narration: row.Narration,
           CostCenterId: row.CostCenterId,
           ChequeNo: row.ChequeNo,
-          ChequeDate: row.ChequeDate,
+          ChequeDate: row.ChequeDate
+            ? dayjs(row.ChequeDate).format("YYYY-MM-DD")
+            : formattedVoucherDate,
           ChequeAmount: row.ChequeAmount,
           MICRCode: row.MICRCode,
           BankName: row.BankName,
@@ -603,7 +675,7 @@ function Creditnote() {
           PaperProps={{
             sx: {
               borderRadius: isSmallScreen ? "0" : "10px 0 0 10px",
-              width: isSmallScreen ? "100%" : "70%",
+              width: isSmallScreen ? "100%" : "80%",
               zIndex: 1000,
             },
           }}>
@@ -658,21 +730,19 @@ borderWidth: 1,
                   {" "}
                   Date
                 </Typography>
-                <LocalizationProvider dateAdapter={AdapterDateFns}>
+                <LocalizationProvider dateAdapter={AdapterDayjs}>
                   <DatePicker
-                    value={VoucherDate ? new Date(VoucherDate) : null} // Convert to Date object
-                    onChange={(newValue) => setVoucherDate(newValue)}
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        error={!!errors.VoucherDate}
-                        helperText={errors.VoucherDate}
-                      />
-                    )}
+                    value={safedate}
+                    onChange={handleDateChange1}
+                    format="DD-MM-YYYY"
                     slotProps={{
-                      textField: { size: "small", fullWidth: true },
+                      textField: {
+                        size: "small",
+                        fullWidth: true,
+                        error: !!dateError,
+                        helperText: dateError,
+                      },
                     }}
-                    format="dd-MM-yyyy"
                   />
                 </LocalizationProvider>
               </Box>
@@ -787,7 +857,7 @@ borderWidth: 1,
                                 newValue ? newValue.value : ""
                               )
                             }
-                            sx={{ width: 250 }} // Set width
+                            sx={{ width: 550 }} // Set width
                             getOptionLabel={(option) => option.label}
                             renderInput={(params) => (
                               <TextField
@@ -831,7 +901,7 @@ borderWidth: 1,
                                 newValue ? newValue.value : ""
                               )
                             }
-                            sx={{ width: 150 }} // Set width
+                            sx={{ width: 100 }} // Set width
                             getOptionLabel={(option) => option.label}
                             renderInput={(params) => (
                               <TextField
@@ -888,7 +958,7 @@ borderWidth: 1,
                               handleInputChange(index, "Amount", e.target.value)
                             }
                             style={{
-                              width: "150px",
+                              width: "100px",
                             }}
                             className="creditnote-control"
                             placeholder="Amount"
@@ -915,7 +985,7 @@ borderWidth: 1,
                                 newValue ? newValue.value : ""
                               )
                             }
-                            sx={{ width: 250 }} // Set width
+                            sx={{ width: 200 }} // Set width
                             getOptionLabel={(option) => option.label}
                             renderInput={(params) => (
                               <TextField
@@ -952,7 +1022,7 @@ borderWidth: 1,
                               }
                             }}
                             style={{
-                              width: "150px",
+                              width: "120px",
                             }}
                             className="creditnote-control"
                             placeholder="ChequeNo"
@@ -964,10 +1034,12 @@ borderWidth: 1,
                           {/* {index === 0 ? (
           row.CheckDate
         ) : ( */}
-
                           <input
                             type="date"
-                            value={row.ChequeDate}
+                            value={
+                              row.ChequeDate ||
+                              new Date().toISOString().split("T")[0]
+                            }
                             onChange={(e) =>
                               handleInputChange(
                                 index,
@@ -975,9 +1047,16 @@ borderWidth: 1,
                                 e.target.value
                               )
                             }
+                            style={{ width: "150px" }}
                             placeholder="Cheque Date"
-                            className="creditnote-control"
+                            className="paymentvoucher-control"
                           />
+
+                          {rowErrors[index]?.ChequeDate && (
+                            <span style={{ color: "red", fontSize: "12px" }}>
+                              {rowErrors[index].ChequeDate}
+                            </span>
+                          )}
                           {/* )} */}
                         </td>
 
@@ -999,7 +1078,7 @@ borderWidth: 1,
                               }
                             }}
                             style={{
-                              width: "150px",
+                              width: "120px",
                             }}
                             placeholder="Cheque Amount"
                             className="creditnote-control"

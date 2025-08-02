@@ -254,13 +254,12 @@ function Publication() {
     // if (!CountryId) {
     //   formErrors.CountryId = "CountryId is required.";
     //   isValid = false;
-
     // }
-    // if (!ContactNo) {
-    //   formErrors.ContactNo = "Contact No is required.";
-    //   isValid = false;
 
-    // }
+    if (!ContactNo) {
+      formErrors.ContactNo = "Contact No must be 10 digits.";
+      isValid = false;
+    }
 
     if (!PublicationCode) {
       formErrors.PublicationCode = "Publication Code is required.";
@@ -282,7 +281,7 @@ function Publication() {
 
   const handleSubmit = async (e) => {
     e.preventDefault(); // Prevent the default form submission
-    if (!validateForm()) return;
+    // if (!validateForm()) return;
 
     const data = {
       PublicationName: PublicationName,
@@ -463,45 +462,70 @@ function Publication() {
                     />
                   </Tooltip>
 
-                  <div>
+                  {/* <div>
                     {errors.PublicationName && (
                       <b className="error-text">{errors.PublicationName}</b>
                     )}
-                  </div>
+                  </div> */}
                 </div>
               </div>
 
               <div>
                 <label className="publication-label">
-                  Address <b className="required">*</b>
+                  Publication Code<b className="required">*</b>
+                </label>
+                <div>
+                  <input
+                    type="text"
+                    id="PublicationCode"
+                    name="PublicationCode"
+                    value={PublicationCode}
+                    maxLength={1}
+                    onChange={(e) => setPublicationCode(e.target.value)}
+                    ref={pubcodeRef}
+                    onKeyDown={(e) => handleKeyDown(e, shortnameRef)}
+                    placeholder="Enter Publication code"
+                    className="professor-control"
+                  />
+
+                  {/* <div>
+                    {errors.PublicationCode && (
+                      <b className="error-text">{errors.PublicationCode}</b>
+                    )}
+                  </div> */}
+                </div>
+              </div>
+
+              <div>
+                <label className="publication-label">
+                  Short Name <b className="required">*</b>
                 </label>
                 <div>
                   <Tooltip
                     title={
                       <span style={{ fontSize: "14px", fontWeight: "bold" }}>
-                        {Address}
+                        {ShortName}
                       </span>
                     }
                     arrow>
                     <input
                       type="text"
-                      id="Address"
-                      name="Address"
-                      value={Address}
-                      onChange={(e) => setAddress(e.target.value)}
-                      maxLength={200}
-                      ref={addressRef}
-                      onKeyDown={(e) => handleKeyDown(e, countryRef)}
-                      placeholder="Enter Address"
+                      id="ShortName"
+                      name="ShortName"
+                      value={ShortName}
+                      onChange={(e) => setShortName(e.target.value)}
+                      ref={shortnameRef}
+                      onKeyDown={(e) => handleKeyDown(e, pubflagRef)}
+                      placeholder="Enter ShortName"
                       className="professor-control"
                     />
                   </Tooltip>
 
-                  <div>
-                    {errors.Address && (
-                      <b className="error-text">{errors.Address}</b>
+                  {/* <div>
+                    {errors.ShortName && (
+                      <b className="error-text">{errors.ShortName}</b>
                     )}
-                  </div>
+                  </div> */}
                 </div>
               </div>
 
@@ -533,11 +557,11 @@ function Publication() {
                     placeholder="Select Country"
                   />
 
-                  <div>
+                  {/* <div>
                     {errors.CountryId && (
                       <b className="error-text">{errors.CountryId}</b>
                     )}
-                  </div>
+                  </div> */}
                 </div>
               </div>
 
@@ -569,11 +593,11 @@ function Publication() {
                     placeholder="Select State"
                   />
 
-                  <div>
+                  {/* <div>
                     {errors.StateId && (
                       <b className="error-text">{errors.StateId}</b>
                     )}
-                  </div>
+                  </div> */}
                 </div>
               </div>
 
@@ -605,9 +629,44 @@ function Publication() {
                     placeholder="Select City"
                   />
 
-                  <div>
+                  {/* <div>
                     {errors.CityId && (
                       <b className="error-text">{errors.CityId}</b>
+                    )}
+                  </div> */}
+                </div>
+              </div>
+
+              <div>
+                <label className="publication-label">
+                  Address <b className="required">*</b>
+                </label>
+                <div>
+                  <Tooltip
+                    title={
+                      <span style={{ fontSize: "14px", fontWeight: "bold" }}>
+                        {Address}
+                      </span>
+                    }
+                    arrow>
+                    <input
+                      type="text"
+                      id="Address"
+                      name="Address"
+                      value={Address}
+                      onChange={(e) => setAddress(e.target.value)}
+                      maxLength={200}
+                      ref={addressRef}
+                      onKeyDown={(e) => handleKeyDown(e, countryRef)}
+                      style={{ width: "300px" }}
+                      placeholder="Enter Address"
+                      className="professor-control"
+                    />
+                  </Tooltip>
+
+                  <div>
+                    {errors.Address && (
+                      <b className="error-text">{errors.Address}</b>
                     )}
                   </div>
                 </div>
@@ -633,65 +692,6 @@ function Publication() {
                   <div>
                     {errors.ContactNo && (
                       <b className="error-text">{errors.ContactNo}</b>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <label className="publication-label">
-                  Publication Code<b className="required">*</b>
-                </label>
-                <div>
-                  <input
-                    type="text"
-                    id="PublicationCode"
-                    name="PublicationCode"
-                    value={PublicationCode}
-                    maxLength={1}
-                    onChange={(e) => setPublicationCode(e.target.value)}
-                    ref={pubcodeRef}
-                    onKeyDown={(e) => handleKeyDown(e, shortnameRef)}
-                    placeholder="Enter Publication code"
-                    className="professor-control"
-                  />
-
-                  <div>
-                    {errors.PublicationCode && (
-                      <b className="error-text">{errors.PublicationCode}</b>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <label className="publication-label">
-                  Short Name <b className="required">*</b>
-                </label>
-                <div>
-                  <Tooltip
-                    title={
-                      <span style={{ fontSize: "14px", fontWeight: "bold" }}>
-                        {ShortName}
-                      </span>
-                    }
-                    arrow>
-                    <input
-                      type="text"
-                      id="ShortName"
-                      name="ShortName"
-                      value={ShortName}
-                      onChange={(e) => setShortName(e.target.value)}
-                      ref={shortnameRef}
-                      onKeyDown={(e) => handleKeyDown(e, pubflagRef)}
-                      placeholder="Enter ShortName"
-                      className="professor-control"
-                    />
-                  </Tooltip>
-
-                  <div>
-                    {errors.ShortName && (
-                      <b className="error-text">{errors.ShortName}</b>
                     )}
                   </div>
                 </div>

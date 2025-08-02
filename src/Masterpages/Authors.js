@@ -59,7 +59,8 @@ function Authors() {
   const [StateId, setStateId] = useState("");
   const [MobileNo, setMobileNo] = useState("");
   const [Pincode, setPincode] = useState("");
-  const [faxNo, setFaxNo] = useState("");
+  const [FaxNo, setFaxno] = useState("");
+  const [PanNo, setPanNo] = useState("");
   const [email, setEmail] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingIndex, setEditingIndex] = useState(-1);
@@ -86,7 +87,7 @@ function Authors() {
   const areaRef = useRef(null);
   const pincodeRef = useRef(null);
   const mobilenoRef = useRef(null);
-  const faxnoRef = useRef(null);
+  const pannoref = useRef(null);
   const emailRef = useRef(null);
   const saveRef = useRef(null);
 
@@ -192,7 +193,7 @@ function Authors() {
     setAreaId("");
     setMobileNo("");
     setPincode("");
-    setFaxNo("");
+    setPanNo("");
     setEmail("");
     setIsModalOpen(false);
     setId(null); // Reset the author ID
@@ -218,9 +219,10 @@ function Authors() {
 
     setCityId(author.CityId || "");
     setStateId(author.StateId || "");
+    setAreaId(author.AreaId || "");
     setMobileNo(author.MobileNo || "");
     setPincode(author.Pincode || "");
-    setFaxNo(author.FaxNo || "");
+    setPanNo(author.PanNo || "");
     setEmail(author.EmailId);
     setEditingIndex(index);
     setIsModalOpen(true);
@@ -300,8 +302,8 @@ function Authors() {
     }
 
     // City
-    if (!faxNo) {
-      formErrors.faxNo = "Fax No is required.";
+    if (!PanNo) {
+      formErrors.PanNo = "Pan No is required.";
       isValid = false;
     }
 
@@ -352,8 +354,9 @@ function Authors() {
       StateId: StateId,
       AreaId: AreaId,
       Pincode: Pincode,
+      FaxNo: 123456,
       MobileNo: MobileNo,
-      FaxNo: faxNo,
+      PanNo: PanNo,
       EmailId: email,
       CreatedBy: userId,
     };
@@ -802,7 +805,7 @@ function Authors() {
                     id="AreaId"
                     name="AreaId"
                     value={areaOptions.find(
-                      (option) => option.value === AreaId
+                      (option) => option.value === Number(AreaId)
                     )}
                     onChange={(option) => setAreaId(option.value)}
                     ref={areaRef}
@@ -865,7 +868,7 @@ function Authors() {
                     onChange={(e) => setMobileNo(e.target.value)}
                     maxLength={25}
                     ref={mobilenoRef}
-                    onKeyDown={(e) => handleKeyDown(e, faxnoRef)}
+                    onKeyDown={(e) => handleKeyDown(e, pannoref)}
                     className="author-control"
                     placeholder="Enter Mobile Number"
                   />
@@ -879,25 +882,25 @@ function Authors() {
               </div>
               <div>
                 <label className="author-label">
-                  Fax Number <b className="required">*</b>
+                  PAN Number <b className="required">*</b>
                 </label>
                 <div>
                   <input
                     type="text"
-                    id="faxNo"
-                    name="faxNo"
-                    value={faxNo}
-                    onChange={(e) => setFaxNo(e.target.value)}
+                    id="PanNo"
+                    name="PanNo"
+                    value={PanNo}
+                    onChange={(e) => setPanNo(e.target.value)}
                     maxLength={25}
-                    ref={faxnoRef}
+                    ref={[pannoref]}
                     onKeyDown={(e) => handleKeyDown(e, emailRef)}
                     className="author-control"
-                    placeholder="Enter Fax Number"
+                    placeholder="Enter PAN Number"
                   />
 
                   <div>
-                    {errors.faxNo && (
-                      <b className="error-text">{errors.faxNo}</b>
+                    {errors.PanNo && (
+                      <b className="error-text">{errors.PanNo}</b>
                     )}
                   </div>
                 </div>

@@ -52,9 +52,11 @@ import {
 import CloseIcon from "@mui/icons-material/Close";
 import { useTheme } from "@mui/material/styles";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
-import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { DatePicker } from "@mui/x-date-pickers";
 import { Edit, Delete, Add, MoreVert, Print } from "@mui/icons-material";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import dayjs from "dayjs";
+import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 
 function Paymentvoucher() {
   const [userId, setUserId] = useState("");
@@ -288,8 +290,31 @@ function Paymentvoucher() {
 
   const handleInputChange = (index, field, value) => {
     const updatedRows = [...rows];
-    updatedRows[index] = { ...updatedRows[index], [field]: value };
+    updatedRows[index][field] = value;
 
+    const selectedDate = dayjs(value);
+    const today = dayjs();
+    const minDate = today.subtract(3, "day");
+    const maxDate = today.add(2, "day");
+
+    const updatedErrors = [...rowErrors];
+    if (!updatedErrors[index]) {
+      updatedErrors[index] = {};
+    }
+
+    if (field === "ChequeDate") {
+      if (!selectedDate.isValid()) {
+        updatedErrors[index][field] = "Invalid date";
+      } else if (
+        selectedDate.isBefore(minDate) ||
+        selectedDate.isAfter(maxDate)
+      ) {
+        updatedErrors[index][field] =
+          "You can select only 2 days before or after today";
+      } else {
+        updatedErrors[index][field] = ""; // Clear error
+      }
+    }
     let totalCredit = 0;
     let totalDebit = 0;
 
@@ -313,6 +338,8 @@ function Paymentvoucher() {
     console.log("Total Credit:", totalCredit, "Total Debit:", totalDebit);
 
     setRows(updatedRows);
+    setRowErrors(updatedErrors);
+
     setTotalcredit(totalCredit); // ✅ First row's amount is now Total Credit
     setTotaldebit(totalDebit);
   };
@@ -345,10 +372,14 @@ function Paymentvoucher() {
   };
 
   const resetForm = () => {
-    setVoucherDate("");
+    // setVoucherDate("");
+    setVouchersafedate(dayjs());
+    setDateError("");
     setVoucherNo("");
     setChequeNo("");
-    setChequeDate("");
+    // setChequeDate("");
+    setchequesafeDate(dayjs());
+    setChequedateerror("");
     setNarration("");
     setTotalcredit("");
     setTotaldebit("");
@@ -397,25 +428,53 @@ function Paymentvoucher() {
     console.log(currentRow, "row");
     const paymentheader = payments[currentRow.index];
 
+    console.log(paymentheader, "payment voucher header");
     // Filter purchase details to match the selected PurchaseId
     const paymentdetail = paymentdetails.filter(
       (detail) => detail.VoucherId === paymentheader.Id
     );
 
-    // Convert date strings to DD-MM-YYYY format
+    // Helper function to safely parse date strings
     const convertDateForInput = (dateStr) => {
       if (typeof dateStr === "string" && dateStr.includes("-")) {
         const [year, month, day] = dateStr.split(" ")[0].split("-");
         return `${year}-${month}-${day}`;
+      } else if (dateStr?.date) {
+        const [year, month, day] = dateStr.date.split(" ")[0].split("-");
+        return `${year}-${month}-${day}`;
       } else {
-        console.error("Invalid date format:", dateStr);
-        return ""; // Return an empty string or handle it as needed
+        return null;
       }
     };
 
-    const chequedetailDate = convertDateForInput(
-      paymentdetail.ChequeDate?.date
-    );
+    // --- Safely parse and set VoucherDate ---
+    const voucherdate = convertDateForInput(paymentheader.VoucherDate?.date);
+    if (voucherdate && dayjs(voucherdate).isValid()) {
+      setVouchersafedate(dayjs(voucherdate));
+    } else {
+      setVouchersafedate(null);
+      console.warn("Invalid VoucherDate:", paymentheader.VoucherDate);
+    }
+
+    // --- Safely parse and set ChequeDate ---
+    const chequeDate = convertDateForInput(paymentheader.ChequeDate?.date);
+    if (chequeDate && dayjs(chequeDate).isValid()) {
+      setchequesafeDate(dayjs(chequeDate));
+    } else {
+      setchequesafeDate(null);
+      console.warn("Invalid ChequeDate:", paymentheader.ChequeDate);
+    }
+
+    // // Convert date strings to DD-MM-YYYY format
+    // const convertDateForInput = (dateStr) => {
+    //   if (typeof dateStr === "string" && dateStr.includes("-")) {
+    //     const [year, month, day] = dateStr.split(" ")[0].split("-");
+    //     return `${year}-${month}-${day}`;
+    //   } else {
+    //     console.error("Invalid date format:", dateStr);
+    //     return ""; // Return an empty string or handle it as needed
+    //   }
+    // };
 
     // Map the details to rows
     const mappedRows = paymentdetail.map((detail) => ({
@@ -426,7 +485,6 @@ function Paymentvoucher() {
       DOrC: detail.DOrC,
       IsOldCheque: detail.IsOldCheque,
       AccountPayeeCheque: detail.AccountPayeeCheque,
-
       Narration: detail.Narration,
       CostCenterId: detail.CostCenterId,
       ChequeNo: detail.ChequeNo,
@@ -440,20 +498,24 @@ function Paymentvoucher() {
       Id: detail.Id,
     }));
 
-    const voucherdate = convertDateForInput(paymentheader.VoucherDate?.date);
+    // const voucherdate = convertDateForInput(paymentheader.VoucherDate?.date);
 
-    const chequeDate = convertDateForInput(paymentheader.ChequeDate?.date);
+    // const chequeDate = convertDateForInput(paymentheader.ChequeDate?.date);
 
     // Set the form fields
     setVoucherNo(paymentheader.VoucherNo);
-    setVoucherDate(voucherdate);
+    setVouchersafedate(dayjs(voucherdate));
+    setchequesafeDate(dayjs(chequeDate));
+
+    // setVoucherDate(voucherdate);
     setAccountId(paymentheader.AccountId);
     setChequeNo(paymentheader.ChequeNo);
-    setChequeDate(chequeDate);
+    // setChequeDate(chequeDate);
     setAccountId(paymentdetail[0]?.AccountId);
     setNarration(paymentdetail[0]?.Narration);
     setTotalcredit(paymentdetail[0]?.Amount);
     setTotaldebit(paymentdetail[1]?.Amount);
+    setPaymentType(paymentheader.PaymentType);
     setAmount(paymentdetail[0]?.Amount);
     setAccountpayeecheque(paymentdetail[0]?.AccountPayeeCheque);
     setIsoldcheque(paymentdetail[0]?.IsOldCheque);
@@ -537,6 +599,52 @@ function Paymentvoucher() {
     setDeleteIndex(null);
   };
 
+  const [vouchersafedate, setVouchersafedate] = useState(dayjs());
+
+  const handleDateChange1 = (newValue) => {
+    if (!newValue || !dayjs(newValue).isValid()) {
+      setDateError("Invalid date");
+      setVouchersafedate(null);
+      return;
+    }
+
+    const today = dayjs();
+    const minDate = today.subtract(3, "day");
+    const maxDate = today.add(2, "day");
+
+    if (newValue.isBefore(minDate) || newValue.isAfter(maxDate)) {
+      setDateError("You can select only 2 days before or after today");
+    } else {
+      setDateError("");
+    }
+
+    setVouchersafedate(newValue);
+  };
+
+  const [chequesafeDate, setchequesafeDate] = useState(dayjs());
+  const [chequedateerror, setChequedateerror] = useState(false);
+  const handleDateChange2 = (newValue) => {
+    if (!newValue || !dayjs(newValue).isValid()) {
+      setChequedateerror("Invalid date");
+      setchequesafeDate(null);
+      return;
+    }
+
+    const today = dayjs();
+    const minDate = today.subtract(3, "day");
+    const maxDate = today.add(2, "day");
+
+    if (newValue.isBefore(minDate) || newValue.isAfter(maxDate)) {
+      setChequedateerror("You can select only 2 days before or after today");
+    } else {
+      setChequedateerror("");
+    }
+
+    setchequesafeDate(newValue);
+  };
+
+  const [rowErrors, setRowErrors] = useState([]); // array of objects per row
+
   // const validateForm = () => {
   //   let formErrors = {};
   //   let isValid = true;
@@ -547,10 +655,21 @@ function Paymentvoucher() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    // if (!validateForm()) return;
 
-    const formattedVoucherDate = moment(VoucherDate).format("YYYY-MM-DD");
-    const formattedChequeDate = moment(ChequeDate).format("YYYY-MM-DD");
+    if (
+      !vouchersafedate ||
+      !dayjs(vouchersafedate).isValid() ||
+      dateError ||
+      !chequesafeDate ||
+      !dayjs(chequesafeDate).isValid() ||
+      chequedateerror
+    ) {
+      toast.error("Please correct all the date fields before submitting.");
+      return;
+    }
+
+    const formattedVoucherDate = dayjs(vouchersafedate).format("YYYY-MM-DD");
+    const formattedChequeDate = dayjs(chequesafeDate).format("YYYY-MM-DD");
 
     const voucherData = {
       Id: isEditing ? id : "", // Include the Id for updating, null for new records
@@ -561,6 +680,8 @@ function Paymentvoucher() {
       ChequeDate: formattedChequeDate,
       RefNo: "RefNo",
       Narration: Narration,
+      PaymentType: PaymentType,
+
       CreatedBy: !isEditing ? userId : undefined,
       UpdatedBy: isEditing ? userId : undefined,
     };
@@ -589,14 +710,16 @@ function Paymentvoucher() {
           VoucherType: "PY",
           SRN: rows.indexOf(row) + 1,
           VoucherNo: VoucherNo ? voucherNo : null,
-          VoucherDate: VoucherDate,
+          VoucherDate: formattedVoucherDate,
           AccountId: parseInt(row.AccountId, 10),
           Amount: parseFloat(row.Amount),
           DOrC: index === 0 ? "C" : row.DOrC, // Set to 'D' for the first row
           Narration: row.Narration,
           CostCenterId: row.CostCenterId,
           ChequeNo: row.ChequeNo,
-          ChequeDate: row.ChequeDate,
+          ChequeDate: row.ChequeDate
+            ? dayjs(row.ChequeDate).format("YYYY-MM-DD")
+            : formattedVoucherDate, // ✅ Fix
           ChequeAmount: row.ChequeAmount,
           MICRCode: row.MICRCode,
           BankName: row.BankName,
@@ -671,6 +794,12 @@ function Paymentvoucher() {
       },
 
       {
+        accessorKey: "VoucherType",
+        header: "Voucher Type",
+        size: 50,
+      },
+
+      {
         accessorKey: "VoucherNo",
         header: "Voucher No",
         size: 50,
@@ -681,7 +810,7 @@ function Paymentvoucher() {
         size: 50,
         Cell: ({ cell }) => {
           // Using moment.js to format the date
-          const date = moment(cell.getValue()).format("DD-MM-YYYY");
+          const date = dayjs(cell.getValue()).format("DD-MM-YYYY");
           return <span>{date}</span>;
         },
       },
@@ -816,23 +945,20 @@ function Paymentvoucher() {
                     <Typography variant="body2" fontWeight="bold">
                       Voucher Date
                     </Typography>
-                    <LocalizationProvider dateAdapter={AdapterDateFns}>
+                    <LocalizationProvider dateAdapter={AdapterDayjs}>
                       <DatePicker
-                        value={VoucherDate ? new Date(VoucherDate) : null}
-                        onChange={(newValue) => setVoucherDate(newValue)}
-                        renderInput={(params) => (
-                          <TextField
-                            {...params}
-                            error={!!errors.VoucherDate}
-                            helperText={errors.VoucherDate}
-                            size="small"
-                            fullWidth
-                          />
-                        )}
+                        value={vouchersafedate || null}
+                        // onChange={(newValue) => setVouchersafedate(newValue)}
+                        onChange={handleDateChange1}
+                        format="DD-MM-YYYY"
                         slotProps={{
-                          textField: { size: "small", fullWidth: true },
+                          textField: {
+                            size: "small",
+                            fullWidth: true,
+                            error: !!dateError,
+                            helperText: dateError,
+                          },
                         }}
-                        format="dd-MM-yyyy"
                       />
                     </LocalizationProvider>
                   </Box>
@@ -848,14 +974,19 @@ function Paymentvoucher() {
                     value={PaymentType}
                     onChange={(e) => setPaymentType(e.target.value)}>
                     <FormControlLabel
-                      value="cash"
+                      value={0}
                       control={<Radio />}
                       label="Cash"
                     />
                     <FormControlLabel
-                      value="bank"
+                      value={1}
                       control={<Radio />}
                       label="Bank"
+                    />
+                    <FormControlLabel
+                      value={2}
+                      control={<Radio />}
+                      label="NEFT"
                     />
                   </RadioGroup>
                 </Box>
@@ -925,23 +1056,19 @@ function Paymentvoucher() {
                     <Typography variant="body2" fontWeight="bold">
                       Cheque Date
                     </Typography>
-                    <LocalizationProvider dateAdapter={AdapterDateFns}>
+                    <LocalizationProvider dateAdapter={AdapterDayjs}>
                       <DatePicker
-                        value={ChequeDate ? new Date(ChequeDate) : null} // Convert to Date object
-                        onChange={(newValue) => setChequeDate(newValue)}
-                        renderInput={(params) => (
-                          <TextField
-                            {...params}
-                            error={!!errors.ChequeDate}
-                            helperText={errors.ChequeDate}
-                            size="small"
-                            fullWidth
-                          />
-                        )}
+                        value={chequesafeDate}
+                        onChange={handleDateChange2}
+                        format="DD-MM-YYYY"
                         slotProps={{
-                          textField: { size: "small", fullWidth: true },
+                          textField: {
+                            size: "small",
+                            fullWidth: true,
+                            error: !!chequedateerror,
+                            helperText: chequedateerror,
+                          },
                         }}
-                        format="dd-MM-yyyy"
                       />
                     </LocalizationProvider>
                   </Box>
@@ -953,7 +1080,7 @@ function Paymentvoucher() {
                     Cash/ Bank Particulars
                   </Typography>
                   <Box sx={{ display: "flex", gap: 1 }}>
-                    <FormControlLabel
+                    {/* <FormControlLabel
                       control={
                         <Checkbox
                           checked={IsOldCheque}
@@ -961,7 +1088,7 @@ function Paymentvoucher() {
                         />
                       }
                       label="Is Old Cheque?"
-                    />
+                    /> */}
                     <FormControlLabel
                       control={
                         <Checkbox
@@ -1298,7 +1425,10 @@ function Paymentvoucher() {
 
                           <input
                             type="date"
-                            value={row.ChequeDate}
+                            value={
+                              row.ChequeDate ||
+                              new Date().toISOString().split("T")[0]
+                            }
                             onChange={(e) =>
                               handleInputChange(
                                 index,
@@ -1306,9 +1436,16 @@ function Paymentvoucher() {
                                 e.target.value
                               )
                             }
+                            style={{ width: "150px" }}
                             placeholder="Cheque Date"
-                            className="receiptvoucher-control"
+                            className="paymentvoucher-control"
                           />
+
+                          {rowErrors[index]?.ChequeDate && (
+                            <span style={{ color: "red", fontSize: "12px" }}>
+                              {rowErrors[index].ChequeDate}
+                            </span>
+                          )}
                           {/* )} */}
                         </td>
 
