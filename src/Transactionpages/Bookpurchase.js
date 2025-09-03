@@ -102,7 +102,7 @@ function Bookpurchase() {
   const [TotalCopies, setTotalCopies] = useState("");
   const [IsPaperPurchase, setIsPaperPurchase] = useState(false);
   const [Remark, setRemark] = useState("");
-
+  const [PurchaseTypeId, setPurchasetypeid] = useState("");
   const [currentRow, setCurrentRow] = useState(null);
   const [anchorEl, setAnchorEl] = useState(null);
 
@@ -130,7 +130,7 @@ function Bookpurchase() {
   const [bookOptions, setBookOptions] = useState([]);
   const [tdsOptions, setTdsOptions] = useState([]);
   const [accountOptions, setAccountOptions] = useState([]);
-
+  const [purchasetypeOptions, setPurchasetypeoptions] = useState([]);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [deleteIndex, setDeleteIndex] = useState(null);
   const [deleteId, setDeleteId] = useState(null);
@@ -725,7 +725,7 @@ function Bookpurchase() {
       TotalCopies: TotalCopies,
       IsPaperPurchase: "false",
       Remark: Remark,
-
+      PurchaseTypeId: PurchaseTypeId,
       CreatedBy: !isEditing ? userId : undefined,
       UpdatedBy: isEditing ? userId : undefined,
     };

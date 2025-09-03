@@ -1467,7 +1467,7 @@ function Book() {
                       ref={bookrateRef}
                       onKeyDown={(e) => handleKeyDown(e, bookpagesRef)}
                       className="masterbook-control"
-                      placeholder="Enter Book Rate"
+                      placeholder="Enter MRP"
                     />
 
                     {/* <div>

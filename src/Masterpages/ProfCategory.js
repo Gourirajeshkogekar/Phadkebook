@@ -23,7 +23,6 @@ function ProfCategory() {
   const [userId, setUserId] = useState("");
   const [yearid, setYearId] = useState("");
   const [dateError, setDateError] = useState(false);
-
   useEffect(() => {
     const storedUserId = sessionStorage.getItem("UserId");
     const storedYearId = sessionStorage.getItem("YearId");

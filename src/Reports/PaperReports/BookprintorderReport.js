@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Button,
@@ -19,6 +19,25 @@ function BookprintorderReport() {
   const [toDate, setToDate] = useState(dayjs());
   const [loading, setLoading] = useState(false);
 
+  const [companyName, setCompanyName] = useState("");
+
+  useEffect(() => {
+    fetchCompanies();
+  }, []);
+
+  const fetchCompanies = async () => {
+    try {
+      const response = await axios.get(
+        "https://publication.microtechsolutions.net.in/php/CompanyMasterget.php"
+      );
+
+      if (response.data.length > 0) {
+        setCompanyName(response.data[0].CompanyName); // Assuming you want the first one
+      }
+    } catch (error) {
+      console.error("Error fetching companies:", error);
+    }
+  };
   const handleGenerateReport = async () => {
     setLoading(true);
     try {
@@ -48,9 +67,14 @@ function BookprintorderReport() {
 
       const addHeader = () => {
         doc.setFontSize(13).setFont(undefined, "bold");
-        doc.text("Phadke Prakashan, Kolhapur", pageWidth / 2, y, {
-          align: "center",
-        });
+        doc.text(
+          companyName || "Phadke Prakashan, Kolhapur",
+          pageWidth / 2,
+          y,
+          {
+            align: "center",
+          }
+        );
         y += 6;
         doc.setFontSize(12);
         doc.text("Paper Consumption Details", pageWidth / 2, y, {
@@ -252,7 +276,16 @@ function BookprintorderReport() {
     <LocalizationProvider dateAdapter={AdapterDayjs}>
       <Box sx={{ p: 3, display: "flex", justifyContent: "center" }}>
         <Paper elevation={3} sx={{ p: 4, width: "100%", maxWidth: 700 }}>
-          <Typography variant="h5" textAlign="center" fontWeight="bold">
+          <Typography
+            variant="h5"
+            mb={3}
+            sx={{
+              textAlign: "center",
+              background: "linear-gradient(to right, #007cf0, #00dfd8)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              fontWeight: "bold",
+            }}>
             Book Print Order Report
           </Typography>
           <Divider sx={{ my: 2 }} />

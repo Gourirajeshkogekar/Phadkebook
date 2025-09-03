@@ -832,11 +832,11 @@ function Accounts() {
         size: 10,
       },
 
-      {
-        accessorKey: "OpeningBalance",
-        header: "Opening Balance",
-        size: 10,
-      },
+      // {
+      //   accessorKey: "OpeningBalance",
+      //   header: "Opening Balance",
+      //   size: 10,
+      // },
 
       {
         accessorKey: "actions",

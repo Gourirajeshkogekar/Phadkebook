@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Button,
@@ -18,6 +18,25 @@ function GodownwisepaperReport() {
   const [fromDate, setFromDate] = useState(dayjs());
   const [toDate, setToDate] = useState(dayjs());
   const [loading, setLoading] = useState(false);
+  const [companyName, setCompanyName] = useState("");
+
+  useEffect(() => {
+    fetchCompanies();
+  }, []);
+
+  const fetchCompanies = async () => {
+    try {
+      const response = await axios.get(
+        "https://publication.microtechsolutions.net.in/php/CompanyMasterget.php"
+      );
+
+      if (response.data.length > 0) {
+        setCompanyName(response.data[0].CompanyName); // Assuming you want the first one
+      }
+    } catch (error) {
+      console.error("Error fetching companies:", error);
+    }
+  };
 
   const handleGenerateReport = async () => {
     setLoading(true);
@@ -48,29 +67,36 @@ function GodownwisepaperReport() {
         doc.setFontSize(10);
         doc.text(`Page ${pageNumber}`, pageWidth - 20, 10);
       };
+      const addHeader = () => {
+        doc.setFontSize(13).setFont(undefined, "bold");
+        doc.text(
+          companyName || "Phadke Prakashan, Kolhapur",
+          pageWidth / 2,
+          y,
+          {
+            align: "center",
+          }
+        );
+        y += 6;
+        doc.setFontSize(12);
+        doc.text("Godown-wise Paperwise Partywise Report", pageWidth / 2, y, {
+          align: "center",
+        });
+        y += 6;
+        doc.setFontSize(11);
+        doc.text(
+          `From: ${fromDate.format("DD-MM-YYYY")} To: ${toDate.format(
+            "DD-MM-YYYY"
+          )}`,
+          pageWidth / 2,
+          y,
+          { align: "center" }
+        );
+        y += 10;
+        addPageNumber();
+      };
 
-      // Header
-      doc.setFontSize(13).setFont(undefined, "bold");
-      doc.text("Phadke Prakashan, Kolhapur", pageWidth / 2, y, {
-        align: "center",
-      });
-      y += 6;
-      doc.setFontSize(12);
-      doc.text("Godown-wise Paperwise Partywise Report", pageWidth / 2, y, {
-        align: "center",
-      });
-      y += 6;
-      doc.setFontSize(11);
-      doc.text(
-        `From: ${fromDate.format("DD-MM-YYYY")} To: ${toDate.format(
-          "DD-MM-YYYY"
-        )}`,
-        pageWidth / 2,
-        y,
-        { align: "center" }
-      );
-      y += 10;
-      addPageNumber();
+      addHeader();
 
       for (const [godown, paperGroups] of Object.entries(grouped)) {
         doc.setFont(undefined, "bold").setFontSize(11);
@@ -142,9 +168,10 @@ function GodownwisepaperReport() {
 
             if (y > 270) {
               doc.addPage();
-              pageNumber++;
               y = 20;
-              addPageNumber();
+              pageNumber++;
+
+              addHeader();
             }
           }
 
@@ -197,7 +224,17 @@ function GodownwisepaperReport() {
     <LocalizationProvider dateAdapter={AdapterDayjs}>
       <Box sx={{ p: 3, display: "flex", justifyContent: "center" }}>
         <Paper elevation={3} sx={{ p: 4, width: "100%", maxWidth: 700 }}>
-          <Typography variant="h5" textAlign="center" fontWeight="bold">
+          <Typography
+            variant="h5"
+            mb={3}
+            sx={{
+              textAlign: "center",
+              background: "linear-gradient(to right, #007cf0, #00dfd8)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              fontWeight: "bold",
+            }}>
+            {" "}
             Godown-wise Paper Report
           </Typography>
           <Divider sx={{ my: 2 }} />

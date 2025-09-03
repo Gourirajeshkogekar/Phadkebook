@@ -30,9 +30,11 @@ const Salesbookwisepartywise = () => {
   const [bookReportData, setBookreportdata] = useState([]);
   const hiddenReportRef = useRef();
   const [loading, setLoading] = useState(false);
+  const [companyName, setCompanyName] = useState("");
 
   useEffect(() => {
     fetchBooks();
+    fetchCompanies();
   }, []);
 
   const fetchBooks = async () => {
@@ -48,6 +50,20 @@ const Salesbookwisepartywise = () => {
       setBookOptions(options);
     } catch (error) {
       console.error("Error fetching books:", error);
+    }
+  };
+
+  const fetchCompanies = async () => {
+    try {
+      const response = await axios.get(
+        "https://publication.microtechsolutions.net.in/php/CompanyMasterget.php"
+      );
+
+      if (response.data.length > 0) {
+        setCompanyName(response.data[0].CompanyName); // Assuming you want the first one
+      }
+    } catch (error) {
+      console.error("Error fetching companies:", error);
     }
   };
 
@@ -155,7 +171,7 @@ const Salesbookwisepartywise = () => {
       // header
       pdf.setFontSize(11);
       pdf.setFont("helvetica", "bold");
-      pdf.text("Phadke Prakashan, Kolhapur", pdfWidth / 2, 8, {
+      pdf.text(companyName || "Phadke Prakashan, Kolhapur", pdfWidth / 2, 8, {
         align: "center",
       });
 
@@ -201,7 +217,7 @@ const Salesbookwisepartywise = () => {
   return (
     <Box p={3}>
       <Typography
-        variant="h4"
+        variant="h5"
         mb={3}
         sx={{
           textAlign: "center",

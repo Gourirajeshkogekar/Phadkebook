@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 import dayjs from "dayjs";
 import {
@@ -18,6 +18,25 @@ function PaperoutwardPartywiseReport() {
   const [loading, setLoading] = useState(false);
   const [fromdate, setFromDate] = useState(dayjs());
   const [todate, setToDate] = useState(dayjs());
+  const [companyName, setCompanyName] = useState("");
+
+  useEffect(() => {
+    fetchCompanies();
+  }, []);
+
+  const fetchCompanies = async () => {
+    try {
+      const response = await axios.get(
+        "https://publication.microtechsolutions.net.in/php/CompanyMasterget.php"
+      );
+
+      if (response.data.length > 0) {
+        setCompanyName(response.data[0].CompanyName); // Assuming you want the first one
+      }
+    } catch (error) {
+      console.error("Error fetching companies:", error);
+    }
+  };
 
   // const handleGenerateReport = async () => {
   //   setLoading(true);
@@ -242,34 +261,41 @@ function PaperoutwardPartywiseReport() {
         doc.text(`Page ${pageNum}`, pageWidth - 20, 10);
       };
 
-      doc.setTextColor(0);
-      doc.setFontSize(13);
-      doc.setFont(undefined, "bold");
+      const addHeader = () => {
+        doc.setTextColor(0);
+        doc.setFontSize(13);
+        doc.setFont(undefined, "bold");
 
-      doc.text("Phadke Prakashan, Kolhapur", pageWidth / 2, y, {
-        align: "center",
-      });
-      y += 6;
-      doc.setFontSize(12);
-      doc.setFont(undefined, "bold");
+        doc.text(
+          companyName || "Phadke Prakashan, Kolhapur",
+          pageWidth / 2,
+          y,
+          {
+            align: "center",
+          }
+        );
+        y += 6;
+        doc.setFontSize(12);
+        doc.setFont(undefined, "bold");
 
-      doc.text("Paper Outward Partywise Report", pageWidth / 2, y, {
-        align: "center",
-      });
-      y += 6;
-      doc.setFontSize(11);
-      doc.setFont(undefined, "bold");
+        doc.text("Paper Outward Partywise Report", pageWidth / 2, y, {
+          align: "center",
+        });
+        y += 6;
+        doc.setFontSize(11);
+        doc.setFont(undefined, "bold");
 
-      doc.text(
-        `From Date: ${fromdate.format("DD-MM-YYYY")}  To Date: ${todate.format(
-          "DD-MM-YYYY"
-        )}`,
-        pageWidth / 2,
-        y,
-        { align: "center" }
-      );
-      y += 10;
-
+        doc.text(
+          `From Date: ${fromdate.format(
+            "DD-MM-YYYY"
+          )}  To Date: ${todate.format("DD-MM-YYYY")}`,
+          pageWidth / 2,
+          y,
+          { align: "center" }
+        );
+        y += 10;
+      };
+      addHeader();
       addPageNumber(doc, pageNumber);
 
       for (const [partyName, paperMap] of Object.entries(partywiseData)) {
@@ -345,6 +371,7 @@ function PaperoutwardPartywiseReport() {
               y = 20;
               pageNumber++;
               addPageNumber(doc, pageNumber);
+              addHeader();
             }
           }
 
@@ -393,7 +420,17 @@ function PaperoutwardPartywiseReport() {
     <LocalizationProvider dateAdapter={AdapterDayjs}>
       <Box sx={{ p: 3, display: "flex", justifyContent: "center" }}>
         <Paper elevation={3} sx={{ p: 4, width: "100%", maxWidth: 700 }}>
-          <Typography variant="h5" textAlign="center" fontWeight="bold">
+          <Typography
+            variant="h5"
+            mb={3}
+            sx={{
+              textAlign: "center",
+              background: "linear-gradient(to right, #007cf0, #00dfd8)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              fontWeight: "bold",
+            }}>
+            {" "}
             Paper Outward Partywise Report
           </Typography>
           <Divider sx={{ my: 2 }} />

@@ -28,10 +28,11 @@ const BookDetails = () => {
   const [BookCode, setBookCode] = useState("");
   const [bookOptions, setBookOptions] = useState([]);
   const [bookReportData, setBookreportdata] = useState([]);
-  const [renderPreview, setRenderPreview] = useState(false);
+  const [companyName, setCompanyName] = useState("");
 
   useEffect(() => {
     fetchBooks();
+    fetchCompanies();
   }, []);
 
   const fetchBooks = async () => {
@@ -47,6 +48,20 @@ const BookDetails = () => {
       setBookOptions(options);
     } catch (error) {
       console.error("Error fetching books:", error);
+    }
+  };
+
+  const fetchCompanies = async () => {
+    try {
+      const response = await axios.get(
+        "https://publication.microtechsolutions.net.in/php/CompanyMasterget.php"
+      );
+
+      if (response.data.length > 0) {
+        setCompanyName(response.data[0].CompanyName); // Assuming you want the first one
+      }
+    } catch (error) {
+      console.error("Error fetching companies:", error);
     }
   };
 
@@ -129,7 +144,11 @@ const BookDetails = () => {
       // Header
       pdf.setFontSize(14);
       pdf.setFont("helvetica", "bold");
-      pdf.text("Phadke Prakashan, Kolhapur", pdfWidth / 2, 10, {
+      // pdf.text("Phadke Prakashan, Kolhapur", pdfWidth / 2, 10, {
+      //   align: "center",
+      // });
+
+      pdf.text(companyName || "Phadke Prakashan, Kolhapur", pdfWidth / 2, 10, {
         align: "center",
       });
 
@@ -169,7 +188,7 @@ const BookDetails = () => {
   return (
     <Box p={3}>
       <Typography
-        variant="h4"
+        variant="h5"
         mb={3}
         sx={{
           textAlign: "center",

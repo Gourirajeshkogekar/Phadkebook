@@ -16,9 +16,11 @@ const Stockstmtdetailsreport = () => {
   const [todate, setToDate] = useState(dayjs());
   const hiddenReportRef = useRef();
   const [loading, setLoading] = useState(false);
+  const [companyName, setCompanyName] = useState("");
 
   useEffect(() => {
     fetchBooks();
+    fetchCompanies();
   }, []);
 
   const [bookOptions, setBookOptions] = useState([]);
@@ -36,6 +38,20 @@ const Stockstmtdetailsreport = () => {
       setBookOptions(options);
     } catch (error) {
       console.error("Error fetching books:", error);
+    }
+  };
+
+  const fetchCompanies = async () => {
+    try {
+      const response = await axios.get(
+        "https://publication.microtechsolutions.net.in/php/CompanyMasterget.php"
+      );
+
+      if (response.data.length > 0) {
+        setCompanyName(response.data[0].CompanyName); // Assuming you want the first one
+      }
+    } catch (error) {
+      console.error("Error fetching companies:", error);
     }
   };
 
@@ -99,7 +115,11 @@ const Stockstmtdetailsreport = () => {
     const drawHeader = () => {
       pdf.setFontSize(14);
       pdf.setFont("helvetica", "normal");
-      pdf.text("Phadke Prakashan, Kolhapur", pageWidth / 2, 10, {
+
+      // ✅ Use dynamic companyName or fallback
+      const displayCompany = companyName || "Phadke Prakashan, Kolhapur";
+
+      pdf.text(displayCompany, pageWidth / 2, 10, {
         align: "center",
       });
 
@@ -272,7 +292,7 @@ const Stockstmtdetailsreport = () => {
   return (
     <Box p={3}>
       <Typography
-        variant="h4"
+        variant="h5"
         mb={3}
         sx={{
           textAlign: "center",

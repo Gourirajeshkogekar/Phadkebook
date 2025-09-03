@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Box, Button, Typography, Grid } from "@mui/material";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
@@ -17,6 +17,25 @@ const StockBookReport = () => {
   const [todate, setToDate] = useState(dayjs());
   const [stockData, setStockData] = useState([]); // stockData state is not strictly needed for PDF generation if passing data directly
   const [loading, setLoading] = useState(false);
+  const [companyName, setCompanyName] = useState("");
+
+  useEffect(() => {
+    fetchCompanies();
+  }, []);
+
+  const fetchCompanies = async () => {
+    try {
+      const response = await axios.get(
+        "https://publication.microtechsolutions.net.in/php/CompanyMasterget.php"
+      );
+
+      if (response.data.length > 0) {
+        setCompanyName(response.data[0].CompanyName); // Assuming you want the first one
+      }
+    } catch (error) {
+      console.error("Error fetching companies:", error);
+    }
+  };
 
   const handleGeneratePDF = async () => {
     setLoading(true);
@@ -139,7 +158,7 @@ const StockBookReport = () => {
       // Header
       pdf.setFontSize(14);
       pdf.setFont("helvetica", "bold");
-      pdf.text("Phadke Prakashan, Kolhapur", pdfWidth / 2, 10, {
+      pdf.text(companyName || "Phadke Prakashan, Kolhapur", pdfWidth / 2, 10, {
         align: "center",
       });
       pdf.setFontSize(11);
@@ -381,7 +400,7 @@ const StockBookReport = () => {
   return (
     <Box p={3}>
       <Typography
-        variant="h4"
+        variant="h5"
         mb={3}
         sx={{
           textAlign: "center",

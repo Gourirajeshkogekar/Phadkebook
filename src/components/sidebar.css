@@ -1,22 +1,13 @@
-
-
-
-
-
-  
 .grid-container {
   margin: 0;
   padding: 0;
-  height: 95vh;
+  height: 70vh;
   display: grid;
   grid-template-columns: auto 1fr;
   grid-template-rows: 60px 1fr;
   grid-template-areas: "side nav" "side main"; 
   width: 100%;
-  
 }
-
-
 
 .sidebar {
   background: #ffffff;
@@ -25,23 +16,21 @@
   position: relative;
   border-radius: 10px;
   box-shadow: rgb(38, 57, 77) 0px 20px 30px -10px;
+  /* border: 1px solid red; */
 }
 
 .sidebar-items {
-  overflow-y: scroll; /* Enables scrolling */
+  overflow-y: scroll; 
   overflow-x: hidden;
-  max-height: calc(85vh - 10px);
+  max-height: calc(100vh - 10px);
   max-width: calc(350px - 10px);
 
-  /* Hide scrollbar for Webkit browsers (Chrome, Safari) */
   &::-webkit-scrollbar {
     display: none;
   }
 
-  /* Hide scrollbar for Firefox */
   scrollbar-width: none;
 
-  /* Hide scrollbar for Edge */
   -ms-overflow-style: none;
 }
 
@@ -56,15 +45,13 @@
   padding: 20px;
   background-color: #ffffff;
   grid-area:main; 
-
-  
-
 }
 
 
 
 .menu-bar {
-  padding: 10px;
+  padding: 5px;
+  /* border: 1px solid green; */
 }
 
 .menu li span,
@@ -85,11 +72,12 @@
   /* color: #ffffff; */
   text-decoration: none;
   display: flex;
-  margin-bottom: 5px;
+  margin-bottom: 2px;
   align-items: center;
   padding: 10px;
   font-weight: normal;
   font-size: 17px;
+  /* border:'1px solid green'; */
 }
 
 .menu-link .menu-icon,
@@ -212,6 +200,51 @@ background-color: hsl(0, 12%, 92%);
 }
 
 
+/* Single report = slim line indicator */
+.submenu-link.single-report {
+  padding-left: 35px;
+  font-size: 14px;
+  position: relative;
+}
+
+.submenu-link.single-report::before {
+  content: "";
+  position: absolute;
+  left: 20px;
+  top: 10px;
+  bottom: 10px;
+  width: 3px;
+  background: #0a60bd;
+  border-radius: 3px;
+  opacity: 0.5;
+}
+
+/* Group report = box with shadow */
+.submenu-link.group-report {
+  margin: 5px 10px;
+  border-radius: 8px;
+  background: #f7f9fc;
+  box-shadow: inset 0px 0px 4px rgba(0, 0, 0, 0.08);
+  padding: 10px 12px;
+}
+
+.submenu-link.single-report:hover {
+  transform: translateX(5px);
+  /* little slide-in effect */
+  background: #eef5ff;
+}
+
+.submenu-link.group-report:hover {
+  background: #ddeaff;
+  transform: scale(1.02);
+  /* small zoom effect */
+}
+
+.submenu-link.group-report {
+  border-top: 1px solid #e0e6f5;
+  border-bottom: 1px solid #e0e6f5;
+  background: #f9fbff;
+}
 
 
 @media (max-width: 768px) {
@@ -264,6 +297,4 @@ background-color: hsl(0, 12%, 92%);
     background-color: #ffffff;
 
   }
-
-
 }

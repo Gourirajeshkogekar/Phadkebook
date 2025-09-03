@@ -26,14 +26,16 @@ const Netsalereport = () => {
   const [previewImage, setPreviewImage] = useState(null);
   const [showPreview, setShowPreview] = useState(false);
   const [reportData, setReportData] = useState([]);
+  const [companyName, setCompanyName] = useState("");
 
   const hiddenReportRef = useRef();
 
   useEffect(() => {
-    fetchBooks();
+    fetchAccounts();
+    fetchCompanies();
   }, []);
 
-  const fetchBooks = async () => {
+  const fetchAccounts = async () => {
     try {
       const response = await axios.get(
         "https://publication.microtechsolutions.net.in/php/Accountget.php"
@@ -46,6 +48,20 @@ const Netsalereport = () => {
       setAccountOptions(options);
     } catch (error) {
       toast.error("Error fetching accounts:", error);
+    }
+  };
+
+  const fetchCompanies = async () => {
+    try {
+      const response = await axios.get(
+        "https://publication.microtechsolutions.net.in/php/CompanyMasterget.php"
+      );
+
+      if (response.data.length > 0) {
+        setCompanyName(response.data[0].CompanyName); // Assuming you want the first one
+      }
+    } catch (error) {
+      console.error("Error fetching companies:", error);
     }
   };
 
@@ -138,26 +154,37 @@ const Netsalereport = () => {
         },
 
         didDrawPage: (data) => {
-          const pageSize = pdf.internal.pageSize;
-          const pageWidth = pageSize.width || pdf.internal.pageSize.getWidth();
+          const pageWidth = pdf.internal.pageSize.getWidth();
 
-          // Heading
-          pdf.setFont("helvetica", "bold"); // <--- Set bold font
-          pdf.setFontSize(12);
-          pdf.setTextColor(40);
-          pdf.text("Net Sale Report", 14, 10);
+          // Company Name
+          pdf.setFont("helvetica", "bold");
+          pdf.setFontSize(13);
+          pdf.text(
+            companyName || "Phadke Prakashan, Kolhapur",
+            pageWidth / 2,
+            10,
+            {
+              align: "center",
+            }
+          );
 
-          // Account + Date Range
-          pdf.setFont("helvetica", "bold"); // <--- Set bold font
+          // Report Title
+          pdf.setFont("helvetica", "bold");
+          pdf.setFontSize(11);
+          pdf.text("Net Sale Report", pageWidth / 2, 17, {
+            align: "center",
+          });
+
+          // Account + Date Range (move it below title)
+          pdf.setFont("helvetica", "normal");
           pdf.setFontSize(10);
           pdf.text(
             `Account: ${selectedAccountlabel}   From: ${fromdate.format(
               "DD-MM-YYYY"
             )}   To: ${todate.format("DD-MM-YYYY")}`,
             14,
-            16
+            23
           );
-
           // Page number
           const pageNumber = pdf.internal.getCurrentPageInfo().pageNumber;
           pdf.text(`Page ${pageNumber}`, pageWidth - 30, 10);
@@ -183,7 +210,7 @@ const Netsalereport = () => {
   return (
     <Box p={3}>
       <Typography
-        variant="h4"
+        variant="h5"
         mb={3}
         sx={{
           textAlign: "center",
@@ -289,7 +316,7 @@ const Netsalereport = () => {
           <strong>To:</strong> {todate.format("YYYY-MM-DD")}
         </p>
 
-        <Box mt={2}>
+        <Box mt={1}>
           <table
             style={{
               width: "100%",

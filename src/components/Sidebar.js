@@ -55,7 +55,10 @@ function Sidebar() {
             <li key={subIndex}>
               <Link
                 to={subItem.path}
-                className="submenu-link"
+                // className="submenu-link"
+                className={`submenu-link ${
+                  subItem.type === "single" ? "single-report" : "group-report"
+                }`}
                 onClick={(event) => {
                   if (subItem.submenus) {
                     event.preventDefault();

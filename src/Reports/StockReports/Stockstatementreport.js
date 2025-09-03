@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Box, Button, Typography, TextField, Grid } from "@mui/material";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
@@ -12,6 +12,11 @@ const StockStatement = () => {
   const [data, setData] = useState([]);
   const [fromdate, setFromDate] = useState(dayjs());
   const [todate, setToDate] = useState(dayjs());
+  const [companyName, setCompanyName] = useState("");
+
+  useEffect(() => {
+    fetchCompanies();
+  }, []);
 
   const fetchData = async () => {
     try {
@@ -23,6 +28,20 @@ const StockStatement = () => {
       setData(res.data.data || []);
     } catch (err) {
       console.error("Error fetching data", err);
+    }
+  };
+
+  const fetchCompanies = async () => {
+    try {
+      const response = await axios.get(
+        "https://publication.microtechsolutions.net.in/php/CompanyMasterget.php"
+      );
+
+      if (response.data.length > 0) {
+        setCompanyName(response.data[0].CompanyName); // Assuming you want the first one
+      }
+    } catch (error) {
+      console.error("Error fetching companies:", error);
     }
   };
 
@@ -75,7 +94,7 @@ const StockStatement = () => {
   return (
     <Box p={3}>
       <Typography
-        variant="h4"
+        variant="h5"
         mb={3}
         sx={{
           textAlign: "center",
@@ -153,8 +172,9 @@ const StockStatement = () => {
           zIndex: -999,
         }}>
         <Typography align="center" fontWeight="bold" fontSize="20px">
-          Phadke Prakashan, Kolhapur
+          {companyName || "Phadke Prakashan, Kolhapur"}
         </Typography>
+
         <Typography align="center" fontSize="20px" fontWeight="bold">
           Stock Statement from {fromdate.format("DD-MM-YYYY")} to{" "}
           {todate.format("DD-MM-YYYY")}

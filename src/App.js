@@ -6,6 +6,7 @@ import SidebarMenu from "./components/SidebarMenu";
 import Login from "./components/Login";
 import { Navigate } from "react-router-dom";
 import Home from "./Pages/Home";
+import ContactSupport from "./Pages/Contactsupport";
 import Dashboard from "./Pages/Dashboard";
 import Masters from "./Pages/Masters";
 import Transactions from "./Pages/Transactions";
@@ -153,6 +154,18 @@ import GodownwisepaperReport from "./Reports/PaperReports/GodownwisepaperReport"
 import BookprintorderReport from "./Reports/PaperReports/BookprintorderReport";
 import BookprintorderSummaryReport from "./Reports/PaperReports/BookprintorderSummaryReport";
 import Paperpurchase from "./Transactionpages/Paperpurchase";
+import PrivateRoute from "./components/PrivateRoute"; // adjust path if needed
+import LedgerReports from "./Reports/LedgerReports";
+import PurchaseregisterReports from "./Reports/PurchaseregisterReports";
+import CashflowmonthwiseReports from "./Reports/CashflowmonthwiseReports";
+import PurchasemonthwiseReports from "./Reports/PurchasemonthwiseReports";
+import PurchaseregistersummaryReports from "./Reports/PurchaseregistersummaryReports";
+import SalesreturnregisterReport from "./Reports/SalesreturnregisterReports";
+import TDSRegisterReports from "./Reports/TDSRegisterReports";
+import TDSMasterlistingReports from "./Reports/TDSMasterlistingReports";
+import RoyaltyStatementsummaryReport from "./Reports/RoyaltyReports/RoyaltyStatementsummaryReport";
+import RoyaltyStockAuthorReport from "./Reports/RoyaltyReports/RoyaltyStockAuthorReport";
+import RoyaltyReports from "./Pages/RoyaltyReports";
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -173,17 +186,88 @@ function App() {
           <Route index element={<Login />} />
           <Route path="/login" element={<Login />} />
           <Route path="/coverpage" element={<CoverPage />} />
-          <Route path="/" element={<Sidebar />}>
-            <Route path="/home" element={<Home />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            {/* Routes for Master and master submenus */}
-            <Route path="/masters" element={<Masters />} />
-            <Route path="/masters/accounts" element={<Accounts />} />
-            <Route path="/masters/accountgroup" element={<AccountGroup />} />
-            <Route path="/masters/book" element={<Book />} />
-            <Route path="/masters/book/bookprint" element={<BookPrint />} />
+          <Route
+            path="/"
+            element={
+              <PrivateRoute>
+                <Sidebar />
+              </PrivateRoute>
+            }>
+            <Route
+              path="/home"
+              element={
+                <PrivateRoute>
+                  <Home />
+                </PrivateRoute>
+              }
+            />
 
-            <Route path="/masters/bookgroup" element={<BookGroup />} />
+            <Route
+              path="/support"
+              element={
+                <PrivateRoute>
+                  <ContactSupport />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/dashboard"
+              element={
+                <PrivateRoute>
+                  <Dashboard />
+                </PrivateRoute>
+              }
+            />
+            {/* Routes for Master and master submenus */}
+            <Route
+              path="/masters"
+              element={
+                <PrivateRoute>
+                  <Masters />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/masters/accounts"
+              element={
+                <PrivateRoute>
+                  <Accounts />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/masters/accountgroup"
+              element={
+                <PrivateRoute>
+                  <AccountGroup />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/masters/book"
+              element={
+                <PrivateRoute>
+                  <Book />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/masters/book/bookprint"
+              element={
+                <PrivateRoute>
+                  <BookPrint />
+                </PrivateRoute>
+              }
+            />
+
+            <Route
+              path="/masters/bookgroup"
+              element={
+                <PrivateRoute>
+                  <BookGroup />
+                </PrivateRoute>
+              }
+            />
             <Route path="/masters/bookmedium" element={<BookMedium />} />
             <Route path="/masters/standard" element={<Standard />} />
             <Route path="/masters/college" element={<College />} />
@@ -243,7 +327,14 @@ function App() {
 
             {/* Routes for Transaction and Transaction submenus  */}
 
-            <Route path="/transactions" element={<Transactions />} />
+            <Route
+              path="/transaction"
+              element={
+                <PrivateRoute>
+                  <Transactions />
+                </PrivateRoute>
+              }
+            />
 
             <Route
               path="/transaction/receiptvoucher"
@@ -352,7 +443,14 @@ function App() {
 
             {/* Routes for Transaction and Printing submenus */}
 
-            <Route path="/printing" element={<Printing />} />
+            <Route
+              path="/printing"
+              element={
+                <PrivateRoute>
+                  <Printing />
+                </PrivateRoute>
+              }
+            />
             <Route path="/printing/ledger" element={<Ledger />} />
             <Route path="/printing/alldocuments" element={<Alldocuments />} />
             <Route path="/printing/booksofaccounts" element={<Booksofacc />} />
@@ -440,7 +538,14 @@ function App() {
             />
 
             {/* Routes for the Settings */}
-            <Route path="/settings" element={<Settings />} />
+            <Route
+              path="/settings"
+              element={
+                <PrivateRoute>
+                  <Settings />
+                </PrivateRoute>
+              }
+            />
             <Route path="/settings/companymaster" element={<Company />} />
             <Route path="/settings/userrights" element={<Userrights />} />
             <Route path="/settings/splitdata" element={<Splitdata />} />
@@ -458,7 +563,14 @@ function App() {
 
             {/* Routes for the Royalty */}
 
-            <Route path="/royalty" element={<Royalty />} />
+            <Route
+              path="/royalty"
+              element={
+                <PrivateRoute>
+                  <Royalty />
+                </PrivateRoute>
+              }
+            />
             <Route path="/royalty/feedadvauthor" element={<FeedadvAuthors />} />
             <Route
               path="/royalty/feedopeningstock"
@@ -492,7 +604,54 @@ function App() {
 
             {/* Routes for the Reports */}
 
-            <Route path="/reports" element={<Reports />} />
+            <Route
+              path="/reports"
+              element={
+                <PrivateRoute>
+                  <Reports />
+                </PrivateRoute>
+              }
+            />
+
+            <Route path="/reports/ledgerreport" element={<LedgerReports />} />
+            <Route
+              path="/reports/purchaseregisterreport"
+              element={<PurchaseregisterReports />}
+            />
+            <Route
+              path="/reports/cashflowmonthwisereport"
+              element={<CashflowmonthwiseReports />}
+            />
+
+            <Route
+              path="/reports/purchasemonthwisereport"
+              element={<PurchasemonthwiseReports />}
+            />
+
+            <Route
+              path="/reports/purchaseregsummaryreport"
+              element={<PurchaseregistersummaryReports />}
+            />
+
+            {/* <Route
+              path="/reports/purchaseregisterreport"
+              element={<PurchaseRegReports />}
+            /> */}
+
+            <Route
+              path="/reports/salesreturnregisterreport"
+              element={<SalesreturnregisterReport />}
+            />
+
+            <Route
+              path="/reports/tdsregisterreport"
+              element={<TDSRegisterReports />}
+            />
+
+            <Route
+              path="/reports/tdsmasterlistingreport"
+              element={<TDSMasterlistingReports />}
+            />
 
             <Route path="/reports/stockreports" element={<Stockreports />} />
             <Route
@@ -550,6 +709,20 @@ function App() {
             <Route
               path="/reports/paperreports/bookprintordersummary"
               element={<BookprintorderSummaryReport />}
+            />
+
+            <Route
+              path="/reports/royaltyreports"
+              element={<RoyaltyReports />}
+            />
+            <Route
+              path="/reports/royaltyreports/royaltystmtsummary"
+              element={<RoyaltyStatementsummaryReport />}
+            />
+
+            <Route
+              path="/reports/royaltyreports/royaltystockauth"
+              element={<RoyaltyStockAuthorReport />}
             />
 
             <Route path="/exit" element={<Exit />} />

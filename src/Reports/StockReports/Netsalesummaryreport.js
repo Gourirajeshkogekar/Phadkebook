@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   TextField,
   Button,
@@ -29,6 +29,7 @@ function Netsalesummaryreport() {
   const [fromdate, setFromDate] = useState(dayjs());
   const [todate, setToDate] = useState(dayjs());
   const [data, setData] = useState([]);
+  const [companyName, setCompanyName] = useState("");
 
   const totalValues = data.reduce(
     (acc, item) => {
@@ -58,6 +59,24 @@ function Netsalesummaryreport() {
     } catch (err) {
       console.error("Fetch Error:", err);
       toast.error("Error fetching data");
+    }
+  };
+
+  useEffect(() => {
+    fetchCompanies();
+  }, []);
+
+  const fetchCompanies = async () => {
+    try {
+      const response = await axios.get(
+        "https://publication.microtechsolutions.net.in/php/CompanyMasterget.php"
+      );
+
+      if (response.data.length > 0) {
+        setCompanyName(response.data[0].CompanyName); // Assuming you want the first one
+      }
+    } catch (error) {
+      console.error("Error fetching companies:", error);
     }
   };
 
@@ -124,7 +143,7 @@ function Netsalesummaryreport() {
 
       pdf.setFontSize(14);
       pdf.setFont("helvetica", "bold");
-      pdf.text("Phadke Prakashan, Kolhapur", pdfWidth / 2, 10, {
+      pdf.text(companyName || "Phadke Prakashan, Kolhapur", pdfWidth / 2, 10, {
         align: "center",
       });
 
@@ -163,7 +182,7 @@ function Netsalesummaryreport() {
   return (
     <Box p={3}>
       <Typography
-        variant="h4"
+        variant="h5"
         mb={3}
         sx={{
           textAlign: "center",

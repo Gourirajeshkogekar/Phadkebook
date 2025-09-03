@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import jsPDF from "jspdf";
 import axios from "axios";
 import dayjs from "dayjs";
@@ -19,7 +19,25 @@ const PaperwiseSummaryReport = () => {
   const [fromDate, setFromDate] = useState(dayjs());
   const [toDate, setToDate] = useState(dayjs());
   const [loading, setLoading] = useState(false);
+  const [companyName, setCompanyName] = useState("");
 
+  useEffect(() => {
+    fetchCompanies();
+  }, []);
+
+  const fetchCompanies = async () => {
+    try {
+      const response = await axios.get(
+        "https://publication.microtechsolutions.net.in/php/CompanyMasterget.php"
+      );
+
+      if (response.data.length > 0) {
+        setCompanyName(response.data[0].CompanyName); // Assuming you want the first one
+      }
+    } catch (error) {
+      console.error("Error fetching companies:", error);
+    }
+  };
   const generatePDF = async () => {
     try {
       const formattedFromDate = fromDate.format("YYYY-MM-DD");
@@ -45,9 +63,14 @@ const PaperwiseSummaryReport = () => {
 
       const drawHeader = () => {
         doc.setFont("times", "bold").setFontSize(14);
-        doc.text("Phadke Prakashan, Kolhapur", pageWidth / 2, y, {
-          align: "center",
-        });
+        doc.text(
+          companyName || "Phadke Prakashan, Kolhapur",
+          pageWidth / 2,
+          y,
+          {
+            align: "center",
+          }
+        );
 
         doc.setFontSize(10);
         doc.text(`Page ${page}`, pageWidth - 20, 10); // Top-right page number
@@ -194,7 +217,17 @@ const PaperwiseSummaryReport = () => {
     <LocalizationProvider dateAdapter={AdapterDayjs}>
       <Box sx={{ p: 3, display: "flex", justifyContent: "center" }}>
         <Paper elevation={3} sx={{ p: 4, width: "100%", maxWidth: 700 }}>
-          <Typography variant="h5" textAlign="center" fontWeight="bold">
+          <Typography
+            variant="h5"
+            mb={3}
+            sx={{
+              textAlign: "center",
+              background: "linear-gradient(to right, #007cf0, #00dfd8)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              fontWeight: "bold",
+            }}>
+            {" "}
             Book Print Order Summary Report
           </Typography>
           <Divider sx={{ my: 2 }} />
