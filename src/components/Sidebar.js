@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Link, Outlet, useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { Link, Outlet, useNavigate , useLocation} from "react-router-dom";
 import "../components/sidebar.css";
 import { menuItems } from "./Menuitem";
 import {
@@ -29,6 +29,25 @@ function Sidebar() {
     setSidebarOpen(!sidebarOpen);
   };
 
+
+  const location = useLocation(); // Get current URL path
+  // ... your other states
+
+  // Effect to auto-expand menus based on current URL
+  useEffect(() => {
+    const pathParts = location.pathname.split('/').filter(Boolean);
+    let currentPath = "";
+    const newOpenMenus = [...openSubMenus];
+
+    pathParts.forEach(part => {
+      currentPath += `/${part}`;
+      if (!newOpenMenus.includes(currentPath)) {
+        newOpenMenus.push(currentPath);
+      }
+    });
+    setOpenSubMenus(newOpenMenus);
+  }, [location.pathname]);
+
   const toggleSubMenu = (path, event) => {
     event.preventDefault();
     const isOpen = openSubMenus.includes(path);
@@ -51,12 +70,15 @@ function Sidebar() {
         {submenus.map((subItem, subIndex) => {
           const fullPath = `${parentPath}${subItem.path}`;
           const isOpen = openSubMenus.includes(fullPath);
+                        const isActive = location.pathname === subItem.path;
+
           return (
             <li key={subIndex}>
               <Link
                 to={subItem.path}
                 // className="submenu-link"
-                className={`submenu-link ${
+                // className={`submenu-link ${
+                  className={`submenu-link ${isActive ? "active-link" : ""} ${
                   subItem.type === "single" ? "single-report" : "group-report"
                 }`}
                 onClick={(event) => {

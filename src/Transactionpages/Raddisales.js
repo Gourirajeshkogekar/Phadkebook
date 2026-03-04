@@ -1,151 +1,66 @@
-import React, {
-  useState,
-  useMemo,
-  useEffect,
-  useSyncExternalStore,
-} from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import "./Raddisales.css";
 import { useNavigate } from "react-router-dom";
-import Select from "react-select";
 import axios from "axios";
-import { Button, TextField, Modal, setRef } from "@mui/material";
-import {
-  MaterialReactTable,
-  useMaterialReactTable,
-} from "material-react-table";
+import { Button, TextField, Modal, Typography , Grid, TableCell, TableContainer, Table,Paper, TableHead, TableRow, TableBody} from "@mui/material";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { RiDeleteBin5Line } from "react-icons/ri";
-import { CiEdit } from "react-icons/ci";
-import moment from "moment";
 import qs from "qs";
 import {
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
-} from "@mui/material";
-import {
   Box,
-  Typography,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  IconButton,
-  MenuItem,
-  InputLabel,
-  FormControl,
-  Menu,
-  FormControlLabel,
-  RadioGroup,
-  Radio,
-} from "@mui/material";
-import {
-  Alert,
-  useMediaQuery,
   Autocomplete,
-  Drawer,
-  Divider,
 } from "@mui/material";
-import CloseIcon from "@mui/icons-material/Close";
-import { useTheme } from "@mui/material/styles";
+import dayjs from "dayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { DatePicker } from "@mui/x-date-pickers";
-import {
-  Edit,
-  Delete,
-  Add,
-  MoreVert,
-  Print,
-  Discount,
-} from "@mui/icons-material";
-import dayjs from "dayjs";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-
+   
 function Raddisales() {
   const [userId, setUserId] = useState("");
   const [yearid, setYearId] = useState("");
-  const [dateError, setDateError] = useState(false);
-
-  useEffect(() => {
-    const storedUserId = sessionStorage.getItem("UserId");
-    const storedYearId = sessionStorage.getItem("YearId");
-
-    if (storedUserId) {
-      setUserId(storedUserId);
-    } else {
-      toast.error("User is not logged in.");
-    }
-
-    if (storedYearId) {
-      setYearId(storedYearId);
-    } else {
-      toast.error("Year is not set.");
-    }
-
-    fetchRaddisales();
-  }, []);
-
   const [pageIndex, setPageIndex] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [editingIndex, setEditingIndex] = useState(-1);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [deleteIndex, setDeleteIndex] = useState(null);
   const [deleteId, setDeleteId] = useState(null);
-  const [DocNo, setDocNo] = useState(null);
-  const [Date, setDate] = useState("");
+
+  // Header fields
+  const [DocNo, setDocNo] = useState("");
+
   const [BookId, setBookId] = useState("");
   const [Rate, setRate] = useState("");
   const [number, setNumber] = useState("");
+  const [safedate, setsafedate] = useState(dayjs());
+  const [dateerror, setdateerror] = useState("");
+  const [isEditing, setIsEditing] = useState(false);
+  const [id, setId] = useState(""); // header id when editing
 
+  // Book dropdowns + main dataset
+  const [bookOptions, setBookOptions] = useState([]);
   const [raddisales, setRaddisales] = useState([]);
 
-  const [id, setId] = useState("");
+  // Rows for detail lines of current document (editable table)
+  const [rows, setRows] = useState([]); // each: { BookId, Rate, Number, Id? , DocNo? }
+  const [selectedRowIndex, setSelectedRowIndex] = useState(null);
 
-  const [errors, setErrors] = useState("");
-  const [isEditing, setIsEditing] = useState(false);
-
-  //Dropdown for ID's
-  const [bookOptions, setBookOptions] = useState([]);
-  const [anchorEl, setAnchorEl] = useState(null);
-  const [currentIndex, setCurrentIndex] = useState(null);
-  const [selectedIndex, setSelectedIndex] = useState(null);
-
-  const theme = useTheme();
-  const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm"));
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-
-  const handleDrawerOpen = () => {
-    setIsDrawerOpen(true);
-  };
-
-  const handleDrawerClose = () => {
-    setIsDrawerOpen(false);
-  };
-
-  const [currentRow, setCurrentRow] = useState(null);
-
-  const handleMenuOpen = (event, row) => {
-    setAnchorEl(event.currentTarget);
-    setCurrentRow(row);
-  };
-
-  const handleMenuClose = () => {
-    setAnchorEl(null);
-  };
+  const navigate = useNavigate();
 
   useEffect(() => {
+    const storedUserId = sessionStorage.getItem("UserId");
+    const storedYearId = sessionStorage.getItem("YearId");
+    if (storedUserId) setUserId(storedUserId);
+    if (storedYearId) setYearId(storedYearId);
+
     fetchBooks();
   }, []);
 
   useEffect(() => {
     fetchRaddisales();
-    console.log("this function is called");
   }, [pageIndex]);
 
   const fetchRaddisales = async () => {
@@ -153,518 +68,598 @@ function Raddisales() {
       const response = await axios.get(
         `https://publication.microtechsolutions.net.in/php/get/gettblpage.php?Table=Raddisales&PageNo=${pageIndex}`
       );
-      console.log(response.data, "response of raddi sales");
-
-      setRaddisales(response.data.data);
-      setTotalPages(response.data.total_pages);
-    } catch (error) {
-      console.error("Error fetching raddi sales:", error);
-    }
-  };
-
-  const fetchBooks = async () => {
-    try {
-      const response = await axios.get(
-        "https://publication.microtechsolutions.net.in/php/Bookget.php"
+      const allRows = response.data.data || [];
+      // Accept Active as number 1 or string "1"
+      const activeRows = allRows.filter(
+        (r) => r?.Active === 1 || r?.Active === "1"
       );
-      const bookOptions = response.data.map((book) => ({
-        value: book.Id,
-        label: book.BookName,
-      }));
-      setBookOptions(bookOptions);
-    } catch (error) {
-      // toast.error("Error fetching books:", error);
+      setRaddisales(activeRows);
+      setTotalPages(response.data.total_pages || 1); // note: totalPages still reflects server-side count
+    } catch (err) {
+      console.error("fetchRaddisales error", err);
     }
   };
+
+ const fetchBooks = async () => {
+  try {
+    const response = await axios.get(
+      "https://publication.microtechsolutions.net.in/php/Bookget.php"
+    );
+
+    const opts = response.data.map((b) => ({
+      Id: b.Id,
+      BookCode: b.BookCode,
+      BookName: b.BookName || b.BookNameMarathi,
+      Rate: b.BookRate,
+    }));
+
+    setBookOptions(opts);
+  } catch (err) {
+    console.error("fetchBooks error", err);
+  }
+};
+
 
   const resetForm = () => {
     setDocNo("");
-    setBookId("");
-    setRate("");
-    setNumber("");
-    // setDate("");
     setsafedate(dayjs());
     setdateerror("");
+    setRows([]);
+    setIsEditing(false);
+    setId("");
+    setRows([{
+      BookId: null,
+      BookCode: "",
+      BookName: "",
+      Rate: "",
+      Number: "",
+    },])
   };
 
   const handleNewClick = () => {
     resetForm();
     setIsModalOpen(true);
-    setIsEditing(false);
-    setEditingIndex(-1);
   };
 
-  const navigate = useNavigate("");
+  // Inline table operations
+const handleAddEmptyRow = () => {
+  setRows((prev) => [
+    ...prev,
+    {
+      BookId: null,
+      BookCode: "",
+      BookName: "",
+      Rate: "",
+      Number: "",
+    },
+  ]);
+};
 
-  const handlePrint = () => {
-    navigate("/transaction/raddisales/raddisalesprint");
+
+  const handleChangeRow = (index, field, value) => {
+    setRows((prev) => {
+      const copy = [...prev];
+      copy[index] = { ...copy[index], [field]: value };
+      return copy;
+    });
   };
 
-  const handleEdit = (row) => {
-    const raddisale = raddisales[row.index];
+  const handleDeleteRow = (index) => {
+    // If row has server Id, optionally delete from server immediately
+    const row = rows[index];
+    if (row?.Id) {
+      // delete server-side
+      fetch(
+        `https://publication.microtechsolutions.net.in/php/deletetable.php?Id=${row.Id}&Table=RaddiSales`,
+        { method: "POST" }
+      )
+        .then(() => toast.success("Row deleted on server"))
+        .catch(() => toast.error("Failed to delete row on server"));
+    }
+    setRows((prev) => prev.filter((_, i) => i !== index));
+  };
 
-    const backendDate = raddisale.Date?.date;
+  const handleEditDocument = async (raddisaleRow) => {
+  try {
+    if (bookOptions.length === 0) {
+      toast.error("Books not loaded yet");
+      return;
+    }
 
-    console.log(raddisale, "selected row of raddi sale");
-    setDocNo(raddisale.DocNo);
-    // setDate(formattedDate);
-    setsafedate(dayjs(backendDate));
-    setNumber(raddisale.Number);
-    setRate(raddisale.Rate);
-    setBookId(raddisale.BookId);
+    const docNo = raddisaleRow.DocNo;
+    const backendDate = raddisaleRow.Date?.date;
 
+    const res = await axios.get(
+      `https://publication.microtechsolutions.net.in/php/get/getbycolm.php?Table=RaddiSales&Colname=DocNo&Colvalue=${docNo}`
+    );
+
+    const rowsData = res.data || [];
+    const filteredRows = rowsData.filter(
+      (r) =>
+        Number(r.DocNo) === Number(docNo) &&
+        (r.Active === 1 || r.Active === "1" || r.Active === true)
+    );
+
+    const mapped = filteredRows.map((r) => {
+      const book = bookOptions.find(
+        (b) => Number(b.Id) === Number(r.BookId)
+      );
+
+      return {
+        Id: r.Id || null,
+        BookId: r.BookId,
+        BookCode: book?.BookCode || "",
+        BookName: book?.BookName || "",
+        Rate: r.Rate,
+        Number: r.Number,
+        DocNo: r.DocNo,
+      };
+    });
+
+    setDocNo(docNo);
+    setsafedate(backendDate ? dayjs(backendDate) : dayjs());
     setIsEditing(true);
-    setEditingIndex(row.index);
-    setIsModalOpen(true); // Ensure modal is opened after setting state
-    setId(raddisale.Id);
+    setId(raddisaleRow.Id || "");
+    setRows(mapped);
+    setIsModalOpen(true);
+  } catch (err) {
+    console.error("Error loading details:", err);
+    toast.error("Failed to load document details");
+  }
+};
+
+  const handleSubmit = async () => {
+    const formattedDate = dayjs(safedate).format("YYYY-MM-DD");
+    let generatedDocNo = DocNo; // store the first DocNo received from backend
+
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+
+      const payload = {
+        Id: id || "",
+        Date: formattedDate,
+        CreatedBy: !isEditing ? userId : undefined,
+        UpdatedBy: isEditing ? userId : undefined,
+        // ✅ If we already got a DocNo from first insert, reuse it
+        DocNo: generatedDocNo || "",
+        BookId: row.BookId,
+        Rate: row.Rate,
+        Number: row.Number,
+      };
+
+      const url = isEditing
+        ? "https://publication.microtechsolutions.net.in/php/update/raddisales.php"
+        : "https://publication.microtechsolutions.net.in/php/post/raddisales.php";
+
+      try {
+        const response = await axios.post(url, qs.stringify(payload), {
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        });
+
+        console.log("Response for row:", response.data);
+
+        if (response.data.success) {
+          // ✅ Capture DocNo from FIRST successful insert only
+          if (i === 0 && response.data.DocNo) {
+            generatedDocNo = response.data.DocNo;
+          }
+        } else {
+          toast.error(`Failed to save BookId ${row.BookId}`);
+          return;
+        }
+      } catch (error) {
+        console.error("Axios error:", error);
+        toast.error(`Error saving BookId ${row.BookId}`);
+        return;
+      }
+    }
+
+    toast.success(
+      isEditing
+        ? "Raddi Sales updated successfully!"
+        : "Raddi Sales saved successfully!"
+    );
+    fetchRaddisales();
+    resetForm();
+    setIsModalOpen(false);
   };
 
-  const handleDelete = (index, Id) => {
-    console.log(Id, "id to delete");
-
+  // Delete whole document
+  const handleDeleteDocument = (index, Id) => {
     setDeleteIndex(index);
     setDeleteId(Id);
     setIsDeleteDialogOpen(true);
   };
-
-  const confirmDelete = () => {
-    const myHeaders = new Headers();
-    myHeaders.append("Content-Type", "application/x-www-form-urlencoded");
-
-    const urlencoded = new URLSearchParams();
-    urlencoded.append("Id", deleteId);
-
-    const requestOptions = {
-      method: "POST",
-      headers: myHeaders,
-      body: urlencoded,
-      redirect: "follow",
-    };
-
-    fetch(
-      `https://publication.microtechsolutions.net.in/php/deletetable.php?Id=${deleteId}&Table=RaddiSales`,
-      requestOptions
-    )
-      .then((response) => response.text())
-      .then((result) => console.log(result))
-      .catch((error) => console.error(error));
-    toast.success("Raddi sales Deleted Successfully");
-    setIsDeleteDialogOpen(false);
-    // setDeleteIndex(deleteIndex)
-    fetchRaddisales();
+  const confirmDelete = async () => {
+    try {
+      await fetch(
+        `https://publication.microtechsolutions.net.in/php/deletetable.php?Id=${deleteId}&Table=RaddiSales`,
+        { method: "POST" }
+      );
+      toast.success("Deleted");
+      setIsDeleteDialogOpen(false);
+      fetchRaddisales();
+    } catch (err) {
+      toast.error("Delete failed");
+    }
   };
-
   const cancelDelete = () => {
     setIsDeleteDialogOpen(false);
     setDeleteIndex(null);
   };
 
-  const [safedate, setsafedate] = useState(dayjs());
-  const [dateerror, setdateerror] = useState("");
-
-  const handleDateChange1 = (newValue) => {
-    if (!newValue || !dayjs(newValue).isValid()) {
-      setdateerror("Invalid date");
-      setsafedate(null);
-      return;
-    }
-
-    const today = dayjs();
-    const minDate = today.subtract(3, "day");
-    const maxDate = today.add(2, "day");
-
-    if (newValue.isBefore(minDate) || newValue.isAfter(maxDate)) {
-      setdateerror("You can select only 2 days before or after today");
-    } else {
-      setdateerror("");
-    }
-
-    setsafedate(newValue);
+  // helper to find Book option object
+  const findBookOptionObj = (valueOrLabel) => {
+    if (valueOrLabel == null) return null;
+    return (
+      bookOptions.find((b) => b.value === valueOrLabel) ||
+      bookOptions.find((b) => b.label === valueOrLabel) ||
+      null
+    );
   };
-
-  const validateForm = () => {
-    let formErrors = {};
-    let isValid = true;
-
-    setErrors(formErrors);
-    return isValid;
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!validateForm()) return;
-
-    if (!safedate || !dayjs(safedate).isValid() || dateerror) {
-      toast.error("Please correct all the date fields before submitting.");
-      return;
-    }
-
-    const formattedDate = dayjs(safedate).format("YYYY-MM-DD");
-    const data = {
-      Date: formattedDate,
-      BookId: BookId,
-      Rate: Rate,
-      Number: number,
-      CreatedBy: !isEditing ? userId : undefined,
-      UpdatedBy: isEditing ? userId : undefined,
-    };
-
-    // Determine the URL based on whether we're editing or adding
-    const url = isEditing
-      ? "https://publication.microtechsolutions.net.in/php/update/raddisales.php"
-      : "https://publication.microtechsolutions.net.in/php/post/raddisales.php";
-
-    // If editing, include the author ID in the payload
-    if (isEditing) {
-      data.Id = id;
-      data.UpdatedBy = userId;
-    }
-
-    try {
-      // console.log("Sending data to server:", data);
-      const response = await axios.post(url, qs.stringify(data), {
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-      });
-      // console.log("Server response:", response.data);
-
-      if (isEditing) {
-        toast.success("Raddi sales updated successfully!");
-      } else {
-        toast.success("Raddi sales added successfully!");
-      }
-      setIsModalOpen(false);
-      resetForm();
-      fetchRaddisales(); // Refresh the list after submit
-    } catch (error) {
-      // console.error("Error saving record:", error);
-      toast.error("Error saving record!");
-    }
-  };
-
-  const columns = useMemo(
-    () => [
-      {
-        accessorKey: "SrNo",
-        header: "Sr.No",
-        size: 50,
-        Cell: ({ row }) => row.index + 1,
-      },
-
-      {
-        accessorKey: "DocNo",
-        header: "Doc no",
-        size: 50,
-      },
-      {
-        accessorKey: "BookId",
-        header: "Book Name",
-        size: 50,
-      },
-
-      {
-        accessorKey: "Rate",
-        header: "Rate",
-        size: 50,
-      },
-
-      {
-        accessorKey: "actions",
-        header: "Actions",
-        size: 150,
-        Cell: ({ row }) => (
-          <div>
-            <Button
-              onClick={() => handleEdit(row)}
-              style={{
-                background: "#0a60bd",
-                color: "white",
-                marginRight: "5px",
-              }}>
-              Edit
-            </Button>
-            <Button
-              onClick={() => handleDelete(row.index, row.original.Id)}
-              style={{
-                background: "red",
-                color: "white",
-                fontSize: "22px",
-              }}>
-              <RiDeleteBin5Line />
-            </Button>
-          </div>
-        ),
-      },
-    ],
-    [raddisales]
-  );
-
-  const table = useMaterialReactTable({
-    columns,
-    data: raddisales,
-    enablePagination: false,
-    muiTableHeadCellProps: {
-      style: {
-        backgroundColor: "#E9ECEF", // Replace with your desired color
-        color: "black",
-        fontSize: "16px",
-      },
-    },
-  });
 
   return (
-    <div className="raddisales-container">
-      <h1>Raddi Sales</h1>
+    <>
+      <div className="raddisales-container">
+      <h1 style={{textAlign:'center', }}>Raddi Sales</h1>
 
-      <div className="raddisalestable-master">
-        <div className="raddisalestable1-master">
-          <Button
-            onClick={handleNewClick}
-            style={{
-              color: "#FFFF",
-              fontWeight: "700",
-              background: "#0a60bd",
-              width: "15%",
-            }}>
-            New
-          </Button>
-          <div className="raddisalestable-container">
-            <Box mt={2}>
-              <MaterialReactTable table={table} />
-              {/* <Menu
-                anchorEl={anchorEl}
-                open={Boolean(anchorEl)}
-                onClose={handleMenuClose}>
-                <MenuItem onClick={handleEdit}>Edit</MenuItem>
-                <MenuItem onClick={handleDelete}>Delete</MenuItem>
+  <Box
+  sx={{
+    position: "sticky",
+    bottom: 10,
+    display: "flex",
+    justifyContent: "flex-start",
+    mt: 1,mb:2
+  }}
+>
+  <Button
+    variant="contained"
+    onClick={handleNewClick}
+    sx={{ background: "#0a60bd" }}
+  >
+    New
+  </Button>
+</Box>
 
-                <MenuItem onClick={handlePrint}>Print</MenuItem>
-              </Menu> */}
-            </Box>{" "}
-          </div>
 
-          {/* Pagination Controls */}
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              marginTop: "10px",
-            }}>
-            <Button
-              onClick={() =>
-                setPageIndex((prev) => Math.max(Number(prev) - 1, 1))
-              }>
-              ◀ Prev
-            </Button>
-            <input
-              type="number"
-              value={pageIndex}
+        {/* Main list (simple table showing server rows) */}
+       <Box sx={{ mb: 2 }}>
+  <TableContainer
+    component={Paper}
+    sx={{ maxHeight: 300 }}
+  >
+    <Table stickyHeader size="small">
+<TableHead
+  sx={{
+     "& .MuiTableCell-root": {
+       fontWeight: "500",fontSize:'16px',
+      textAlign: "center",
+    },
+  }}
+>        <TableRow>
+          <TableCell align="center"><b>Sr</b></TableCell>
+          <TableCell align="center"><b>Doc No</b></TableCell>
+          <TableCell align="center"><b>Date</b></TableCell>
+          <TableCell align="center"><b>Actions</b></TableCell>
+        </TableRow>
+      </TableHead>
+
+      <TableBody>
+        {raddisales && raddisales.length > 0 ? (
+          raddisales.map((r, idx) => (
+            <TableRow key={idx} hover>
+              <TableCell align="center">{idx + 1}</TableCell>
+
+              <TableCell align="center">
+                {r.DocNo}
+              </TableCell>
+
+              <TableCell align="center">
+                {r.Date?.date
+                  ? dayjs(r.Date.date.substring(0, 10)).format("DD-MM-YYYY")
+                  : ""}
+              </TableCell>
+
+              <TableCell align="center">
+                <Button
+                  size="small"
+                  onClick={() => handleEditDocument(r, idx)}
+                >
+                  Edit
+                </Button>
+                <Button
+                  size="small"
+                  color="error"
+                  sx={{ ml: 1 }}
+                  onClick={() => handleDeleteDocument(idx, r.Id)}
+                >
+                  Delete
+                </Button>
+              </TableCell>
+            </TableRow>
+          ))
+        ) : (
+          <TableRow>
+            <TableCell colSpan={4} align="center">
+              No records found
+            </TableCell>
+          </TableRow>
+        )}
+      </TableBody>
+    </Table>
+  </TableContainer>
+</Box>
+
+
+       <Box
+  sx={{
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 2,
+    mt: 1,
+  }}
+>
+  <Button
+    onClick={() =>
+      setPageIndex((prev) => Math.max(prev - 1, 1))
+    }
+  >
+    ◀ Prev
+  </Button>
+
+  <TextField
+    type="number"
+    size="small"
+    value={pageIndex}
+    onChange={(e) => {
+      const val = Number(e.target.value);
+      if (!isNaN(val) && val >= 1) setPageIndex(val);
+    }}
+    sx={{ width: 80 }}
+  />
+
+  <Button onClick={() => setPageIndex((prev) => prev + 1)}>
+    Next ▶
+  </Button>
+
+  <Typography variant="body2">
+    Total Pages: {totalPages}
+  </Typography>
+</Box>
+
+
+        {/* Modal for Add/Edit Document */}
+       
+
+        <Modal open={isModalOpen} onClose={() => setIsModalOpen(false)}>
+  <Box
+    sx={{
+      position: "absolute",
+      top: "40%",
+      left: "50%",
+      transform: "translate(-50%, -50%)",
+      width: 1000,
+      bgcolor: "background.paper",
+      boxShadow: 24,
+      p: 3,
+      borderRadius: 2,
+    }}
+  >
+    <Typography variant="h6" align="center"  mb={2}>
+    <b>{isEditing ? "Edit Raddi Sales" : "Create Raddi Sales"}</b>
+    </Typography>
+
+    {/* Header fields */}
+
+     <Grid container spacing={2} mb={2}>
+  <Grid item xs={4} md={6}>
+  <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1 }}>
+  Doc No
+</Typography>
+
+
+    <TextField
+       value={DocNo}
+      onChange={(e) => setDocNo(e.target.value)}
+                   sx={{ width: 200 }}
+
+    />
+  </Grid>
+
+  <Grid item xs={6} md={6}>
+    <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1 }}>
+  Date
+</Typography>
+
+    <LocalizationProvider dateAdapter={AdapterDayjs}>
+      <DatePicker
+        
+        value={safedate}
+        onChange={setsafedate}
+        format="DD-MM-YYYY"
+        slotProps={{ textField: { width:200 } }}
+      />
+    </LocalizationProvider>
+  </Grid>
+</Grid>
+
+
+                {/* Editable details table (inline inputs) */}
+                <div style={{ marginTop: 8 }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      marginBottom: 8,
+                    }}>
+                    <strong>Books</strong>
+                    <div>
+                      <Button
+                        variant="contained"
+                        sx={{ background: "#0a60bd", mr: 1 }}
+                        onClick={handleAddEmptyRow}>
+                        Add Item
+                      </Button>
+                      <Button
+                        variant="contained"
+                        color="error"
+                        onClick={() => {
+                          if (selectedRowIndex === null) {
+                            toast.warning(
+                              "Select a row to delete by clicking it"
+                            );
+                          } else {
+                            handleDeleteRow(selectedRowIndex);
+                            setSelectedRowIndex(null);
+                          }
+                        }}>
+                        Delete Item
+                      </Button>
+                    </div>
+                  </div>
+                  <TableContainer component={Paper} sx={{ maxHeight: 200 }}>
+  <Table stickyHeader size="small">
+<TableHead
+  sx={{
+    "& .MuiTableCell-root": {
+      fontWeight: "bold",
+      textAlign: "center",
+    },
+  }}
+>      <TableRow>
+        <TableCell align="center">Sr</TableCell>
+        <TableCell align="center">Book Code</TableCell>
+        <TableCell>Book Name</TableCell>
+        <TableCell align="center">Rate</TableCell>
+        <TableCell align="center">Nos</TableCell>
+      </TableRow>
+    </TableHead>
+
+    <TableBody>
+      {rows.map((row, idx) => (
+        <TableRow
+          key={idx}
+          hover
+          selected={selectedRowIndex === idx}
+          onClick={() => setSelectedRowIndex(idx)}
+        >
+          <TableCell align="center">{idx + 1}</TableCell>
+
+          {/* Book Code */}
+          <TableCell align="center">
+            <TextField
+              value={row.BookCode}
+              size="small"
+              sx={{ width: 100 }}
               onChange={(e) => {
-                const newPage = Number(e.target.value); // Convert to Number
-                if (!isNaN(newPage) && newPage >= 1) {
-                  setPageIndex(newPage);
+                const code = e.target.value;
+                handleChangeRow(idx, "BookCode", code);
+
+                const matchedBook = bookOptions.find(
+                  (b) => String(b.BookCode) === String(code)
+                );
+
+                if (matchedBook) {
+                  handleChangeRow(idx, "BookId", matchedBook.Id);
+                  handleChangeRow(idx, "BookName", matchedBook.BookName);
+                  handleChangeRow(idx, "Rate", matchedBook.Rate);
+                } else {
+                  handleChangeRow(idx, "BookId", null);
+                  handleChangeRow(idx, "BookName", "");
+                  handleChangeRow(idx, "Rate", "");
                 }
               }}
-              style={{
-                width: "50px",
-                textAlign: "center",
-                margin: "0 10px",
-                marginBottom: "5px",
-              }}
             />
-            <Button onClick={() => setPageIndex((prev) => Number(prev) + 1)}>
-              Next ▶
-            </Button>{" "}
-            Total Pages : {totalPages}
-          </div>
-        </div>
+          </TableCell>
 
-        {isModalOpen && (
-          <div
-            className="raddisales-overlay"
-            onClick={() => setIsModalOpen(false)}
-          />
-        )}
+          {/* Book Name */}
+          <TableCell>
+            <TextField
+              value={row.BookName || row.BookNameMarathi}
+              size="small"
+                            sx={{ width: 500 }}
 
-        <Modal open={isModalOpen}>
-          <div className="raddisales-modal" onSubmit={handleSubmit}>
-            <h2
-              style={{
-                textAlign: "center",
-                fontWeight: "620",
-                margin: "2px",
-                fontSize: "27px",
-              }}>
-              {isEditing ? "Edit Raddi sales" : "Add Raddi sales"}
-            </h2>
+               
+              InputProps={{ readOnly: true }}
+            />
+          </TableCell>
 
-            <div className="raddisales-form">
-              <div>
-                <label className="raddisales-label">Doc No</label>
-                <div>
-                  <input
-                    type="text"
-                    id="DocNo"
-                    name="DocNo"
-                    value={DocNo}
-                    onChange={(e) => setDocNo(e.target.value)}
-                    style={{ background: "#f5f5f5" }}
-                    className="bookprinting-control"
-                    placeholder="Auto-Incremented"
-                    readOnly
-                  />
+          {/* Rate */}
+          <TableCell align="center">
+            <TextField
+              value={row.Rate}
+              size="small"
+              InputProps={{ readOnly: true }}
+              sx={{ width: 100 }}
+            />
+          </TableCell>
+
+          {/* Nos */}
+          <TableCell align="center">
+            <TextField
+              value={row.Number}
+              size="small"
+              type="number"
+              onChange={(e) =>
+                handleChangeRow(idx, "Number", e.target.value)
+              }
+              sx={{ width: 100 }}
+            />
+          </TableCell>
+        </TableRow>
+      ))}
+    </TableBody>
+  </Table>
+</TableContainer>
+
+                <Box display="flex" justifyContent="center" gap={2} mt={3}>
+  <Button variant="contained" onClick={handleSubmit}>
+    {isEditing ? "Update" : "Save"}
+  </Button>
+
+  <Button
+    variant="contained"
+    color="error"
+    onClick={() => setIsModalOpen(false)}
+  >
+    Cancel
+  </Button>
+</Box>
+
+                  
                 </div>
-              </div>
+             
+          
+         
+  </Box>
+</Modal>
 
-              <div>
-                <label className="raddisales-label">Date</label>
-                <div>
-                  <LocalizationProvider dateAdapter={AdapterDayjs}>
-                    <DatePicker
-                      value={safedate}
-                      onChange={handleDateChange1}
-                      format="DD-MM-YYYY"
-                      slotProps={{
-                        textField: {
-                          size: "small",
-                          fullWidth: true,
-                          error: !!dateerror,
-                          helperText: dateerror,
-                        },
-                      }}
-                      sx={{
-                        marginTop: "10px",
-                        marginBottom: "5px",
-                        width: "165px",
-                      }}
-                    />
-                  </LocalizationProvider>
-                </div>
-              </div>
 
-              <div>
-                <label className="raddisales-label">Book</label>
-                <div>
-                  <Autocomplete
-                    options={bookOptions}
-                    value={
-                      bookOptions.find((option) => option.value === BookId) ||
-                      null
-                    }
-                    onChange={(event, newValue) =>
-                      setBookId(newValue ? newValue.value : null)
-                    }
-                    getOptionLabel={(option) => option.label} // Display only label in dropdown
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        placeholder="Select Book id"
-                        size="small"
-                        margin="none"
-                        fullWidth
-                      />
-                    )}
-                    sx={{ mt: 1.25, mb: 0.625, width: 350 }}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="raddisales-label">Rate</label>
-                <div>
-                  <input
-                    type="number"
-                    id="Rate"
-                    name="Rate"
-                    value={Rate}
-                    onChange={(e) => setRate(e.target.value)}
-                    // ref={accgroupcodeRef}
-                    // onKeyDown={(e) => handleKeyDown(e, accgroupnameRef)}
-                    placeholder="Enter Rate"
-                    className="raddisales-control"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="raddisales-label">Number</label>
-                <div>
-                  <input
-                    type="number"
-                    id="number"
-                    name="number"
-                    value={number}
-                    onChange={(e) => setNumber(e.target.value)}
-                    // ref={accgroupcodeRef}
-                    // onKeyDown={(e) => handleKeyDown(e, accgroupnameRef)}
-                    placeholder="Enter Number"
-                    className="raddisales-control"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="raddisales-btn-container">
-              <Button
-                onClick={handleSubmit}
-                // ref={saveRef}
-                // onKeyDown={(e) => handleKeyDown(e, accgroupnameRef)}
-                style={{
-                  background: "#0a60bd",
-                  color: "white",
-                }}>
-                {editingIndex >= 0 ? "Update" : "Save"}
-              </Button>
-              <Button
-                onClick={() => setIsModalOpen(false)}
-                style={{
-                  background: "red",
-                  color: "white",
-                }}>
-                Cancel
-              </Button>
-            </div>
-          </div>
-        </Modal>
-
-        {/* Confirmation Dialog for Delete */}
         <Dialog open={isDeleteDialogOpen} onClose={cancelDelete}>
-          <DialogTitle style={{ color: "navy", fontWeight: "600" }}>
-            Confirm Deletion
-          </DialogTitle>
+          <DialogTitle>Confirm Deletion</DialogTitle>
           <DialogContent>
-            Are you sure you want to delete this{" "}
-            <b style={{ color: "red" }}>
-              <u>Raddi Sales</u>
-            </b>
-            ?
+            Are you sure you want to delete this Raddi Sales?
           </DialogContent>
           <DialogActions>
             <Button
               onClick={cancelDelete}
-              style={{
-                background: "red",
-                color: "white",
-                marginRight: "5px",
-              }}>
+              sx={{ background: "red", color: "white" }}>
               Cancel
             </Button>
             <Button
               onClick={confirmDelete}
-              style={{
-                background: "#0a60bd",
-                color: "white",
-                marginRight: "5px",
-              }}>
+              sx={{ background: "#0a60bd", color: "white" }}>
               Confirm
             </Button>
           </DialogActions>
         </Dialog>
+
+        <ToastContainer />
       </div>
-      <ToastContainer />
-    </div>
+    </>
   );
 }
+
 export default Raddisales;

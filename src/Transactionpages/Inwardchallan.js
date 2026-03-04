@@ -40,7 +40,7 @@ import {
   RadioGroup,
   Radio,
 } from "@mui/material";
-
+import { useRef } from "react";
 import {
   Alert,
   useMediaQuery,
@@ -240,17 +240,17 @@ function Invertchallan() {
       return;
     }
 
-    const today = dayjs();
-    const minDate = today.subtract(3, "day");
-    const maxDate = today.add(2, "day");
+    // const today = dayjs();
+    // const minDate = today.subtract(3, "day");
+    // const maxDate = today.add(2, "day");
 
-    if (newValue.isBefore(minDate) || newValue.isAfter(maxDate)) {
-      setInwarderror("You can select only 2 days before or after today");
-    } else {
-      setInwarderror("");
-    }
-
-    setInwarddate(newValue);
+    // if (newValue.isBefore(minDate) || newValue.isAfter(maxDate)) {
+    //   setInwarderror("You can select only 2 days before or after today");
+    // } else {
+    //   setInwarderror("");
+    // }
+    setInwarderror("");
+    setInwarddate(dayjs(newValue));
   };
 
   const handleDateChange2 = (newValue) => {
@@ -260,18 +260,22 @@ function Invertchallan() {
       return;
     }
 
-    const today = dayjs();
-    const minDate = today.subtract(3, "day");
-    const maxDate = today.add(2, "day");
+    // const today = dayjs();
+    // const minDate = today.subtract(3, "day");
+    // const maxDate = today.add(2, "day");
 
-    if (newValue.isBefore(minDate) || newValue.isAfter(maxDate)) {
-      setSupplierdateerror("You can select only 2 days before or after today");
-    } else {
-      setSupplierdateerror("");
-    }
+    // if (newValue.isBefore(minDate) || newValue.isAfter(maxDate)) {
+    //   setSupplierdateerror("You can select only 2 days before or after today");
+    // } else {
+    //   setSupplierdateerror("");
+    // }
 
-    setSupplierdate(newValue);
+    setSupplierdateerror("");
+    setSupplierdate(dayjs(newValue));
   };
+
+
+
 
   const handleInputChange = (index, field, value) => {
     const updatedRows = [...rows];
@@ -386,7 +390,7 @@ function Invertchallan() {
     );
 
     // Map the details to rows
-    const mappedRows = invertchallandetail.map((detail) => ({
+    let mappedRows = invertchallandetail.map((detail) => ({
       // InvertId:200,
       InvertId: detail.InvertId,
       BookId: detail.BookId,
@@ -397,6 +401,18 @@ function Invertchallan() {
       Amount: detail.Amount,
       Id: detail.Id, // Include the detail Id in the mapped row for tracking
     }));
+
+    // ⭐ No API call needed — match from local bookOptions
+    mappedRows = mappedRows.map((row) => {
+      const book = bookOptions.find((b) => b.value === row.BookId);
+
+      return {
+        ...row,
+        BookCode: book?.code || "",
+        BookName: book?.label || "",
+        Rate: row.Rate || book?.price || 0,
+      };
+    });
 
     // Convert date strings to DD-MM-YYYY format
     const convertDateForInput = (dateStr) => {
@@ -500,52 +516,79 @@ function Invertchallan() {
     setDeleteIndex(null);
   };
 
-  const validateForm = () => {
-    let formErrors = {};
-    let isValid = true;
+  const bookCodeTimer = useRef(null);
 
-    // if (!InvertNo) {
-    //   formErrors.InvertNo = "Inward No  is required.";
-    //   isValid = false;
-    // }
-    if (!inwarddate) {
-      formErrors.inwarddate = "Inward Date is required.";
-      isValid = false;
-    }
+  const handleBookCodeChange = (rowIndex, value) => {
+    const updatedRows = [...rows];
+    updatedRows[rowIndex].BookCode = value;
+    setRows(updatedRows);
 
-    if (!DCNo) {
-      formErrors.DCNo = "DC No is required.";
-      isValid = false;
-    }
-    if (!AccountId) {
-      formErrors.AccountId = "Account Id is required.";
-      isValid = false;
-    }
-    if (!supplierdate) {
-      formErrors.supplierdate = "DC Date is required.";
-      isValid = false;
+    // 🔴 Clear previous timer
+    if (bookCodeTimer.current) {
+      clearTimeout(bookCodeTimer.current);
     }
 
-    if (!TotalAmount) {
-      formErrors.TotalAmount = "Total Amount is required.";
-      isValid = false;
-    }
-    if (!TotalCopies) {
-      formErrors.TotalCopies = "Total Copies is required.";
-      isValid = false;
-    }
-    if (!Remark) {
-      formErrors.Remark = "Remark is required.";
-      isValid = false;
+    // if book code is blank → reset row fields
+    if (value.trim() === "") {
+      updatedRows[rowIndex].BookName = "";
+      updatedRows[rowIndex].BookNameMarathi = "";
+      updatedRows[rowIndex].Price = "";
+      updatedRows[rowIndex].BookRate = "";
+      updatedRows[rowIndex].BookId = "";
+      updatedRows[rowIndex].Copies = "";
+      updatedRows[rowIndex].Amount = "";
+      updatedRows[rowIndex].Discount = "";
+      updatedRows[rowIndex].FinalAmount = "";
+
+      setRows(updatedRows);
+      return; // stop here
     }
 
-    setErrors(formErrors);
-    return isValid;
+    // 🟡 Wait until user finishes typing (500ms)
+    bookCodeTimer.current = setTimeout(() => {
+      // 🔒 Minimum length check (VERY IMPORTANT)
+      if (value.length < 2) return;
+
+      // Fetch data
+      fetchBookDataForRow(rowIndex, value);
+    }, 400);
+  };
+
+  const fetchBookDataForRow = async (rowIndex, bookCode) => {
+    if (!bookCode) return; // guard clause
+
+    try {
+      const response = await fetch(
+        `https://publication.microtechsolutions.net.in/php/Bookcodeget.php?BookCode=${bookCode}`
+      );
+      const data = await response.json();
+
+      if (Array.isArray(data) && data.length > 0) {
+        const book = data[0];
+
+        setRows((prevRows) => {
+          const updatedRows = [...prevRows];
+          updatedRows[rowIndex] = {
+            ...updatedRows[rowIndex],
+            BookName: book.BookName || book.BookNameMarathi || "",
+            Price: book.BookRate || 0,
+            BookId: book.Id || "", // This is important
+          };
+          return updatedRows;
+        });
+      } else {
+        // ❌ Now this WILL fire correctly
+        toast.error("Invalid Book Code");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to fetch Book");
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!validateForm()) return;
+    // if (!val idateForm()) return;
 
     if (
       !inwarddate ||
@@ -665,12 +708,6 @@ function Invertchallan() {
       {
         accessorKey: "TotalAmount",
         header: "Total",
-        size: 50,
-      },
-
-      {
-        accessorKey: "Remark",
-        header: "Remark",
         size: 50,
       },
 
@@ -795,9 +832,7 @@ function Invertchallan() {
             </h2>
             <form className="invertc-form">
               <div>
-                <label className="invertc-label">
-                  Inward No <b className="required">*</b>
-                </label>
+                <label className="invertc-label">Inward No</label>
                 <div>
                   <input
                     type="text"
@@ -811,18 +846,10 @@ function Invertchallan() {
                     readOnly
                   />
                 </div>
-
-                <div>
-                  {errors.InvertNo && (
-                    <b className="error-text">{errors.InvertNo}</b>
-                  )}
-                </div>
               </div>
 
               <div>
-                <label className="invertc-label">
-                  Inward Date <b className="required">*</b>
-                </label>
+                <label className="invertc-label">Inward Date</label>
                 <div>
                   <LocalizationProvider dateAdapter={AdapterDayjs}>
                     <DatePicker
@@ -845,19 +872,10 @@ function Invertchallan() {
                     />
                   </LocalizationProvider>
                 </div>
-
-                <div>
-                  {errors.inwarddate && (
-                    <b className="error-text">{errors.inwarddate}</b>
-                  )}
-                </div>
               </div>
 
               <div>
-                <label className="invertc-label">
-                  {" "}
-                  Account <b className="required">*</b>
-                </label>
+                <label className="invertc-label"> Account</label>
                 <div>
                   <Autocomplete
                     options={accountOptions}
@@ -882,18 +900,10 @@ function Invertchallan() {
                     sx={{ mt: 1.25, mb: 0.625, width: 450 }} // Equivalent to 10px and 5px
                   />
                 </div>
-
-                <div>
-                  {errors.AccountId && (
-                    <b className="error-text">{errors.AccountId}</b>
-                  )}
-                </div>
               </div>
 
               <div>
-                <label className="invertc-label">
-                  Supplier DC No <b className="required">*</b>
-                </label>
+                <label className="invertc-label">Supplier DC No</label>
                 <div>
                   <input
                     type="text"
@@ -906,16 +916,10 @@ function Invertchallan() {
                     placeholder="Enter DC No"
                   />
                 </div>
-
-                <div>
-                  {errors.DCNo && <b className="error-text">{errors.DCNo}</b>}
-                </div>
               </div>
 
               <div>
-                <label className="invertc-label">
-                  Supplier DC Date <b className="required">*</b>
-                </label>
+                <label className="invertc-label">Supplier DC Date</label>
                 <div>
                   <LocalizationProvider dateAdapter={AdapterDayjs}>
                     <DatePicker
@@ -938,11 +942,6 @@ function Invertchallan() {
                     />
                   </LocalizationProvider>
                 </div>
-                <div>
-                  {errors.supplierdate && (
-                    <b className="error-text">{errors.supplierdate}</b>
-                  )}
-                </div>
               </div>
             </form>
 
@@ -952,24 +951,11 @@ function Invertchallan() {
                   <tr>
                     <th>Serial No</th>
                     <th>Book Code</th>
-                    <th>
-                      Book Name <b className="required">*</b>
-                    </th>
-                    <th>
-                      Copies <b className="required">*</b>
-                    </th>
-                    <th>
-                      Rate <b className="required">*</b>
-                    </th>
-                    <th>
-                      Discount Percentage <b className="required">*</b>
-                    </th>
-                    <th>
-                      Discount Amount <b className="required">*</b>
-                    </th>
-                    <th>
-                      Amount <b className="required">*</b>
-                    </th>
+                    <th>Book Name</th>
+                    <th>Copies</th>
+                    <th>Rate</th>
+                    <th>Discount %</th>
+                    <th>Amount</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
@@ -1006,45 +992,25 @@ function Invertchallan() {
                         <td>{index + 1}</td>
 
                         <td>
-                          {bookOptions.find(
-                            (option) => option.value === row.BookId
-                          )?.code || ""}
+                          <input
+                            type="text"
+                            value={row.BookCode || ""}
+                            onChange={(e) =>
+                              handleBookCodeChange(index, e.target.value)
+                            }
+                            placeholder="Enter Book Code"
+                            style={{ width: "100px" }}
+                            className="invertc-control"
+                          />
                         </td>
-
                         <td>
-                          <Autocomplete
-                            options={bookOptions}
-                            value={
-                              bookOptions.find(
-                                (option) => option.value === row.BookId
-                              ) || null
-                            }
-                            onChange={(event, newValue) =>
-                              handleInputChange(
-                                index,
-                                "BookId",
-                                newValue ? newValue.value : ""
-                              )
-                            }
-                            sx={{ width: 500 }} // Set width
-                            getOptionLabel={(option) => option.label}
-                            renderInput={(params) => (
-                              <TextField
-                                {...params}
-                                placeholder="Select Book"
-                                size="big"
-                                fullWidth
-                                sx={{
-                                  "& .MuiInputBase-root": {
-                                    height: "50px",
-                                    // width: "200px", // Adjust height here
-                                  },
-                                  "& .MuiInputBase-input": {
-                                    padding: "14px", // Adjust padding for better alignment
-                                  },
-                                }}
-                              />
-                            )}
+                          <input
+                            type="text"
+                            value={row.BookName || row.BookNameMarathi || ""}
+                            readOnly
+                            placeholder="Book Name / Book Name Marathi"
+                            style={{ width: "420px" }}
+                            className="invertc-control"
                           />
                         </td>
                         <td>
@@ -1054,15 +1020,21 @@ function Invertchallan() {
                             onChange={(e) =>
                               handleInputChange(index, "Copies", e.target.value)
                             }
-                            style={{ width: "120px" }}
+                            style={{
+                              width: "65px",
+                            }}
+                            className="invertc-control"
                             placeholder="Copies"
                           />
                         </td>
                         <td>
                           <input
-                            type="number"
-                            value={row.Rate}
+                            type="text"
+                            // value={row.Rate || row.BookRate || ""}
+
+                            value={row.Price || row.Rate || ""}
                             readOnly
+                            placeholder="Rate"
                             style={{ width: "100px" }}
                             className="invertc-control"
                           />
@@ -1070,41 +1042,31 @@ function Invertchallan() {
                         <td>
                           <input
                             type="number"
-                            value={row.DiscountPercentage}
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              // Regex to validate decimal numbers with at most 18 digits total and 2 decimal places
-                              const regex = /^\d{0,18}(\.\d{0,2})?$/;
+                            value={row.DiscountPercentage || ""}
+                            onChange={(e) =>
+                              handleInputChange(
+                                index,
+                                "DiscountPercentage",
+                                e.target.value
+                              )
+                            }
+                            style={{ width: "80px" }}
+                            className="invertc-control"
+                            placeholder="Discount"
+                          />
+                        </td>
 
-                              // Check if the value matches the regex
-                              if (value === "" || regex.test(value)) {
-                                handleInputChange(
-                                  index,
-                                  "DiscountPercentage",
-                                  value
-                                );
-                              }
-                            }}
-                            placeholder="Discount %"
-                          />
-                        </td>
                         <td>
                           <input
                             type="number"
-                            value={row.DiscountAmount}
-                            readOnly
-                            placeholder="Discount Amount"
-                          />
-                        </td>
-                        <td>
-                          <input
-                            type="number"
-                            value={row.Amount}
+                            value={row.Amount || ""}
                             readOnly
                             style={{ width: "100px" }}
                             placeholder="Amount"
+                            className="invertc-control"
                           />
                         </td>
+
                         <td>
                           <div
                             style={{
@@ -1135,9 +1097,7 @@ function Invertchallan() {
             </div>
             <form className="invertc-form">
               <div>
-                <label className="invertc-label">
-                  Total Copies <b className="required">*</b>
-                </label>
+                <label className="invertc-label">Total Copies</label>
                 <div>
                   <input
                     type="text"
@@ -1145,21 +1105,19 @@ function Invertchallan() {
                     name="TotalCopies"
                     value={TotalCopies}
                     onChange={(e) => setTotalCopies(e.target.value)}
+                    style={{
+                      fontSize: "1.2rem",
+                      fontWeight: "bold",
+                      color: "black",
+                    }}
                     className="invertc-control"
                     placeholder="Enter Total Copies"
                   />
                 </div>
-                <div>
-                  {errors.TotalCopies && (
-                    <b className="error-text">{errors.TotalCopies}</b>
-                  )}
-                </div>
               </div>
 
               <div>
-                <label className="invertc-label">
-                  Total Amount <b className="required">*</b>
-                </label>
+                <label className="invertc-label">Total Amount</label>
                 <div>
                   <input
                     type="text"
@@ -1177,37 +1135,15 @@ function Invertchallan() {
                         setTotalAmount(value);
                       }
                     }}
+                    style={{
+                      fontSize: "1.2rem",
+                      fontWeight: "bold",
+                      color: "green",
+                    }}
+                    readOnly
                     className="invertc-control"
                     placeholder="Enter Total Amount"
                   />
-                </div>
-                <div>
-                  {errors.TotalAmount && (
-                    <b className="error-text">{errors.TotalAmount}</b>
-                  )}
-                </div>
-              </div>
-
-              <div>
-                <label className="invertc-label">
-                  Remark <b className="required">*</b>
-                </label>
-                <div>
-                  <input
-                    type="text"
-                    id="Remark"
-                    name="Remark"
-                    value={Remark}
-                    onChange={(e) => setRemark(e.target.value)}
-                    maxLength={200}
-                    className="invertc-control"
-                    placeholder="Enter Remark"
-                  />
-                </div>
-                <div>
-                  {errors.Remark && (
-                    <b className="error-text">{errors.Remark}</b>
-                  )}
                 </div>
               </div>
 

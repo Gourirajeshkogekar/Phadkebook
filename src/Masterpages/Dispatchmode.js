@@ -154,10 +154,7 @@ function Dispatchmode() {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    // Only validate form if it's a POST request (not editing)
-    if (!isEditing && !validateForm()) return;
+    // e.preventDefault();
 
     const data = {
       DispatchModeName: DispatchModeName,
@@ -293,9 +290,7 @@ function Dispatchmode() {
             </h2>
             <form onSubmit={handleSubmit} className="dispatch-form">
               <div>
-                <label className="dispatch-label">
-                  Dispatch Mode Name<b className="required">*</b>
-                </label>
+                <label className="dispatch-label">Dispatch Mode Name</label>
                 <div>
                   <Tooltip
                     title={
@@ -317,11 +312,6 @@ function Dispatchmode() {
                       placeholder="Enter dispatch Name"
                     />
                   </Tooltip>
-                  <div>
-                    {errors.DispatchModeName && (
-                      <b className="error-text">{errors.DispatchModeName}</b>
-                    )}
-                  </div>
                 </div>
               </div>
             </form>

@@ -17,9 +17,8 @@ import axios from "axios";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { RiDeleteBin5Line } from "react-icons/ri";
-import { CiEdit } from "react-icons/ci";
-import { Tooltip } from "@mui/material";
-
+import { TextField } from "@mui/material";
+import { Autocomplete } from "@mui/material";
 function Authors() {
   const [userId, setUserId] = useState("");
   const [yearid, setYearId] = useState("");
@@ -329,6 +328,9 @@ function Authors() {
     if (!email) {
       formErrors.email = "Email Id is required.";
       isValid = false;
+    } else if (/[A-Z]/.test(email)) {
+      formErrors.email = "Email must not contain uppercase letters.";
+      isValid = false;
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       formErrors.email = "Email Id is invalid.";
       isValid = false;
@@ -542,56 +544,21 @@ function Authors() {
             </h2>
             <form onSubmit={handleSubmit} className="author-form">
               <div>
-                <label className="author-label">
-                  Author Code <b className="required">*</b>
-                </label>
+                <label className="author-label">Author Name</label>
                 <div>
                   <input
-                    type="number"
-                    id="AuthorCode"
-                    name="AuthorCode"
-                    value={AuthorCode}
-                    onChange={(e) => setAuthorCode(e.target.value)}
+                    type="text"
+                    id="authorName"
+                    name="authorName"
+                    value={authorName}
+                    onChange={(e) => setAuthorName(e.target.value)}
                     maxLength={100}
-                    ref={authorcodeRef}
-                    onKeyDown={(e) => handleKeyDown(e, authornameRef)}
+                    ref={authornameRef}
+                    onKeyDown={(e) => handleKeyDown(e, address1Ref)}
+                    style={{ width: "400px" }}
                     className="author-control"
-                    placeholder="Enter Author Code"
+                    placeholder="Enter Author Name"
                   />
-                  <div>
-                    {errors.AuthorCode && (
-                      <b className="error-text">{errors.AuthorCode}</b>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <label className="author-label">
-                  Author Name <b className="required">*</b>
-                </label>
-                <div>
-                  <Tooltip
-                    title={
-                      <span style={{ fontSize: "14px", fontWeight: "bold" }}>
-                        {authorName}
-                      </span>
-                    }
-                    arrow>
-                    <input
-                      type="text"
-                      id="authorName"
-                      name="authorName"
-                      value={authorName}
-                      onChange={(e) => setAuthorName(e.target.value)}
-                      maxLength={100}
-                      ref={authornameRef}
-                      onKeyDown={(e) => handleKeyDown(e, address1Ref)}
-                      style={{ width: "400px" }}
-                      className="author-control"
-                      placeholder="Enter Author Name"
-                    />
-                  </Tooltip>
                   <div>
                     {errors.authorName && (
                       <b className="error-text">{errors.authorName}</b>
@@ -599,200 +566,56 @@ function Authors() {
                   </div>
                 </div>
               </div>
-              <div>
-                <label className="author-label">
-                  Address1 <b className="required">*</b>
-                </label>
+              <div className="address-box">
+                <label className="author-label">Address</label>
                 <div>
-                  <Tooltip
-                    title={
-                      <span style={{ fontSize: "14px", fontWeight: "bold" }}>
-                        {Address1}
-                      </span>
-                    }
-                    arrow>
-                    <input
-                      type="text"
-                      id="Address1"
-                      name="Address1"
-                      value={Address1}
-                      onChange={(e) => setAddress1(e.target.value)}
-                      maxLength={100}
-                      ref={address1Ref}
-                      onKeyDown={(e) => handleKeyDown(e, address2Ref)}
-                      style={{ width: "300px" }}
-                      className="author-control"
-                      placeholder="Enter Address line 1"
-                    />
-                  </Tooltip>
-                  <div>
-                    {errors.Address1 && (
-                      <b className="error-text">{errors.Address1}</b>
-                    )}
-                  </div>
-                </div>
-              </div>
-              <div>
-                <label className="author-label">
-                  Address2 <b className="required">*</b>
-                </label>
-                <div>
-                  <Tooltip
-                    title={
-                      <span style={{ fontSize: "14px", fontWeight: "bold" }}>
-                        {Address2}
-                      </span>
-                    }
-                    arrow>
-                    <input
-                      type="text"
-                      id="Address2"
-                      name="Address2"
-                      value={Address2}
-                      onChange={(e) => setAddress2(e.target.value)}
-                      maxLength={100}
-                      ref={address2Ref}
-                      onKeyDown={(e) => handleKeyDown(e, address3Ref)}
-                      style={{ width: "300px" }}
-                      className="author-control"
-                      placeholder="Enter Address line 2"
-                    />
-                  </Tooltip>
-                  <div>
-                    {errors.Address1 && (
-                      <b className="error-text">{errors.Address1}</b>
-                    )}
-                  </div>
-                </div>
-              </div>
-              <div>
-                <label className="author-label">
-                  Address3 <b className="required">*</b>
-                </label>
-                <div>
-                  <Tooltip
-                    title={
-                      <span style={{ fontSize: "14px", fontWeight: "bold" }}>
-                        {Address3}
-                      </span>
-                    }
-                    arrow>
-                    <input
-                      type="text"
-                      id="Address3"
-                      name="Address3"
-                      value={Address3}
-                      onChange={(e) => setAddress3(e.target.value)}
-                      maxLength={100}
-                      ref={address3Ref}
-                      onKeyDown={(e) => handleKeyDown(e, address4Ref)}
-                      style={{ width: "300px" }}
-                      className="author-control"
-                      placeholder="Enter Address line 3"
-                    />
-                  </Tooltip>
-                  <div>
-                    {errors.Address3 && (
-                      <b className="error-text">{errors.Address3}</b>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <label className="author-label">
-                  Address4 <b className="required">*</b>
-                </label>
-                <div>
-                  <Tooltip
-                    title={
-                      <span style={{ fontSize: "14px", fontWeight: "bold" }}>
-                        {Address4}
-                      </span>
-                    }
-                    arrow>
-                    <input
-                      type="text"
-                      id="Address4"
-                      name="Address4"
-                      value={Address4}
-                      onChange={(e) => setAddress4(e.target.value)}
-                      maxLength={100}
-                      ref={address4Ref}
-                      onKeyDown={(e) => handleKeyDown(e, stateRef)}
-                      style={{ width: "300px" }}
-                      className="author-control"
-                      placeholder="Enter Address line 4"
-                    />
-                  </Tooltip>
-                  <div>
-                    {errors.Address4 && (
-                      <b className="error-text">{errors.Address4}</b>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <label className="author-label">
-                  State <b className="required">*</b>
-                </label>
-                <div>
-                  <Select
-                    id="StateId"
-                    name="StateId"
-                    value={stateOptions.find(
-                      (option) => option.value === StateId
-                    )}
-                    onChange={(option) => setStateId(option.value)}
-                    ref={stateRef}
-                    onKeyDown={(e) => handleKeyDown(e, cityRef)}
-                    options={stateOptions}
-                    styles={{
-                      control: (base) => ({
-                        ...base,
-                        width: "170px",
-                        marginTop: "10px",
-                        borderRadius: "4px",
-                        border: "1px solid rgb(223, 222, 222)",
-                        marginBottom: "5px",
-                      }),
-                    }}
-                    placeholder="Select State"
+                  <input
+                    className="author-control"
+                    value={Address1}
+                    onChange={(e) => setAddress1(e.target.value)}
+                    style={{ width: "350px" }}
+                    placeholder="Enter Address 1"
                   />
-                  <div>
-                    {errors.StateId && (
-                      <b className="error-text">{errors.StateId}</b>
-                    )}
-                  </div>
+                  <input
+                    className="author-control"
+                    value={Address2}
+                    onChange={(e) => setAddress2(e.target.value)}
+                    style={{ width: "350px" }}
+                    placeholder="Enter Address 2"
+                  />
+                  <input
+                    className="author-control"
+                    value={Address3}
+                    onChange={(e) => setAddress3(e.target.value)}
+                    style={{ width: "350px" }}
+                    placeholder="Enter Address 3"
+                  />
                 </div>
               </div>
+
               <div>
-                <label className="author-label">
-                  City <b className="required">*</b>
-                </label>
+                <label className="author-label">City</label>
                 <div>
-                  <Select
-                    id="CityId"
-                    name="CityId"
-                    value={cityOptions.find(
-                      (option) => option.value === CityId
-                    )}
-                    onChange={(option) => setCityId(option.value)}
-                    ref={cityRef}
-                    onKeyDown={(e) => handleKeyDown(e, areaRef)}
+                  <Autocomplete
                     options={cityOptions}
-                    styles={{
-                      control: (base) => ({
-                        ...base,
-                        width: "170px",
-                        marginTop: "10px",
-                        borderRadius: "4px",
-                        border: "1px solid rgb(223, 222, 222)",
-                        marginBottom: "5px",
-                      }),
-                    }}
-                    placeholder="Select City"
+                    value={
+                      cityOptions.find((option) => option.value === CityId) ||
+                      null
+                    }
+                    onChange={(event, newValue) =>
+                      setCityId(newValue ? newValue.value : null)
+                    }
+                    getOptionLabel={(option) => option.label} // Display only label in dropdown
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        placeholder="Select City id"
+                        size="small"
+                        margin="none"
+                        fullWidth
+                      />
+                    )}
+                    sx={{ mt: 1.25, mb: 0.625, width: 300 }} // Equivalent to 10px and 5px
                   />
                   <div>
                     {errors.CityId && (
@@ -802,31 +625,28 @@ function Authors() {
                 </div>
               </div>
               <div>
-                <label className="author-label">
-                  Area <b className="required">*</b>
-                </label>
+                <label className="author-label">Area</label>
                 <div>
-                  <Select
-                    id="AreaId"
-                    name="AreaId"
-                    value={areaOptions.find(
-                      (option) => option.value === Number(AreaId)
-                    )}
-                    onChange={(option) => setAreaId(option.value)}
-                    ref={areaRef}
-                    onKeyDown={(e) => handleKeyDown(e, pincodeRef)}
+                  <Autocomplete
                     options={areaOptions}
-                    styles={{
-                      control: (base) => ({
-                        ...base,
-                        width: "170px",
-                        marginTop: "10px",
-                        borderRadius: "4px",
-                        border: "1px solid rgb(223, 222, 222)",
-                        marginBottom: "5px",
-                      }),
-                    }}
-                    placeholder="Select Area"
+                    value={
+                      areaOptions.find((option) => option.value === AreaId) ||
+                      null
+                    }
+                    onChange={(event, newValue) =>
+                      setAreaId(newValue ? newValue.value : null)
+                    }
+                    getOptionLabel={(option) => option.label} // Display only label in dropdown
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        placeholder="Select Area id"
+                        size="small"
+                        margin="none"
+                        fullWidth
+                      />
+                    )}
+                    sx={{ mt: 1.25, mb: 0.625, width: 300 }} // Equivalent to 10px and 5px
                   />
 
                   <div>
@@ -837,9 +657,7 @@ function Authors() {
                 </div>
               </div>
               <div>
-                <label className="author-label">
-                  Pincode <b className="required">*</b>
-                </label>
+                <label className="author-label">Pincode</label>
                 <div>
                   <input
                     type="text"
@@ -848,9 +666,10 @@ function Authors() {
                     value={Pincode}
                     onChange={(e) => setPincode(e.target.value)}
                     maxLength={6}
+                    style={{ width: "150px" }}
+                    className="author-control"
                     ref={pincodeRef}
                     onKeyDown={(e) => handleKeyDown(e, mobilenoRef)}
-                    className="author-control"
                     placeholder="Enter Pincode"
                   />
                   <div>
@@ -861,9 +680,7 @@ function Authors() {
                 </div>
               </div>
               <div>
-                <label className="author-label">
-                  Mobile Number <b className="required">*</b>
-                </label>
+                <label className="author-label">Mobile Number</label>
                 <div>
                   <input
                     type="text"
@@ -871,7 +688,7 @@ function Authors() {
                     name="MobileNo"
                     value={MobileNo}
                     onChange={(e) => setMobileNo(e.target.value)}
-                    maxLength={25}
+                    maxLength={10}
                     ref={mobilenoRef}
                     onKeyDown={(e) => handleKeyDown(e, pannoref)}
                     className="author-control"
@@ -885,35 +702,9 @@ function Authors() {
                   </div>
                 </div>
               </div>
-              <div>
-                <label className="author-label">
-                  PAN Number <b className="required">*</b>
-                </label>
-                <div>
-                  <input
-                    type="text"
-                    id="PanNo"
-                    name="PanNo"
-                    value={PanNo}
-                    onChange={(e) => setPanNo(e.target.value)}
-                    maxLength={25}
-                    ref={[pannoref]}
-                    onKeyDown={(e) => handleKeyDown(e, emailRef)}
-                    className="author-control"
-                    placeholder="Enter PAN Number"
-                  />
 
-                  <div>
-                    {errors.PanNo && (
-                      <b className="error-text">{errors.PanNo}</b>
-                    )}
-                  </div>
-                </div>
-              </div>
               <div>
-                <label className="author-label">
-                  Email <b className="required">*</b>
-                </label>
+                <label className="author-label">Email</label>
                 <div>
                   <input
                     type="text"

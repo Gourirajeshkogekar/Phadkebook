@@ -12,6 +12,7 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  FormControlLabel,
 } from "@mui/material";
 import Select from "react-select";
 import { ToastContainer, toast } from "react-toastify";
@@ -20,6 +21,7 @@ import qs from "qs";
 import { RiDeleteBin5Line } from "react-icons/ri";
 import { CiEdit } from "react-icons/ci";
 import { Tooltip } from "@mui/material";
+import { Grid, Checkbox, Radio } from "@mui/material";
 
 function AccountGroup() {
   const [userId, setUserId] = useState("");
@@ -45,13 +47,27 @@ function AccountGroup() {
     fetchAccgroups();
   }, []);
 
+  const [AccountGroupName, setAccountGroupName] = useState("");
+
+  const [TDS, setTDS] = useState(false);
+
+  const [category, setCategory] = useState("");
+
+  const [balanceDetails, setBalanceDetails] = useState(false);
+  const [trialDetails, setTrialDetails] = useState(false);
+  const [subsidiary, setSubsidiary] = useState(false);
+
   const [accountGroups, setAccountGroups] = useState([]);
   const [GroupCode, setGroupCode] = useState("");
   const [GroupName, setGroupName] = useState("");
+  const [MainGroupId, setMainGroupId] = useState("");
+  const [AccountType, setAccountType] = useState("");
+
   const [TypeCode, setTypeCode] = useState("");
   const [IsTDS, setIsTds] = useState(false);
   const [TDSId, setTDSId] = useState("");
   const [tdsOptions, setTdsOptions] = useState([]);
+  const [mainGroupOptions, setMaingroupoptions] = useState([]);
   const [IsPrintDetailsinBL, setIsPrintDetailsinBL] = useState(false);
   const [IsPrintDetailsinTB, setIsPrintDetailsinTB] = useState(false);
   const [IsSubsidiary, setIsSubsidiary] = useState(false);
@@ -99,6 +115,7 @@ function AccountGroup() {
   useEffect(() => {
     fetchAccgroups();
     fetchTds();
+    fetchmaingroups();
   }, []);
 
   const fetchAccgroups = async () => {
@@ -124,6 +141,21 @@ function AccountGroup() {
       setTdsOptions(tdsOptions);
     } catch (error) {
       // toast.error("Error fetching TDS:", error);
+    }
+  };
+
+  const fetchmaingroups = async () => {
+    try {
+      const response = await axios.get(
+        "https://publication.microtechsolutions.net.in/php/get/getMainGroup.php"
+      );
+      const mainoptions = response.data.map((main) => ({
+        value: main.Id,
+        label: main.MainGroupName,
+      }));
+      setMaingroupoptions(mainoptions);
+    } catch (error) {
+      // toast.error("Error fetching mainoptions:", error);
     }
   };
 
@@ -379,7 +411,19 @@ function AccountGroup() {
         )}
 
         <Modal open={isModalOpen}>
-          <div className="accountgroup-modal" onSubmit={handleSubmit}>
+          <div
+            style={{
+              position: "absolute",
+              top: "45%",
+              left: "50%",
+              transform: "translate(-50%, -50%)",
+              background: "white",
+              padding: "10px",
+              width: "70%",
+              maxHeight: "100vh",
+              overflowY: "auto",
+              borderRadius: "10px",
+            }}>
             <h2
               style={{
                 textAlign: "center",
@@ -389,231 +433,337 @@ function AccountGroup() {
               }}>
               {isEditing ? "Edit Account Group" : "Add Account Group"}
             </h2>
-
-            <div className="accountgroup-form">
+            {/* <div className="accountgroup-form">
               <div>
-                <label className="accountgroup-label">
-                  Account Group Code<b className="required">*</b>
-                </label>
+                <label className="accountgroup-label">Account Group Code</label>
+
                 <div>
                   <input
                     type="text"
-                    id="GroupCode"
-                    name="GroupCode"
                     value={GroupCode}
-                    onChange={(e) => setGroupCode(e.target.value)}
-                    maxLength={15}
-                    ref={accgroupcodeRef}
-                    onKeyDown={(e) => handleKeyDown(e, accgroupnameRef)}
-                    style={{ background: "	#D0D0D0" }}
-                    placeholder="Auto-Incremented"
-                    className="accountgroup-control"
                     readOnly
+                    className="accountgroup-control"
+                    placeholder="Auto-Incremented"
                   />
-                  <div>
-                    {errors.GroupCode && (
-                      <b className="error-text">{errors.GroupCode}</b>
-                    )}
-                  </div>
                 </div>
               </div>
 
               <div>
-                <label className="accountgroup-label">
-                  Account Group Name<b className="required">*</b>
-                </label>
+                <label className="accountgroup-label">Account Group Name</label>
                 <div>
-                  <Tooltip
-                    title={
-                      <span style={{ fontSize: "14px", fontWeight: "bold" }}>
-                        {GroupName}
-                      </span>
-                    }
-                    arrow>
-                    <input
-                      type="text"
-                      id="GroupName"
-                      name="GroupName"
-                      value={GroupName}
-                      onChange={(e) => setGroupName(e.target.value)}
-                      maxLength={100}
-                      ref={accgroupnameRef}
-                      onKeyDown={(e) => handleKeyDown(e, typecodeRef)}
-                      style={{ width: "300px" }}
-                      placeholder="Enter Account Group Name"
-                      className="accountgroup-control"
-                    />
-                  </Tooltip>
-                  <div>
-                    {errors.GroupName && (
-                      <b className="error-text">{errors.GroupName}</b>
-                    )}
-                  </div>
+                  <input
+                    type="text"
+                    value={GroupName}
+                    onChange={(e) => setGroupName(e.target.value)}
+                    className="accountgroup-control"
+                    placeholder="Enter Account group Name"
+                  />
                 </div>
               </div>
 
               <div>
-                <label className="accountgroup-label">
-                  Type Code<b className="required">*</b>
-                </label>
+                <label className="accountgroup-label">Main Group</label>
                 <div>
                   <Select
-                    id="TypeCode"
-                    name="TypeCode"
+                    id="MainGroupId"
+                    name="MainGroupId"
+                    value={typeCodeOptions.find(
+                      (option) => option.value === MainGroupId
+                    )}
+                    onChange={(option) => {
+                      setMainGroupId(option?.value); // set selected group id
+                      setTypeCode(option?.code || ""); // ✅ set type code from selected group
+                    }}
+                    tabIndex={0}
                     options={typeCodeOptions}
-                    value={
-                      typeCodeOptions.find(
-                        (option) => option.value === TypeCode
-                      ) || null
-                    }
-                    onChange={(selectedOption) =>
-                      setTypeCode(selectedOption?.value || "")
-                    }
                     styles={{
                       control: (base) => ({
                         ...base,
-                        width: "300px",
+                        width: "170px",
                         marginTop: "10px",
-                        marginBottom: "5px",
                         borderRadius: "4px",
                         border: "1px solid rgb(223, 222, 222)",
+                        marginBottom: "5px",
                       }),
                     }}
-                    placeholder="-- Select Type Code --"
-                    className="react-select-container"
-                    classNamePrefix="react-select"
-                    onKeyDown={(e) => handleKeyDown(e, tdsidRef)}
-                    ref={typecodeRef}
+                    placeholder="Select Main Group id"
                   />
-                  <div>
-                    {errors.TypeCode && (
-                      <b className="error-text">{errors.TypeCode}</b>
-                    )}
-                  </div>
                 </div>
               </div>
 
               <div>
                 <label className="accountgroup-label">
-                  TDS<b className="required">*</b>
+                  <input
+                    type="checkbox"
+                    checked={IsTDS}
+                    onChange={(e) => setIsTds(e.target.checked)}
+                  />
+                  TDS Applicable to this group?
                 </label>
-                <div>
+              </div>
+
+              <div className="ag-row radio-row">
+                <div className="ag-radio-block">
+                  <label className="accountgroup-label">
+                    <input
+                      type="radio"
+                      name="accountType"
+                      value="party"
+                      checked={AccountType === "party"}
+                      onChange={() => setAccountType("party")}
+                    />
+                    Party?
+                  </label>
+
+                  <label className="accountgroup-label">
+                    <input
+                      type="radio"
+                      name="accountType"
+                      value="fixed_asset"
+                      checked={AccountType === "fixed_asset"}
+                      onChange={() => setAccountType("fixed_asset")}
+                    />
+                    Fixed Asset?
+                  </label>
+
+                  <label className="accountgroup-label">
+                    <input
+                      type="radio"
+                      name="accountType"
+                      value="cash_bank"
+                      checked={AccountType === "cash_bank"}
+                      onChange={() => setAccountType("cash_bank")}
+                    />
+                    Cash/Bank?
+                  </label>
+
+                  <label className="accountgroup-label">
+                    <input
+                      type="radio"
+                      name="accountType"
+                      value="other"
+                      checked={AccountType === "other"}
+                      onChange={() => setAccountType("other")}
+                    />
+                    Other?
+                  </label>
+                </div>
+              </div>
+
+              <div style={{ display: "flex" }}>
+                <label className="accountgroup-label">
+                  <div>
+                    <input
+                      type="checkbox"
+                      checked={IsPrintDetailsinBL}
+                      onChange={(e) => setIsPrintDetailsinBL(e.target.checked)}
+                    />
+                  </div>
+                  Print Details in Balance Sheet / P & L A/c?
+                </label>
+
+                <label className="accountgroup-label">
+                  <div>
+                    <input
+                      type="checkbox"
+                      checked={IsPrintDetailsinTB}
+                      onChange={(e) => setIsPrintDetailsinTB(e.target.checked)}
+                    />
+                  </div>
+                  Print Details in Trial Balance?
+                </label>
+
+                <label className="accountgroup-label">
+                  <input
+                    type="checkbox"
+                    checked={IsSubsidiary}
+                    onChange={(e) => setIsSubsidiary(e.target.checked)}
+                  />
+                  Subsidiary Account exists?
+                </label>
+              </div>
+
+              <div className="accgroup-btn-container">
+                <Button
+                  onClick={handleSubmit}
+                  ref={saveRef}
+                  // onKeyDown={(e) => handleKeyDown(e, accgroupnameRef)}
+                  style={{
+                    background: "#0a60bd",
+                    color: "white",
+                  }}>
+                  {editingIndex >= 0 ? "Update" : "Save"}
+                </Button>
+                <Button
+                  onClick={() => setIsModalOpen(false)}
+                  style={{
+                    background: "red",
+                    color: "white",
+                  }}>
+                  Cancel
+                </Button>
+              </div>
+            </div> */}
+
+            <Grid container spacing={3} sx={{ p: 2 }}>
+              {/* LEFT COLUMN */}
+              <Grid item xs={12} md={6}>
+                <label className="account-label">Account Group Code</label>
+                <Grid>
+                  <input
+                    type="text"
+                    value="Auto-Incremented"
+                    disabled
+                    className="accountgroup-control"
+                    placeholder="Auto-incremented"
+                  />
+                </Grid>
+              </Grid>
+
+              {/* RIGHT COLUMN */}
+              <Grid item xs={12} md={6}>
+                <label className="account-label">Account Group Name</label>
+                <Grid>
+                  <input
+                    type="text"
+                    value={AccountGroupName}
+                    onChange={(e) => setAccountGroupName(e.target.value)}
+                    className="accountgroup-control"
+                    style={{ width: "250px" }}
+                    placeholder="Enter Account group name"
+                  />
+                </Grid>
+              </Grid>
+
+              {/* MAIN GROUP DROPDOWN */}
+              <Grid item xs={12} md={6}>
+                <label className="account-label">Main Group</label>
+                <Grid>
                   <Select
-                    id="TDSId"
-                    name="TDSId"
-                    value={tdsOptions.find((option) => option.value === TDSId)}
-                    onChange={(option) => setTDSId(option.value)}
-                    ref={tdsidRef}
-                    onKeyDown={(e) => handleKeyDown(e, tdsappRef)}
-                    options={tdsOptions}
+                    id="MainGroupId"
+                    name="MainGroupId"
+                    value={mainGroupOptions.find(
+                      (option) => option.value === MainGroupId
+                    )}
+                    onChange={(option) => setMainGroupId(option.value)}
+                    options={mainGroupOptions}
                     styles={{
                       control: (base) => ({
                         ...base,
-                        width: "300px",
+                        width: "250px",
                         marginTop: "10px",
-                        marginBottom: "5px",
                         borderRadius: "4px",
                         border: "1px solid rgb(223, 222, 222)",
+                        marginBottom: "5px",
                       }),
                     }}
-                    placeholder="Select TDS Id"
+                    placeholder="Select Main Group Id"
                   />
-                  <div>
-                    {errors.TDSId && (
-                      <b className="error-text">{errors.TDSId}</b>
-                    )}
-                  </div>
-                </div>
-              </div>
+                </Grid>
+              </Grid>
 
-              <div>
-                <label className="accountgroup-label">TDS Applicable ?</label>
-                <input
-                  type="checkbox"
-                  id="IsTDS"
-                  name="IsTDS"
-                  checked={IsTDS}
-                  // className="accountgroup-check-control"
-                  onChange={(e) => setIsTds(e.target.checked)}
-                  ref={tdsappRef}
-                  onKeyDown={(e) => handleKeyDown(e, printdetbalRef)}
-                />
-              </div>
-
-              <div>
-                <label className="accountgroup-label">
-                  Print det in Bal sheet?
+              {/* TDS CHECKBOX */}
+              <Grid item xs={12} md={6}>
+                <label className="account-label">
+                  TDS Applicable to this group?
                 </label>
-                {/* <div> */}
-                <input
-                  type="checkbox"
-                  id="IsPrintDetailsinBL"
-                  name="IsPrintDetailsinBL"
-                  checked={IsPrintDetailsinBL}
-                  // className="accountgroup-check-control"
-                  onChange={(e) => setIsPrintDetailsinBL(e.target.checked)}
-                  ref={printdetbalRef}
-                  onKeyDown={(e) => handleKeyDown(e, printdettrialRef)}
+                <Checkbox
+                  checked={TDS}
+                  onChange={(e) => setTDS(e.target.checked)}
                 />
-                {/* </div> */}
-              </div>
+              </Grid>
 
-              <div>
-                <label className="accountgroup-label">
-                  Print det in Trial Bal?
+              {/* RADIO BUTTONS SECTION */}
+              <Grid item xs={12} container spacing={2}>
+                <Grid item xs={12} md={3}>
+                  <label className="account-label">Party?</label>
+                  <Radio
+                    checked={category === "party"}
+                    onChange={() => setCategory("party")}
+                  />
+                </Grid>
+
+                <Grid item xs={12} md={3}>
+                  <label className="account-label">Fixed Asset?</label>
+                  <Radio
+                    checked={category === "fixedasset"}
+                    onChange={() => setCategory("fixedasset")}
+                  />
+                </Grid>
+
+                <Grid item xs={12} md={3}>
+                  <label className="account-label">Cash/Bank?</label>
+                  <Radio
+                    checked={category === "cashbank"}
+                    onChange={() => setCategory("cashbank")}
+                  />
+                </Grid>
+
+                <Grid item xs={12} md={3}>
+                  <label className="account-label">Other?</label>
+                  <Radio
+                    checked={category === "other"}
+                    onChange={() => setCategory("other")}
+                  />
+                </Grid>
+              </Grid>
+
+              {/* CHECKBOX SECTION */}
+              {/* BALANCE SHEET CHECKBOX */}
+              <Grid item xs={12} md={4}>
+                <label className="account-label">
+                  Print Det in Bal Sheet / P & L A/c?
                 </label>
-                {/* <div> */}
-                <input
-                  type="checkbox"
-                  id="IsPrintDetailsinTB"
-                  name="IsPrintDetailsinTB"
-                  checked={IsPrintDetailsinTB}
-                  //  className="accountgroup-check-control"
-                  onChange={(e) => setIsPrintDetailsinTB(e.target.checked)}
-                  ref={printdettrialRef}
-                  onKeyDown={(e) => handleKeyDown(e, subsiaryaccRef)}
+                <Checkbox
+                  checked={balanceDetails}
+                  onChange={() => setBalanceDetails(!balanceDetails)}
                 />
-                {/* </div> */}
-              </div>
+              </Grid>
 
-              <div>
-                <label className="accountgroup-label">
-                  Subsidiary Acc exists?
+              {/* TRIAL BALANCE CHECKBOX */}
+              <Grid item xs={12} md={4}>
+                <label className="account-label">
+                  Print Details in Trial Balance?
                 </label>
-
-                <input
-                  type="checkbox"
-                  id="IsSubsidiary"
-                  name="IsSubsidiary"
-                  checked={IsSubsidiary}
-                  //className="accountgroup-check-control"
-                  onChange={(e) => setIsSubsidiary(e.target.checked)}
-                  ref={subsiaryaccRef}
-                  onKeyDown={(e) => handleKeyDown(e, saveRef)}
+                <Checkbox
+                  checked={trialDetails}
+                  onChange={() => setTrialDetails(!trialDetails)}
                 />
-              </div>
-            </div>
+              </Grid>
 
-            <div className="accgroup-btn-container">
-              <Button
-                onClick={handleSubmit}
-                ref={saveRef}
-                // onKeyDown={(e) => handleKeyDown(e, accgroupnameRef)}
-                style={{
-                  background: "#0a60bd",
-                  color: "white",
-                }}>
-                {editingIndex >= 0 ? "Update" : "Save"}
-              </Button>
-              <Button
-                onClick={() => setIsModalOpen(false)}
-                style={{
-                  background: "red",
-                  color: "white",
-                }}>
-                Cancel
-              </Button>
-            </div>
+              {/* SUBSIDIARY CHECKBOX */}
+              <Grid item xs={12} md={4}>
+                <label className="account-label">
+                  Subsidiary Account exists?
+                </label>
+                <Checkbox
+                  checked={subsidiary}
+                  onChange={() => setSubsidiary(!subsidiary)}
+                />
+              </Grid>
+
+              {/* BUTTONS */}
+              <Grid className="accgroup-btn-container">
+                <Button
+                  onClick={handleSubmit}
+                  ref={saveRef}
+                  // onKeyDown={(e) => handleKeyDown(e, accgroupnameRef)}
+                  style={{
+                    background: "#0a60bd",
+                    color: "white",
+                  }}>
+                  {editingIndex >= 0 ? "Update" : "Save"}
+                </Button>
+                <Button
+                  onClick={() => setIsModalOpen(false)}
+                  style={{
+                    background: "red",
+                    color: "white",
+                  }}>
+                  Cancel
+                </Button>
+              </Grid>
+            </Grid>
           </div>
         </Modal>
 

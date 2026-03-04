@@ -19,6 +19,7 @@ import "react-toastify/dist/ReactToastify.css";
 import axios from "axios";
 import { RiDeleteBin5Line } from "react-icons/ri";
 import { Tooltip } from "@mui/material";
+import { Autocomplete, TextField } from "@mui/material";
 
 function SubAccountGroup() {
   const [userId, setUserId] = useState("");
@@ -47,6 +48,9 @@ function SubAccountGroup() {
   const [SubGroupCode, setSubGroupCode] = useState("");
   const [SubGroupName, setSubGroupName] = useState("");
   const [subaccs, setSubaccs] = useState([]);
+  const [accountgroups, setAccountGroups] = useState([]);
+  const [AccGroupId, setAccGroupId] = useState("");
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingIndex, setEditingIndex] = useState(-1);
   const [id, setId] = useState("");
@@ -72,6 +76,7 @@ function SubAccountGroup() {
   };
   useEffect(() => {
     fetchSubaccounts();
+    fetchaccgroups();
   }, []);
 
   const fetchSubaccounts = async () => {
@@ -86,14 +91,32 @@ function SubAccountGroup() {
     }
   };
 
+  const fetchaccgroups = async () => {
+    try {
+      const response = await axios.get(
+        "https://publication.microtechsolutions.co.in/php/get/gettable.php?Table=Accountgroup"
+      );
+      const accgroupoptions = response.data.map((acc) => ({
+        value: acc.Id,
+        label: acc.GroupName,
+      }));
+      setAccountGroups(accgroupoptions);
+    } catch (error) {
+      // toast.error("Error fetching mainoptions:", error);
+    }
+  };
+
   const resetForm = () => {
     setSubGroupCode("");
     setSubGroupName("");
+    setAccGroupId("");
     setIsModalOpen(false);
   };
 
   const handleNewClick = () => {
     resetForm();
+    setIsEditing(false); // <-- FIX
+    setId(""); // <-- FIX
     setIsModalOpen(true);
     setEditingIndex(-1);
   };
@@ -309,38 +332,7 @@ function SubAccountGroup() {
             </h2>
             <form onSubmit={handleSubmit} className="subaccgroup-form">
               <div>
-                <label className="subaccgroup-label">
-                  {" "}
-                  Sub Account Group Code <b className="required">*</b>
-                </label>
-                <div>
-                  <input
-                    type=""
-                    id="SubGroupCode"
-                    name="SubGroupCode"
-                    value={SubGroupCode}
-                    onChange={(e) => setSubGroupCode(e.target.value)}
-                    maxLength={50}
-                    ref={subaccgrpcodeRef}
-                    onKeyDown={(e) => handleKeyDown(e, subaccgrpnameRef)}
-                    className="subaccgroup-control"
-                    style={{ background: "	#D0D0D0" }}
-                    placeholder="Auto-Incremented"
-                    readOnly
-                  />
-
-                  <div>
-                    {errors.SubGroupCode && (
-                      <b className="error-text">{errors.SubGroupCode}</b>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <label className="subaccgroup-label">
-                  Sub Account Name <b className="required">*</b>
-                </label>
+                <label className="subaccgroup-label">Sub Account Name</label>
                 <div>
                   <Tooltip
                     title={
@@ -361,11 +353,34 @@ function SubAccountGroup() {
                       placeholder="Enter Sub Acc Name"
                     />
                   </Tooltip>
-                  <div>
-                    {errors.SubGroupName && (
-                      <b className="error-text">{errors.SubGroupName}</b>
+                </div>
+              </div>
+
+              <div>
+                <label className="account-label">
+                  Main Account Group{/* <b className="required">*</b> */}
+                </label>
+                <div>
+                  <Select
+                    id="AccGroupId"
+                    name="AccGroupId"
+                    value={accountgroups.find(
+                      (option) => option.value === AccGroupId
                     )}
-                  </div>
+                    onChange={(option) => setAccGroupId(option.value)}
+                    options={accountgroups}
+                    styles={{
+                      control: (base) => ({
+                        ...base,
+                        width: "250px",
+                        marginTop: "10px",
+                        borderRadius: "4px",
+                        border: "1px solid rgb(223, 222, 222)",
+                        marginBottom: "5px",
+                      }),
+                    }}
+                    placeholder="Select Acc Group Id"
+                  />
                 </div>
               </div>
             </form>

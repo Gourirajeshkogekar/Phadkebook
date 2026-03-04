@@ -17,7 +17,9 @@ import {
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { RiDeleteBin5Line } from "react-icons/ri";
-import { Tooltip } from "@mui/material";
+import CreatableSelect from "react-select/creatable";
+import { TextField, MenuItem } from "@mui/material";
+import Autocomplete from "@mui/material/Autocomplete";
 
 function Assignconvassor() {
   const [userId, setUserId] = useState("");
@@ -43,22 +45,28 @@ function Assignconvassor() {
     fetchConvassors();
   }, []);
 
-  const [CanvassorName, setCanvassorName] = useState("");
   const [AreaId, setAreadId] = useState("");
   const [IsAssigned, setIsAssigned] = useState(false);
   const [canvassors, setCanvassors] = useState([]);
+  const [assignCanvassors, setAssignCanvassors] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingIndex, setEditingIndex] = useState(-1);
   const [CityId, setCityId] = useState("");
+  const [CanvassorId, setCanvassorId] = useState("");
   const [StateId, setStateId] = useState("");
+  const [StateName, setStateName] = useState("");
+  const [CityName, setCityName] = useState("");
   const [cityOptions, setCityOptions] = useState([]);
   const [stateOptions, setStateOptions] = useState([]);
   const [areaOptions, setareaOptions] = useState([]);
+  // { value: Id, label: Name }
+  const [selectedCities, setSelectedCities] = useState([]);
 
   const [errors, setErrors] = useState("");
   const [isEditing, setIsEditing] = useState(false);
   const [id, setId] = useState("");
   const [deleteId, setDeleteId] = useState(null);
+  const [assignTableData, setAssignTableData] = useState([]);
 
   // Confirmation Dialog state
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -83,34 +91,200 @@ function Assignconvassor() {
   };
 
   const resetForm = () => {
-    setCanvassorName("");
+    setCanvassorId("");
     setAreadId("");
     setCityId("");
     setIsAssigned(false);
     setStateId("");
     setIsModalOpen(false);
+    setAssignTableData([]); // 🔥 RESET TABLE
   };
 
   const handleNewClick = () => {
     resetForm();
     setIsModalOpen(true);
     setEditingIndex(-1);
-    setIsEditing(false);
+    setIsEditing(false); // ✅ ADD MODE
+  };
+
+  const loadEditAreas = async (CityId, CanvassorId, AssignId) => {
+    try {
+      const res = await axios.get(
+        "https://publication.microtechsolutions.net.in/php/get/getAssignCanvassor.php",
+        { params: { CityId, CanvassorId } }
+      );
+
+      const data = res.data;
+
+      const tableData = (data.Areas || []).map((area, index) => ({
+        SrNo: index + 1,
+
+        // ✅ STATE (FROM ROOT)
+        StateId: data.State?.Id,
+        StateName: data.State?.Name,
+
+        // ✅ CITY (FROM ROOT)
+        CityId: data.City?.Id,
+        CityName: data.City?.Name,
+
+        // ✅ AREA
+        AreaId: area.Id,
+        AreaName: area.Name,
+
+        CanvassorId,
+        AssignId,
+
+        AlreadyAssigned:
+          data.canvassorAlreadyAssigned?.status === 1 ? "Yes" : "No",
+        IsAssigned: true, // edit mode = already assigned
+      }));
+
+      setAssignTableData(tableData);
+    } catch (err) {
+      toast.error("Failed to load edit data");
+    }
   };
 
   const handleEdit = (row) => {
-    // console.log("Editing row:", row);
-    const canvassor = canvassors[row.index];
-    // console.log("Canvassor data:", canvassor);
-    setCanvassorName(canvassor.CanvassorName || "");
-    setCityId(canvassor.CityId || "");
-    setStateId(canvassor.StateId || "");
-    setAreadId(canvassor.AreaId || "");
-    setIsAssigned(canvassor.IsAssigned || false);
-    setEditingIndex(row.index);
-    setId(canvassor.Id || "");
+    const mode = row.original;
+
+    setCanvassorId(mode.CanvassorId);
+    setCityId(mode.CityId);
+    setStateId(mode.StateId);
+    setStateName(mode.StateName); // ✅ now works
+    setCityName(mode.CityName); // ✅ now works
+    setId(mode.Id);
+
     setIsEditing(true);
     setIsModalOpen(true);
+
+    loadEditAreas(mode.CityId, mode.CanvassorId, mode.Id);
+  };
+
+  // const handleOkClick = async () => {
+  //   if (!CityId || !CanvassorId) {
+  //     toast.error("Please select City and Canvassor");
+  //     return;
+  //   }
+
+  //   // 🚫 prevent duplicate city
+  //   const cityAlreadyAdded = assignTableData.some(
+  //     (row) => row.CityId === CityId
+  //   );
+
+  //   if (cityAlreadyAdded) {
+  //     toast.warning("This city is already added");
+  //     return;
+  //   }
+
+  //   try {
+  //     const res = await axios.get(
+  //       "https://publication.microtechsolutions.net.in/php/get/getAssignCanvassor.php",
+  //       { params: { CityId, CanvassorId } }
+  //     );
+
+  //     const data = res.data;
+
+  //     if (!data?.Areas?.length) {
+  //       toast.info("No areas found for selected city");
+  //       return;
+  //     }
+
+  //     const newRows = data.Areas.map((area, index) => ({
+  //       SrNo: assignTableData.length + index + 1,
+
+  //       StateId: data.State.Id,
+  //       StateName: data.State.Name,
+
+  //       CityId: data.City.Id,
+  //       CityName: data.City.Name,
+
+  //       AreaId: area.Id,
+  //       AreaName: area.Name,
+
+  //       CanvassorId: data.Canvassor.Id,
+  //       CanvassorName: data.Canvassor.Name,
+
+  //       AlreadyAssigned: data.AlreadyAssigned?.status === 1 ? "Yes" : "No",
+  //       IsAssigned: false,
+  //     }));
+
+  //     // ✅ APPEND instead of replace
+  //     setAssignTableData((prev) => [...prev, ...newRows]);
+
+  //     // optional UX reset
+  //     setCityId("");
+  //   } catch (err) {
+  //     toast.error("Failed to load city data");
+  //   }
+  // };
+
+  const handleOkClick = async () => {
+    if (!CityId || !CanvassorId) {
+      toast.error("Please select City and Canvassor");
+      return;
+    }
+
+    const cityAlreadyAdded = assignTableData.some(
+      (row) => row.CityId === CityId
+    );
+
+    if (cityAlreadyAdded) {
+      toast.warning("This city is already added");
+      return;
+    }
+
+    try {
+      const res = await axios.get(
+        "https://publication.microtechsolutions.net.in/php/get/getAssignCanvassor.php",
+        { params: { CityId, CanvassorId } }
+      );
+
+      const responseData = res.data;
+
+      if (!responseData?.success || !responseData?.data?.length) {
+        toast.info("No areas found for selected city");
+        return;
+      }
+
+      const newRows = [];
+
+      responseData.data.forEach((item) => {
+        const assignedList =
+          item.canvassorAlreadyAssigned &&
+          item.canvassorAlreadyAssigned !== "No"
+            ? item.canvassorAlreadyAssigned.split(",")
+            : [];
+
+        newRows.push({
+          // ✅ IDs (THIS FIXES YOUR ISSUE)
+          StateId: item.stateId,
+          CityId: item.City?.Id || item.cityId || CityId, // ✅ FALLBACK to state
+          AreaId: item.areaId,
+
+          // ✅ Names (UI only)
+          StateName: item.state,
+          CityName: item.cityName,
+          AreaName: item.area,
+
+          canvassorAlreadyAssigned:
+            assignedList.length > 0 ? assignedList.join(", ") : "No",
+
+          IsAssigned: assignedList.length === 0 ? false : true,
+        });
+      });
+
+      setAssignTableData(newRows);
+
+      // ✅ ONLY THIS — ONCE
+      setAssignTableData(newRows);
+
+      toast.success(`${newRows.length} rows loaded`);
+      setCityId("");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to load city data");
+    }
   };
 
   const handleDelete = (index, Id) => {
@@ -153,11 +327,36 @@ function Assignconvassor() {
   const fetchConvassors = async () => {
     try {
       const response = await axios.get(
-        "https://publication.microtechsolutions.net.in/php/AssignCanvassorget.php"
+        "https://publication.microtechsolutions.net.in/php/get/getCanvassorMaster.php"
       );
       setCanvassors(response.data);
     } catch (error) {
       // toast.error("Error fetching convassors:", error);
+    }
+  };
+
+  const fetchAssignconvassors = async () => {
+    try {
+      const res = await axios.get(
+        "https://publication.microtechsolutions.net.in/php/get/getAssignCanvassor.php"
+      );
+
+      const activeAssignments = (res.data.Assignments || [])
+        .filter((item) => Number(item.Active) === 1)
+        .map((item) => {
+          const canvassor = res.data.Canvassors.find(
+            (c) => c.Name === item.CanvassorName
+          );
+
+          return {
+            ...item,
+            CanvassorId: canvassor ? canvassor.Id : null,
+          };
+        });
+
+      setAssignCanvassors(activeAssignments);
+    } catch (err) {
+      toast.error("Failed to load assignments");
     }
   };
 
@@ -185,6 +384,7 @@ function Assignconvassor() {
         value: city.Id,
         label: city.CityName,
       }));
+      console.log("Fetched city options:", cityOptions);
       setCityOptions(cityOptions);
     } catch (error) {
       // toast.error("Error fetching cities:", error);
@@ -208,6 +408,7 @@ function Assignconvassor() {
 
   useEffect(() => {
     fetchConvassors();
+    fetchAssignconvassors();
     fetchAllCities();
     fetchStates();
     fetchAreas();
@@ -217,8 +418,8 @@ function Assignconvassor() {
     let formErrors = {};
     let isValid = true;
 
-    if (!CanvassorName) {
-      formErrors.CanvassorName = "Canvassor Name is required.";
+    if (!CanvassorId) {
+      formErrors.CanvassorId = "Canvassor Name is required.";
       isValid = false;
     }
 
@@ -226,51 +427,118 @@ function Assignconvassor() {
     return isValid;
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault(); // Prevent the default form submission
-    if (!validateForm()) return;
+  // const handleOkClick = async () => {
+  //   if (!CityId || !CanvassorId) {
+  //     toast.error("Please select City and Canvassor");
+  //     return;
+  //   }
 
-    // Prepare the data payload
-    const data = {
-      CanvassorName: CanvassorName,
-      CityId: CityId,
-      StateId: StateId,
-      AreaId: AreaId,
-      IsAssigned: IsAssigned,
-      CreatedBy: userId,
-    };
+  //   try {
+  //     const res = await axios.get(
+  //       "https://publication.microtechsolutions.net.in/php/get/getAssignCanvassor.php",
+  //       {
+  //         params: { CityId, CanvassorId },
+  //       }
+  //     );
 
-    // Determine the URL based on whether we're editing or adding
+  //     const data = res.data;
+
+  //     // ✅ Proper validation
+  //     if (
+  //       !data ||
+  //       !data.City ||
+  //       !data.State ||
+  //       !Array.isArray(data.Areas) ||
+  //       data.Areas.length === 0
+  //     ) {
+  //       toast.info("No data found for selected City and Canvassor");
+  //       setAssignTableData([]);
+  //       return;
+  //     }
+
+  //     // ✅ Convert Areas array → table rows
+  //     const tableData = data.Areas.map((area, index) => ({
+  //       SrNo: index + 1,
+  //       StateId: data.State.Id,
+  //       StateName: data.State.Name,
+
+  //       CityId: data.City.Id,
+  //       CityName: data.City.Name,
+
+  //       AreaId: area.Id,
+  //       AreaName: area.Name,
+
+  //       CanvassorId: data.Canvassor.Id,
+  //       CanvassorName: data.Canvassor.Name,
+
+  //       AlreadyAssigned: data.AlreadyAssigned?.status === 1 ? "Yes" : "No",
+  //       IsAssigned: false,
+  //     }));
+
+  //     setAssignTableData(tableData);
+  //     console.log("Assign Table Data:", tableData);
+  //   } catch (err) {
+  //     console.error(err);
+  //     toast.error("Failed to load area data");
+  //   }
+  // };
+
+  const handleSave = async (e) => {
+    e.preventDefault();
+
+    const selectedRows = assignTableData.filter(
+      (row) => row.IsAssigned === true
+    );
+
+    if (selectedRows.length === 0) {
+      toast.error("Please select at least one area");
+      return;
+    }
+
+    // 🔑 choose URL based on mode
     const url = isEditing
       ? "https://publication.microtechsolutions.net.in/php/AssignCanvassorupdate.php"
       : "https://publication.microtechsolutions.net.in/php/AssignCanvassorpost.php";
 
-    // If editing, include the ID in the payload
-    if (isEditing) {
-      data.Id = id;
-      data.UpdatedBy = userId;
-    }
-
-    console.log("Submitting data:", data); // Debugging line
-
     try {
-      await axios.post(url, data, {
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-      });
+      for (const row of selectedRows) {
+        const body = new URLSearchParams();
 
-      if (isEditing) {
-        toast.success("Canvassor updated successfully!");
-      } else {
-        toast.success("Canvassor added successfully!");
+        body.append("CanvassorId", CanvassorId);
+        body.append("StateId", row.StateId);
+        body.append("CityId", row.CityId);
+        body.append("AreaId", row.AreaId);
+        body.append("IsAssigned", 1);
+
+        if (isEditing) {
+          // 🔁 UPDATE CASE
+          body.append("UpdatedBy", userId);
+          body.append("Id", row.AssignId); // IMPORTANT: assignment primary key
+        } else {
+          // ✅ SAVE CASE
+          body.append("CreatedBy", userId);
+        }
+
+        await axios.post(url, body, {
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+        });
       }
+
+      toast.success(
+        isEditing
+          ? "Canvassor assignment updated successfully ✅"
+          : "Canvassor assigned successfully ✅"
+      );
+
       setIsModalOpen(false);
-      resetForm();
-      fetchConvassors(); // Refresh the list after submit
-    } catch (error) {
-      console.error("Error saving record:", error);
-      toast.error("Error saving record!");
+      setAssignTableData([]);
+      setIsEditing(false);
+      fetchAssignconvassors(); // refresh main table
+    } catch (err) {
+      console.error(err);
+      toast.error("Save / Update failed ❌");
     }
   };
 
@@ -284,11 +552,9 @@ function Assignconvassor() {
       },
 
       {
-        accessorKey: "CanvassorName",
         header: "Canvassor Name",
-        size: 50,
+        Cell: ({ row }) => row.original.CanvassorName || "Unknown",
       },
-
       {
         accessorKey: "IsAssigned",
         header: "Convassor Assigned",
@@ -324,12 +590,12 @@ function Assignconvassor() {
         ),
       },
     ],
-    [canvassors]
+    []
   );
 
   const table = useMaterialReactTable({
     columns,
-    data: canvassors,
+    data: assignCanvassors,
     muiTableHeadCellProps: {
       style: {
         backgroundColor: "#E9ECEF", // Replace with your desired color
@@ -340,11 +606,7 @@ function Assignconvassor() {
   });
 
   return (
-    <div className="canvassor-container">
-      {/* <h1>
-      Assign Canvassor Master
-    </h1> */}
-
+    <div className="assigncanvassor-container">
       <h1>Assign Canvassor Master</h1>
 
       <div className="canvassortable-master">
@@ -373,7 +635,7 @@ function Assignconvassor() {
         )}
 
         <Modal open={isModalOpen}>
-          <div className="canvassor-modal">
+          <div className="assigncanvassor-modal">
             <h1
               style={{
                 textAlign: "center",
@@ -381,180 +643,168 @@ function Assignconvassor() {
                 margin: "2px",
                 fontSize: "27px",
               }}>
-              {editingIndex >= 0
-                ? "Edit Assign Canvassor"
-                : "Add Assign Canvassor"}
+              {isEditing ? "Edit Assign Canvassor" : "Add Assign Canvassor"}
             </h1>
-            <form onSubmit={handleSubmit} className="canvassor-form">
-              <div className="firstcanv-row">
-                <div>
-                  <label className="canvassor-label">
-                    Canvassor Name <b className="required">*</b>
-                  </label>{" "}
-                  <div>
-                    <Tooltip
-                      title={
-                        <span style={{ fontSize: "14px", fontWeight: "bold" }}>
-                          {CanvassorName}
-                        </span>
-                      }
-                      arrow>
-                      <input
-                        type="text"
-                        id="CanvassorName"
-                        name="CanvassorName"
-                        value={CanvassorName || ""}
-                        onChange={(e) => setCanvassorName(e.target.value)}
-                        maxLength={50}
-                        ref={canvassornameRef}
-                        onKeyDown={(e) => handleKeyDown(e, stateRef)}
-                        className="canvassor-control"
-                        style={{ width: "500px" }}
-                        placeholder="Enter canvassor Name"
-                      />
-                    </Tooltip>
-
-                    <div>
-                      {errors.CanvassorName && (
-                        <b className="error-text">{errors.CanvassorName}</b>
-                      )}
-                    </div>
+            <form onSubmit={handleSave} className="assigncanvassor-form">
+              <div className="assign-top-section">
+                <div className="assign-row">
+                  <div className="assign-field">
+                    <label>Canvassor Name</label>
+                    <TextField
+                      select
+                      // label="Canvassor"
+                      fullWidth
+                      value={CanvassorId || ""}
+                      onChange={(e) => {
+                        console.log("Selected CanvassorId:", e.target.value);
+                        setCanvassorId(e.target.value);
+                      }}>
+                      {canvassors.map((c) => (
+                        <MenuItem key={c.Id} value={c.Id}>
+                          {c.CanvassorName}
+                        </MenuItem>
+                      ))}
+                    </TextField>
                   </div>
-                </div>{" "}
-              </div>
 
-              <div className="othercanv-rows">
-                <div>
-                  <label className="canvassor-label">
-                    State <b className="required">*</b>
-                  </label>{" "}
-                  <div>
-                    <Select
-                      id="StateId"
-                      name="StateId"
-                      value={
-                        stateOptions.find(
-                          (option) => option.value === StateId
-                        ) || null
-                      }
-                      onChange={(option) => setStateId(option.value)}
-                      ref={stateRef}
-                      onKeyDown={(e) => handleKeyDown(e, cityRef)}
-                      options={stateOptions}
-                      styles={{
-                        control: (base) => ({
-                          ...base,
-                          width: "250px",
-                          marginTop: "10px",
-                          borderRadius: "4px",
-                          border: "1px solid rgb(223, 222, 222)",
-                          marginBottom: "5px",
-                        }),
-                      }}
-                      placeholder="Select State"
-                    />{" "}
-                    <div>
-                      {errors.StateId && (
-                        <b className="error-text">{errors.StateId}</b>
-                      )}
-                    </div>
-                  </div>
-                </div>
-                <div>
-                  <label className="canvassor-label">
-                    City <b className="required">*</b>
-                  </label>{" "}
-                  <div>
-                    <Select
-                      id="CityId"
-                      name="CityId"
-                      value={
-                        cityOptions.find((option) => option.value === CityId) ||
-                        null
-                      }
-                      onChange={(option) => setCityId(option.value)}
-                      ref={cityRef}
-                      onKeyDown={(e) => handleKeyDown(e, areaRef)}
+                  <div className="assign-field">
+                    <label>City</label>
+                    <Autocomplete
                       options={cityOptions}
-                      styles={{
-                        control: (base) => ({
-                          ...base,
-                          width: "250px",
-                          marginTop: "10px",
-                          borderRadius: "4px",
-                          border: "1px solid rgb(223, 222, 222)",
-                          marginBottom: "5px",
-                        }),
-                      }}
-                      placeholder="Select City"
-                    />{" "}
-                    <div>
-                      {errors.CityId && (
-                        <b className="error-text">{errors.CityId}</b>
-                      )}
-                    </div>
-                  </div>
-                </div>
-                <div>
-                  <label className="canvassor-label">
-                    Area <b className="required">*</b>
-                  </label>{" "}
-                  <div>
-                    <Select
-                      id="AreaId"
-                      name="AreaId"
+                      getOptionLabel={(option) => option.label}
                       value={
-                        areaOptions.find((option) => option.value === AreaId) ||
-                        null
+                        cityOptions.find((c) => c.value === CityId) || null
                       }
-                      onChange={(option) => setAreadId(option.value)}
-                      ref={areaRef}
-                      onKeyDown={(e) => handleKeyDown(e, assignCanRef)}
-                      options={areaOptions}
-                      styles={{
-                        control: (base) => ({
-                          ...base,
-                          width: "250px",
-                          marginTop: "10px",
-                          borderRadius: "4px",
-                          border: "1px solid rgb(223, 222, 222)",
-                          marginBottom: "5px",
-                        }),
+                      onChange={(event, newValue) => {
+                        setCityId(newValue ? newValue.value : "");
                       }}
-                      placeholder="Enter Area"
-                    />
-                    <div>
-                      {errors.AreaId && (
-                        <b className="error-text">{errors.AreaId}</b>
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          placeholder="Type City name..."
+                        />
                       )}
-                    </div>
+                      filterOptions={(options, { inputValue }) =>
+                        options.filter((option) =>
+                          option.label
+                            .toLowerCase()
+                            .startsWith(inputValue.toLowerCase())
+                        )
+                      }
+                    />
                   </div>
-                </div>{" "}
+
+                  <button
+                    type="button"
+                    className="assignok-btn"
+                    onClick={handleOkClick}>
+                    OK
+                  </button>
+                </div>
               </div>
-              <div>
-                <label className="canvassor-label">Assign Canvassor</label>{" "}
-                {/* <div> */}
-                <input
-                  type="checkbox"
-                  id="IsAssigned"
-                  name="IsAssigned"
-                  checked={IsAssigned}
-                  onChange={(e) => setIsAssigned(e.target.checked)}
-                  ref={assignCanRef}
-                  onKeyDown={(e) => handleKeyDown(e, saveRef)}
-                  // className="canvassor-control"
-                />
-                {/* </div> */}
+
+              <table className="assign-table">
+                <thead>
+                  <tr>
+                    <th>State</th>
+                    <th>City/District</th>
+                    <th>Area</th>
+                    <th>Canvassor Already Assigned</th>
+                    <th>Assign above Canvassor</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {assignTableData.map((row, index) => (
+                    <tr key={index}>
+                      <td>{row.StateName}</td>
+                      <td>{row.CityName}</td>
+                      <td>{row.AreaName}</td>
+                      <td>{row.canvassorAlreadyAssigned || "No"}</td>
+                      <td>
+                        <input
+                          type="checkbox"
+                          checked={row.IsAssigned}
+                          onChange={(e) => {
+                            const updated = [...assignTableData];
+                            updated[index].IsAssigned = e.target.checked;
+                            setAssignTableData(updated);
+                          }}
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+
+              <div className="assign-btn-container">
+                <button
+                  onClick={() => {
+                    setAssignTableData(
+                      assignTableData.map((row) => ({
+                        ...row,
+                        IsAssigned: true,
+                      }))
+                    );
+                  }}>
+                  Select All
+                </button>
+
+                <button
+                  onClick={() => {
+                    setAssignTableData(
+                      assignTableData.map((row) => ({
+                        ...row,
+                        IsAssigned: false,
+                      }))
+                    );
+                  }}>
+                  Deselect All
+                </button>
+
+                <button
+                  onClick={async () => {
+                    const selectedRows = assignTableData.filter(
+                      (r) => r.IsAssigned
+                    );
+
+                    if (selectedRows.length === 0) {
+                      toast.error("No rows selected!");
+                      return;
+                    }
+
+                    try {
+                      await axios.post(
+                        "https://publication.microtechsolutions.net.in/php/AssignCanvassorAssignPost.php",
+                        {
+                          CanvassorId: CanvassorId,
+                          rows: selectedRows,
+                          CreatedBy: userId,
+                        },
+                        {
+                          headers: { "Content-Type": "application/json" },
+                        }
+                      );
+
+                      toast.success("Data saved successfully!");
+                      setIsModalOpen(false);
+                    } catch (err) {
+                      toast.error("Save failed!");
+                    }
+                  }}>
+                  Save
+                </button>
+                <button onClick={() => setIsModalOpen(false)}>Exit</button>
               </div>
             </form>
-            <div className="canvassor-btn-container">
+            <div className="assigncanvassor-btn-container">
               <Button
-                type="submit"
-                onClick={handleSubmit}
+                onClick={handleSave}
                 ref={saveRef}
-                // onKeyDown={(e) => handleKeyDown(e, accgroupnameRef)}
+                type="submit"
                 style={{
                   background: "#0a60bd",
+                  alignContent: "center",
                   color: "white",
                 }}>
                 {editingIndex >= 0 ? "Update" : "Save"}

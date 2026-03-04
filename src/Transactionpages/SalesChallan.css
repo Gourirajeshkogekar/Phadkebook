@@ -42,14 +42,7 @@
 
 
 .saleschallan-table {
-  /* height: 200px;
-  overflow-y: auto;
-  overflow-x: auto;
-  width: 100%;
-  border-collapse: collapse;
-  background-color: #ffffff; */
-
-/* border: 1px solid red; */
+  
   margin-top: 20px;
   height: 230px;
   overflow-y: auto;
@@ -57,6 +50,15 @@
   width: 100%;
   border-collapse: collapse;
   background-color: #ffffff;
+}
+
+
+.saleschallan-table thead th {
+  position: sticky;
+  top: 0;
+  padding: 10px;
+  background: #f4f4f4;
+  z-index: 1;
 }
 
 .saleschallan-table table {

@@ -360,6 +360,7 @@ function PurchaseregisterReports() {
               <DatePicker
                 value={fromdate}
                 onChange={setFromDate}
+                format="DD-MM-YYYY"
                 slotProps={{
                   textField: {
                     fullWidth: true,
@@ -376,6 +377,7 @@ function PurchaseregisterReports() {
               <DatePicker
                 value={todate}
                 onChange={setToDate}
+                format="DD-MM-YYYY"
                 slotProps={{
                   textField: {
                     fullWidth: true,

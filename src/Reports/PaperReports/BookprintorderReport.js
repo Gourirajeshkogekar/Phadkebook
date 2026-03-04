@@ -103,7 +103,9 @@ function BookprintorderReport() {
         { title: "Book Code", width: 11 },
         { title: "Book Name", width: 30 },
         { title: "Copies", width: 13 },
-        { title: "Forms", sub: ["From", "To", "Nos"], widths: [9, 7, 7] },
+        // { title: "Forms", sub: ["From", "To", "Nos"], widths: [9, 7, 7] },
+        { title: "Forms", sub: ["From", "To", "Nos"], widths: [9.5, 7, 9] },
+
         { title: "Particulars", width: 18 },
         { title: "Paper Size", width: 18 },
         { title: "Book Pages", width: 13 },
@@ -134,8 +136,8 @@ function BookprintorderReport() {
         y += 8;
 
         // Draw 2-level header
-        const firstRowHeight = 6;
-        const secondRowHeight = 6;
+        const firstRowHeight = 8;
+        const secondRowHeight = 8;
         let x = 5;
 
         groupedColumns.forEach((col) => {
@@ -193,13 +195,15 @@ function BookprintorderReport() {
             row.Remarks || "",
           ];
 
-          let x = 5;
-          let rowHeight = 6;
+          let x = 2;
+          let rowHeight = 8;
           const cellHeights = [];
 
           flatWidths.forEach((w, i) => {
             const text = String(values[i]);
-            const lines = doc.splitTextToSize(text, w - 2);
+            // const lines = doc.splitTextToSize(text, w - 2);
+            const lines = doc.splitTextToSize(text, w - 4);
+
             const height = lines.length * 4;
             if (height > rowHeight) rowHeight = height;
             cellHeights.push(height);
@@ -216,15 +220,26 @@ function BookprintorderReport() {
             const val = String(values[i]);
             const split = doc.splitTextToSize(val, w - 2);
             const alignRight = [4, 5, 6, 7, 10, 11, 12].includes(i);
+            // split.forEach((line, j) => {
+            //   const yOffset = y + 4 + j * 4;
+            //   if (alignRight) {
+            //     const tw = doc.getTextWidth(line);
+            //     doc.text(line, x + w - tw - 1, yOffset);
+            //   } else {
+            //     doc.text(line, x + 1, yOffset);
+            //   }
+            // });
+
             split.forEach((line, j) => {
               const yOffset = y + 4 + j * 4;
               if (alignRight) {
                 const tw = doc.getTextWidth(line);
-                doc.text(line, x + w - tw - 1, yOffset);
+                doc.text(line, x + w - tw - 2, yOffset); // right padding
               } else {
-                doc.text(line, x + 1, yOffset);
+                doc.text(line, x + 2, yOffset); // left padding
               }
             });
+
             x += w;
           });
 
@@ -242,8 +257,11 @@ function BookprintorderReport() {
 
         // Sub Total Row
         doc.setFont(undefined, "bold");
+        x = 5;
+
         let xSub = 5;
-        const rowHeight = 6;
+
+        const rowHeight = 8;
         flatWidths.forEach((w, i) => {
           doc.rect(xSub, y, w, rowHeight);
           if (i === 0) {
@@ -296,6 +314,7 @@ function BookprintorderReport() {
                 label="From Date"
                 value={fromDate}
                 onChange={(newVal) => setFromDate(newVal)}
+                format="DD-MM-YYYY"
                 slotProps={{ textField: { fullWidth: true } }}
               />
             </Grid>
@@ -304,6 +323,7 @@ function BookprintorderReport() {
                 label="To Date"
                 value={toDate}
                 onChange={(newVal) => setToDate(newVal)}
+                format="DD-MM-YYYY"
                 slotProps={{ textField: { fullWidth: true } }}
               />
             </Grid>

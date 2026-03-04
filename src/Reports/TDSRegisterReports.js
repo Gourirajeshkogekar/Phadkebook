@@ -335,6 +335,7 @@ function TDSRegisterReports() {
               <DatePicker
                 value={fromdate}
                 onChange={setFromDate}
+                format="DD-MM-YYYY"
                 slotProps={{
                   textField: {
                     fullWidth: true,
@@ -351,6 +352,7 @@ function TDSRegisterReports() {
               <DatePicker
                 value={todate}
                 onChange={setToDate}
+                format="DD-MM-YYYY"
                 slotProps={{
                   textField: {
                     fullWidth: true,

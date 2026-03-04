@@ -146,9 +146,16 @@ function TDS() {
       tds.HigherEducationPercentageSellsAccountId || ""
     );
 
-    // Extract date portion (YYYY-MM-DD) from datetime string
-    const datePart = tds.Effectivedate.date.split(" ")[0];
+  // Fix: Safe Date Extraction
+  if (tds.Effectivedate && typeof tds.Effectivedate.date === 'string') {
+    const datePart = tds.Effectivedate.date.split(" ")[0]; // Gets YYYY-MM-DD
     setEffectivedate(datePart);
+  } else if (typeof tds.Effectivedate === 'string') {
+    setEffectivedate(tds.Effectivedate.split(" ")[0]);
+  } else {
+    setEffectivedate(""); // Fallback for null dates
+  }
+
 
     // console.log(Effectivedate, 'effective date')
 
@@ -159,6 +166,39 @@ function TDS() {
     setIsEditing(true);
     setId(tds.Id || "");
   };
+
+// const handleEdit = (row) => {
+//   const tds = tdses[row.index];
+  
+//   setTDSHead(tds.TDSHead || "");
+//   setSection(tds.Section || "");
+//   setHeading(tds.Heading || "");
+//   setTDSPercentage(tds.TDSPercentage || "");
+//   setTDSAccountId(tds.TDSAccountId || "");
+//   setSurchargePercentage(tds.SurchargePercentage || "");
+//   setSurchargeAccountId(tds.SurchargeAccountId || "");
+//   setEducationSellsPercentage(tds.EducationSellsPercentage || "");
+//   setEducationSellsAccountId(tds.EducationSellsAccountId || "");
+//   setHigherEducationSellsPercentage(tds.HigherEducationSellsPercentage || "");
+//   setHigherEducationPercentageSellsAccountId(tds.HigherEducationPercentageSellsAccountId || "");
+
+//   // Fix: Safe Date Extraction
+//   if (tds.Effectivedate && typeof tds.Effectivedate.date === 'string') {
+//     const datePart = tds.Effectivedate.date.split(" ")[0]; // Gets YYYY-MM-DD
+//     setEffectivedate(datePart);
+//   } else if (typeof tds.Effectivedate === 'string') {
+//     setEffectivedate(tds.Effectivedate.split(" ")[0]);
+//   } else {
+//     setEffectivedate(""); // Fallback for null dates
+//   }
+
+//   setTDSCode(tds.TDSCode || "");
+//   setNetPercentage(tds.NetPercentage || "");
+//   setEditingIndex(row.index);
+//   setIsModalOpen(true);
+//   setIsEditing(true);
+//   setId(tds.Id || "");
+// };
 
   const handleDelete = (index, Id) => {
     setDeleteIndex(index);
@@ -195,85 +235,6 @@ function TDS() {
   const cancelDelete = () => {
     setIsDeleteDialogOpen(false);
     setDeleteIndex(null);
-  };
-
-  const validateForm = () => {
-    let formErrors = {};
-    let isValid = true;
-
-    if (!TDSHead) {
-      formErrors.TDSHead = "TDS head is required.";
-      isValid = false;
-    }
-
-    if (!Section) {
-      formErrors.Section = "Section is required.";
-      isValid = false;
-    }
-
-    if (!Heading) {
-      formErrors.Heading = "Heading is required.";
-      isValid = false;
-    }
-
-    if (!TDSPercentage) {
-      formErrors.TDSPercentage = "TDS% is required.";
-      isValid = false;
-    }
-
-    if (!TDSAccountId) {
-      formErrors.TDSAccountId = "TDS acc Id is required.";
-      isValid = false;
-    }
-
-    // if (!SurchargePercentage) {
-    //   formErrors.SurchargePercentage = "Schrg % is required.";
-    //   isValid = false;
-    // }
-
-    // if (!SurchargeAccountId) {
-    //   formErrors.SurchargeAccountId = "Schrg Acc Id is required.";
-    //   isValid = false;
-    // }
-
-    // if (!EducationSellsPercentage) {
-    //   formErrors.EducationSellsPercentage = "Edu Cess %  is required.";
-    //   isValid = false;
-    // }
-
-    // if (!EducationSellsAccountId) {
-    //   formErrors.EducationSellsAccountId = "Edu Cess Acc Id is required.";
-    //   isValid = false;
-    // }
-
-    // if (!HigherEducationSellsPercentage) {
-    //   formErrors.HigherEducationSellsPercentage = "H Edu Cess % is required.";
-    //   isValid = false;
-    // }
-
-    // if (!HigherEducationPercentageSellsAccountId) {
-    //   formErrors.HigherEducationPercentageSellsAccountId =
-    //     "H Edu Cess Acc Id is required.";
-    //   isValid = false;
-    // }
-
-    // if (!Effectivedate) {
-    //   formErrors.Effectivedate = "Date is required.";
-    //   isValid = false;
-    // }
-
-    // if (!TDSCode) {
-    //   formErrors.TDSCode = "Tds code is required.";
-    //   isValid = false;
-    // }
-
-    // if (!NetPercentage) {
-    //   formErrors.NetPercentage = "Net% is required.";
-    //   isValid = false;
-    // }
-
-    setErrors(formErrors);
-    return isValid;
   };
 
   const fetchTDSMasters = async () => {
@@ -322,15 +283,15 @@ function TDS() {
       Heading: Heading,
       TDSPercentage: TDSPercentage,
       TDSAccountId: TDSAccountId,
-      SurchargePercentage: "10.00",
-      SurchargeAccountId: 2,
-      EducationSellsPercentage: "5.00",
-      EducationSellsAccountId: 3,
-      HigherEducationSellsPercentage: "10.00",
-      HigherEducationPercentageSellsAccountId: 2,
-      Effectivedate: "2025-01-01",
-      TDSCode: 2,
-      NetPercentage: "10.00",
+      SurchargePercentage:SurchargePercentage,
+      SurchargeAccountId: SurchargeAccountId,
+      EducationSellsPercentage: EducationSellsPercentage,
+      EducationSellsAccountId: EducationSellsAccountId,
+      HigherEducationSellsPercentage: HigherEducationSellsPercentage,
+      HigherEducationPercentageSellsAccountId:HigherEducationPercentageSellsAccountId,
+      Effectivedate: Effectivedate,
+      TDSCode: TDSCode,
+      NetPercentage: NetPercentage,
       CreatedBy: userId,
     };
 
@@ -476,20 +437,42 @@ function TDS() {
               {editingIndex >= 0 ? "Edit TDS " : "Add TDS "}
             </h1>
 
-            <form className="mastertds-form">
-              <div>
-                <label className="mastertds-label">
-                  {" "}
-                  TDS Head <b className="required">*</b>
-                </label>
+            <form>
+              <div className="mastertds-form">
                 <div>
-                  <Tooltip
-                    title={
-                      <span style={{ fontSize: "14px", fontWeight: "bold" }}>
-                        {TDSHead}
-                      </span>
-                    }
-                    arrow>
+                  <label>TDS Head</label>
+                  <div>
+                    <input
+                      type="text"
+                      id="TDSHeadDisplay"
+                      name="TDSHeadDisplay"
+                      value={`${Section} : ${TDSHead}`} // 👈 combine here
+                      readOnly // prevent editing
+                      className="mastertds-control"
+                      placeholder="Select TDS Head"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="mastertds-label"> Section</label>
+                  <div>
+                    <input
+                      type="text"
+                      id="Section"
+                      name="Section"
+                      value={Section}
+                      onChange={(e) => setSection(e.target.value)}
+                      maxLength={50}
+                      style={{ width: "150px" }}
+                      className="mastertds-control"
+                      placeholder="Enter Section"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="mastertds-label"> Head</label>
+                  <div>
                     <input
                       type="text"
                       id="TDSHead"
@@ -502,407 +485,307 @@ function TDS() {
                       className="mastertds-control"
                       placeholder="Enter TDS Head"
                     />
-                  </Tooltip>
-
-                  {/* <div>
-                    {errors.TDSHead && (
-                      <b className="error-text">{errors.TDSHead}</b>
-                    )}
-                  </div> */}
+                  </div>
                 </div>
               </div>
-              <div>
-                <label className="mastertds-label">
-                  Section <b className="required">*</b>
-                </label>
-                <div>
-                  <input
-                    id="Section"
-                    name="Section"
-                    value={Section}
-                    onChange={(e) => setSection(e.target.value)}
-                    maxLength={25}
-                    ref={tdssectionRef}
-                    onKeyDown={(e) => handleKeyDown(e, headingRef)}
-                    className="mastertds-control"
-                    placeholder="Enter section"
-                  />
 
-                  {/* <div>
-                    {errors.Section && (
-                      <b className="error-text">{errors.Section}</b>
-                    )}
-                  </div> */}
+              <div className="mastertds-form">
+                <div>
+                  <label className="mastertds-label">TDS %</label>
+                  <div>
+                    <input
+                      type="text"
+                      id="TDSPercentage"
+                      name="TDSPercentage"
+                      value={TDSPercentage}
+                      onChange={(e) => {
+                        const value = e.target.value;
+
+                        // Regex to validate decimal numbers with at most 18 digits total and 2 decimal places
+                        const regex = /^\d{0,18}(\.\d{0,2})?$/;
+
+                        // Check if the value matches the regex
+                        if (value === "" || regex.test(value)) {
+                          setTDSPercentage(value);
+                        }
+                      }}
+                      ref={tdsRef}
+                      onKeyDown={(e) => handleKeyDown(e, tdsaccRef)}
+                      style={{ width: "150px" }}
+                      className="mastertds-control"
+                      placeholder="Enter tds"
+                    />
+                  </div>
                 </div>
-              </div>
-              <div>
-                <label className="mastertds-label">
-                  Heading <b className="required">*</b>
-                </label>
-                <div>
-                  <input
-                    type="text"
-                    id="Heading"
-                    name="Heading"
-                    value={Heading}
-                    onChange={(e) => setHeading(e.target.value)}
-                    maxLength={50}
-                    ref={headingRef}
-                    onKeyDown={(e) => handleKeyDown(e, tdsRef)}
-                    className="mastertds-control"
-                    placeholder="Enter heading"
-                  />
-                  {/* <div>
-                    {errors.Heading && (
-                      <b className="error-text">{errors.Heading}</b>
-                    )}
-                  </div> */}
-                </div>
-              </div>
-              <div>
-                <label className="mastertds-label">
-                  TDS % <b className="required">*</b>
-                </label>
-                <div>
-                  <input
-                    type="text"
-                    id="TDSPercentage"
-                    name="TDSPercentage"
-                    value={TDSPercentage}
-                    onChange={(e) => {
-                      const value = e.target.value;
 
-                      // Regex to validate decimal numbers with at most 18 digits total and 2 decimal places
-                      const regex = /^\d{0,18}(\.\d{0,2})?$/;
+                <div>
+                  <label className="mastertds-label">TDS A/C</label>
 
-                      // Check if the value matches the regex
-                      if (value === "" || regex.test(value)) {
-                        setTDSPercentage(value);
+                  <div>
+                    <Autocomplete
+                      options={accountOptions}
+                      value={
+                        accountOptions.find(
+                          (option) => option.value === TDSAccountId
+                        ) || null
                       }
-                    }}
-                    ref={tdsRef}
-                    onKeyDown={(e) => handleKeyDown(e, tdsaccRef)}
-                    className="mastertds-control"
-                    placeholder="Enter tds"
-                  />
-                  {/* <div>
-                    {errors.TDSPercentage && (
-                      <b className="error-text">{errors.TDSPercentage}</b>
-                    )}
-                  </div> */}
-                </div>
-              </div>
-
-              <div>
-                <label className="mastertds-label">
-                  TDS A/C <b className="required">*</b>
-                </label>
-
-                <div>
-                  <Autocomplete
-                    options={accountOptions}
-                    value={
-                      accountOptions.find(
-                        (option) => option.value === TDSAccountId
-                      ) || null
-                    }
-                    onChange={(event, newValue) =>
-                      setTDSAccountId(newValue ? newValue.value : null)
-                    }
-                    getOptionLabel={(option) => option.label} // Display only label in dropdown
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        placeholder="Select Account id"
-                        size="small"
-                        margin="none"
-                        fullWidth
-                      />
-                    )}
-                    sx={{ mt: 1.25, mb: 0.625, width: 300 }} // Equivalent to 10px and 5px
-                  />
-                </div>
-
-                {/* <div>
-                  {errors.TDSAccountId && (
-                    <b className="error-text">{errors.TDSAccountId}</b>
-                  )}
-                </div> */}
-              </div>
-
-              <div style={{ display: "none" }}>
-                <label className="mastertds-label">
-                  SCHRG % <b className="required">*</b>
-                </label>
-                <div>
-                  <input
-                    type="text"
-                    id="SurchargePercentage"
-                    name="SurchargePercentage"
-                    value={SurchargePercentage}
-                    onChange={(e) => {
-                      const value = e.target.value;
-
-                      // Regex to validate decimal numbers with at most 18 digits total and 2 decimal places
-                      const regex = /^\d{0,18}(\.\d{0,2})?$/;
-
-                      // Check if the value matches the regex
-                      if (value === "" || regex.test(value)) {
-                        setSurchargePercentage(value);
+                      onChange={(event, newValue) => {
+                        setTDSAccountId(newValue ? newValue.value : null);
+                      }}
+                      isOptionEqualToValue={(option, value) =>
+                        option.value === value.value
                       }
-                    }}
-                    ref={schrgRef}
-                    onKeyDown={(e) => handleKeyDown(e, schrgaccRef)}
-                    className="mastertds-control"
-                    placeholder="Enter schrg"
-                  />
-                  <div>
-                    {errors.SurchargePercentage && (
-                      <b className="error-text">{errors.SurchargePercentage}</b>
-                    )}
+                      getOptionLabel={(option) => option.label || ""}
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          placeholder="Select Account"
+                          size="small"
+                          fullWidth
+                        />
+                      )}
+                      sx={{ width: 300, mt: 1 }}
+                    />
                   </div>
                 </div>
-              </div>
 
-              <div style={{ display: "none" }}>
-                <label className="mastertds-label">
-                  SCHRG A/C <b className="required">*</b>
-                </label>
                 <div>
-                  <input
-                    type="number"
-                    id="SurchargeAccountId"
-                    name="SurchargeAccountId"
-                    value={SurchargeAccountId}
-                    onChange={(e) => setSurchargeAccountId(e.target.value)}
-                    ref={schrgaccRef}
-                    onKeyDown={(e) => handleKeyDown(e, educessRef)}
-                    className="mastertds-control"
-                    placeholder="Schrg A/C"
-                  />
-
+                  <label className="mastertds-label">SCHRG %</label>
                   <div>
-                    {errors.SurchargeAccountId && (
-                      <b className="error-text">{errors.SurchargeAccountId}</b>
-                    )}
+                    <input
+                      type="text"
+                      id="SurchargePercentage"
+                      name="SurchargePercentage"
+                      value={SurchargePercentage}
+                      onChange={(e) => {
+                        const value = e.target.value;
+
+                        // Regex to validate decimal numbers with at most 18 digits total and 2 decimal places
+                        const regex = /^\d{0,18}(\.\d{0,2})?$/;
+
+                        // Check if the value matches the regex
+                        if (value === "" || regex.test(value)) {
+                          setSurchargePercentage(value);
+                        }
+                      }}
+                      ref={schrgRef}
+                      onKeyDown={(e) => handleKeyDown(e, schrgaccRef)}
+                      style={{ width: "150px" }}
+                      className="mastertds-control"
+                      placeholder="Enter schrg"
+                    />
                   </div>
                 </div>
-              </div>
 
-              <div style={{ display: "none" }}>
-                <label className="mastertds-label">
-                  Edu Cess % <b className="required">*</b>
-                </label>
                 <div>
-                  <input
-                    type="text"
-                    id="EducationSellsPercentage"
-                    name="EducationSellsPercentage"
-                    value={EducationSellsPercentage}
-                    onChange={(e) => {
-                      const value = e.target.value;
-
-                      // Regex to validate decimal numbers with at most 18 digits total and 2 decimal places
-                      const regex = /^\d{0,18}(\.\d{0,2})?$/;
-
-                      // Check if the value matches the regex
-                      if (value === "" || regex.test(value)) {
-                        setEducationSellsPercentage(value);
+                  <label className="mastertds-label">SCHRG A/C</label>
+                  <div>
+                    <Autocomplete
+                      options={accountOptions}
+                      value={
+                        accountOptions.find(
+                          (option) => option.value === SurchargeAccountId
+                        ) || null
                       }
-                    }}
-                    ref={educessRef}
-                    onKeyDown={(e) => handleKeyDown(e, educessaccRef)}
-                    className="mastertds-control"
-                    placeholder="Enter edu cess"
-                  />
-                  <div>
-                    {errors.EducationSellsPercentage && (
-                      <b className="error-text">
-                        {errors.EducationSellsPercentage}
-                      </b>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <div style={{ display: "none" }}>
-                <label className="mastertds-label">
-                  Edu Cess A/C <b className="required">*</b>
-                </label>
-                <div>
-                  <input
-                    type="number"
-                    id="EducationSellsAccountId"
-                    name="EducationSellsAccountId"
-                    value={EducationSellsAccountId}
-                    onChange={(e) => setEducationSellsAccountId(e.target.value)}
-                    ref={educessaccRef}
-                    onKeyDown={(e) => handleKeyDown(e, heducessRef)}
-                    className="mastertds-control"
-                    placeholder="Edu cess A/C"
-                  />
-
-                  <div>
-                    {errors.EducationSellsAccountId && (
-                      <b className="error-text">
-                        {errors.EducationSellsAccountId}
-                      </b>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <div style={{ display: "none" }}>
-                <label className="mastertds-label">
-                  H Edu Cess % <b className="required">*</b>
-                </label>
-                <div>
-                  <input
-                    type="text"
-                    id="HigherEducationSellsPercentage"
-                    name="HigherEducationSellsPercentage"
-                    value={HigherEducationSellsPercentage}
-                    onChange={(e) => {
-                      const value = e.target.value;
-
-                      // Regex to validate decimal numbers with at most 18 digits total and 2 decimal places
-                      const regex = /^\d{0,18}(\.\d{0,2})?$/;
-
-                      // Check if the value matches the regex
-                      if (value === "" || regex.test(value)) {
-                        setHigherEducationSellsPercentage(value);
+                      onChange={(event, newValue) =>
+                        setSurchargeAccountId(newValue ? newValue.value : null)
                       }
-                    }}
-                    ref={heducessRef}
-                    onKeyDown={(e) => handleKeyDown(e, heducessaccRef)}
-                    className="mastertds-control"
-                    placeholder="Enter H edu cess"
-                  />
-
-                  <div>
-                    {errors.HigherEducationSellsPercentage && (
-                      <b className="error-text">
-                        {errors.HigherEducationSellsPercentage}
-                      </b>
-                    )}
+                      getOptionLabel={(option) => option.label} // Display only label in dropdown
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          placeholder="Select Schrg Account"
+                          size="small"
+                          margin="none"
+                          fullWidth
+                        />
+                      )}
+                      sx={{ mt: 1.25, mb: 0.625, width: 300 }} // Equivalent to 10px and 5px
+                    />
                   </div>
                 </div>
-              </div>
 
-              <div style={{ display: "none" }}>
-                <label className="mastertds-label">
-                  H Edu Cess A/C <b className="required">*</b>
-                </label>
                 <div>
-                  <input
-                    type="number"
-                    id="HigherEducationPercentageSellsAccountId"
-                    name="HigherEducationPercentageSellsAccountId"
-                    value={HigherEducationPercentageSellsAccountId}
-                    onChange={(e) =>
-                      setHigherEducationPercentageSellsAccountId(e.target.value)
-                    }
-                    ref={heducessaccRef}
-                    onKeyDown={(e) => handleKeyDown(e, effcetivedateRef)}
-                    className="mastertds-control"
-                    placeholder="H Edu cess A/C"
-                  />
+                  <label className="mastertds-label">Edu Cess %</label>
                   <div>
-                    {errors.HigherEducationPercentageSellsAccountId && (
-                      <b className="error-text">
-                        {errors.HigherEducationPercentageSellsAccountId}
-                      </b>
-                    )}
+                    <input
+                      type="text"
+                      id="EducationSellsPercentage"
+                      name="EducationSellsPercentage"
+                      value={EducationSellsPercentage}
+                      onChange={(e) => {
+                        const value = e.target.value;
+
+                        // Regex to validate decimal numbers with at most 18 digits total and 2 decimal places
+                        const regex = /^\d{0,18}(\.\d{0,2})?$/;
+
+                        // Check if the value matches the regex
+                        if (value === "" || regex.test(value)) {
+                          setEducationSellsPercentage(value);
+                        }
+                      }}
+                      ref={educessRef}
+                      onKeyDown={(e) => handleKeyDown(e, educessaccRef)}
+                      style={{ width: "150px" }}
+                      className="mastertds-control"
+                      placeholder="Enter edu cess"
+                    />
                   </div>
                 </div>
-              </div>
 
-              <div style={{ display: "none" }}>
-                <label className="mastertds-label">
-                  Effective date <b className="required">*</b>
-                </label>
                 <div>
-                  <input
-                    type="date"
-                    id="Effectivedate"
-                    name="Effectivedate"
-                    value={Effectivedate}
-                    onChange={(e) => setEffectivedate(e.target.value)}
-                    ref={effcetivedateRef}
-                    onKeyDown={(e) => handleKeyDown(e, tdscodeRef)}
-                    className="mastertds-control"
-                    placeholder="Enter Effective date"
-                  />
-
+                  <label className="mastertds-label">Edu Cess A/C</label>
                   <div>
-                    {errors.Effectivedate && (
-                      <b className="error-text">{errors.Effectivedate}</b>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <div style={{ display: "none" }}>
-                <label className="mastertds-label">
-                  TDS code <b className="required">*</b>
-                </label>
-                <div>
-                  <input
-                    type="text"
-                    id="TDSCode"
-                    name="TDSCode"
-                    value={TDSCode}
-                    onChange={(e) => setTDSCode(e.target.value)}
-                    maxLength={15}
-                    ref={tdscodeRef}
-                    onKeyDown={(e) => handleKeyDown(e, netpercentageRef)}
-                    className="mastertds-control"
-                    placeholder="Enter TDS Code"
-                  />
-                  <div>
-                    {errors.TDSCode && (
-                      <b className="error-text">{errors.TDSCode}</b>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <div style={{ display: "none" }}>
-                <label className="mastertds-label">
-                  Net % <b className="required">*</b>
-                </label>
-                <div>
-                  <input
-                    type="text"
-                    id="NetPercentage"
-                    name="NetPercentage"
-                    value={NetPercentage}
-                    onChange={(e) => {
-                      const value = e.target.value;
-
-                      // Regex to validate decimal numbers with at most 18 digits total and 2 decimal places
-                      const regex = /^\d{0,18}(\.\d{0,2})?$/;
-
-                      // Check if the value matches the regex
-                      if (value === "" || regex.test(value)) {
-                        setNetPercentage(value);
+                    <Autocomplete
+                      options={accountOptions}
+                      value={
+                        accountOptions.find(
+                          (option) => option.value === EducationSellsAccountId
+                        ) || null
                       }
-                    }}
-                    ref={netpercentageRef}
-                    onKeyDown={(e) => handleKeyDown(e, saveRef)}
-                    className="mastertds-control"
-                    placeholder="Enter Net"
-                  />
+                      onChange={(event, newValue) =>
+                        setEducationSellsAccountId(
+                          newValue ? newValue.value : null
+                        )
+                      }
+                      getOptionLabel={(option) => option.label} // Display only label in dropdown
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          placeholder="Select Edu cess Account"
+                          size="small"
+                          margin="none"
+                          fullWidth
+                        />
+                      )}
+                      sx={{ mt: 1.25, mb: 0.625, width: 300 }} // Equivalent to 10px and 5px
+                    />
+                  </div>
+                </div>
 
+                <div>
+                  <label className="mastertds-label">H Edu Cess %</label>
                   <div>
-                    {errors.NetPercentage && (
-                      <b className="error-text">{errors.NetPercentage}</b>
-                    )}
+                    <input
+                      type="text"
+                      id="HigherEducationSellsPercentage"
+                      name="HigherEducationSellsPercentage"
+                      value={HigherEducationSellsPercentage}
+                      onChange={(e) => {
+                        const value = e.target.value;
+
+                        // Regex to validate decimal numbers with at most 18 digits total and 2 decimal places
+                        const regex = /^\d{0,18}(\.\d{0,2})?$/;
+
+                        // Check if the value matches the regex
+                        if (value === "" || regex.test(value)) {
+                          setHigherEducationSellsPercentage(value);
+                        }
+                      }}
+                      ref={heducessRef}
+                      onKeyDown={(e) => handleKeyDown(e, heducessaccRef)}
+                      style={{ width: "150px" }}
+                      className="mastertds-control"
+                      placeholder="Enter H edu cess"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="mastertds-label">H Edu Cess A/C</label>
+                  <div>
+                    <Autocomplete
+                      options={accountOptions}
+                      value={
+                        accountOptions.find(
+                          (option) =>
+                            option.value ===
+                            HigherEducationPercentageSellsAccountId
+                        ) || null
+                      }
+                      onChange={(event, newValue) =>
+                        setHigherEducationPercentageSellsAccountId(
+                          newValue ? newValue.value : null
+                        )
+                      }
+                      getOptionLabel={(option) => option.label} // Display only label in dropdown
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          placeholder="Select H Edu cess Acc"
+                          size="small"
+                          margin="none"
+                          fullWidth
+                        />
+                      )}
+                      sx={{ mt: 1.25, mb: 0.625, width: 300 }} // Equivalent to 10px and 5px
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="mastertds-label">Effective date</label>
+                  <div>
+                    <input
+                      type="date"
+                      id="Effectivedate"
+                      name="Effectivedate"
+                      value={Effectivedate}
+                      onChange={(e) => setEffectivedate(e.target.value)}
+                      ref={effcetivedateRef}
+                      onKeyDown={(e) => handleKeyDown(e, tdscodeRef)}
+                      className="mastertds-control"
+                      placeholder="Enter Effective date"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="mastertds-label">TDS code</label>
+                  <div>
+                    <input
+                      type="text"
+                      id="TDSCode"
+                      name="TDSCode"
+                      value={TDSCode}
+                      onChange={(e) => setTDSCode(e.target.value)}
+                      maxLength={15}
+                      ref={tdscodeRef}
+                      onKeyDown={(e) => handleKeyDown(e, netpercentageRef)}
+                      className="mastertds-control"
+                      placeholder="Enter TDS Code"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="mastertds-label">Net %</label>
+                  <div>
+                    <input
+                      type="text"
+                      id="NetPercentage"
+                      name="NetPercentage"
+                      value={NetPercentage}
+                      onChange={(e) => {
+                        const value = e.target.value;
+
+                        // Regex to validate decimal numbers with at most 18 digits total and 2 decimal places
+                        const regex = /^\d{0,18}(\.\d{0,2})?$/;
+
+                        // Check if the value matches the regex
+                        if (value === "" || regex.test(value)) {
+                          setNetPercentage(value);
+                        }
+                      }}
+                      ref={netpercentageRef}
+                      onKeyDown={(e) => handleKeyDown(e, saveRef)}
+                      className="mastertds-control"
+                      placeholder="Enter Net"
+                    />
                   </div>
                 </div>
               </div>
             </form>
-
             <div className="mastertds-btn-container">
               <Button
                 onClick={handleSubmit}
@@ -926,7 +809,6 @@ function TDS() {
           </div>
         </Modal>
 
-        {/* Confirmation Dialog for Delete */}
         <Dialog open={isDeleteDialogOpen} onClose={cancelDelete}>
           <DialogTitle style={{ color: "navy", fontWeight: "600" }}>
             Confirm Deletion

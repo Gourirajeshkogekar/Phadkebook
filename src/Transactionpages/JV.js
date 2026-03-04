@@ -117,9 +117,10 @@ function JV() {
     { value: "D", label: "D" },
     { value: "C", label: "C" },
   ];
+const [accountAddresses, setAccountAddresses] = useState({});
+const [activeAccountId, setActiveAccountId] = useState(null);
 
-  const [costcenterOptions, setCostcenteroptions] = useState([]);
-
+   const [costcenterOptions, setCostcenteroptions] = useState([]);
   const [rows, setRows] = useState([
     {
       SerialNo: "",
@@ -227,16 +228,45 @@ function JV() {
       const response = await axios.get(
         "https://publication.microtechsolutions.net.in/php/Costcenterget.php"
       );
-      const costcenterOptions = response.data.map((cos) => ({
-        value: cos.Id,
-        label: cos.CostCenterName,
-      }));
+      const costcenterOptions = response.data
+        .filter((cos) => cos.Active === 1) // ✅ only active ones
+        .map((cos) => ({
+          value: cos.Id,
+          label: cos.CostCenterName,
+        }));
       setCostcenteroptions(costcenterOptions);
     } catch (error) {
       // toast.error("Error fetching cost centers:", error);
       console.error("Error fetching cost centers:", error);
     }
   };
+
+  const [partyDetails, setPartyDetails] = useState(null);
+    const fetchPartyDetails = async (accountId) => {
+  try {
+    const response = await axios.get(
+      `https://publication.microtechsolutions.net.in/php/Addressget.php?AccountId=${accountId}`
+    );
+
+    console.log("Party Details:", response.data);
+
+    if (
+      response.data?.status === "success" &&
+      response.data?.data?.length > 0
+    ) {
+      setPartyDetails(response.data.data[0]); // ✅ correct path
+    } else {
+      setPartyDetails(null);
+    }
+  } catch (error) {
+    console.error("Error fetching party details:", error);
+    setPartyDetails(null);
+  }
+};
+
+  
+
+
 
   const [rowErrors, setRowErrors] = useState([]); // array of objects per row
 
@@ -271,6 +301,8 @@ function JV() {
     setRowErrors(updatedErrors);
     setRows(updatedRows);
   };
+
+  
 
   const handleAddRow = () => {
     setRows([
@@ -352,17 +384,18 @@ function JV() {
       return;
     }
 
-    const today = dayjs();
-    const minDate = today.subtract(3, "day");
-    const maxDate = today.add(2, "day");
+    // const today = dayjs();
+    // const minDate = today.subtract(3, "day");
+    // const maxDate = today.add(2, "day");
 
-    if (newValue.isBefore(minDate) || newValue.isAfter(maxDate)) {
-      setDateError("You can select only 2 days before or after today");
-    } else {
-      setDateError("");
-    }
+    // if (newValue.isBefore(minDate) || newValue.isAfter(maxDate)) {
+    //   setDateError("You can select only 2 days before or after today");
+    // } else {
+    //   setDateError("");
+    // }
 
-    setSafedate(newValue);
+    setDateError("");
+    setSafedate(dayjs(newValue));
   };
 
   const handleEdit = () => {
@@ -502,21 +535,40 @@ function JV() {
     setDeleteIndex(null);
   };
 
+  
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    // if (!validateForm()) return;
 
+    // ✅ Validate voucher date
     if (!safedate || !dayjs(safedate).isValid() || dateError) {
       toast.error("Please correct all the date fields before submitting.");
+      return;
+    }
+
+    // ✅ Calculate total Debit and Credit before saving
+    let totalDebit = 0;
+    let totalCredit = 0;
+
+    rows.forEach((row) => {
+      const amount = parseFloat(row.Amount) || 0;
+      if (row.DOrC === "D") totalDebit += amount;
+      else if (row.DOrC === "C") totalCredit += amount;
+    });
+
+    if (totalDebit !== totalCredit) {
+      toast.error(
+        `Debit (${totalDebit}) and Credit (${totalCredit}) amounts must be equal!`
+      );
       return;
     }
 
     const formattedVoucherDate = dayjs(safedate).format("YYYY-MM-DD");
 
     const voucherData = {
-      Id: isEditing ? id : "", // Include the Id for updating, null for new records
+      Id: isEditing ? id : "",
       VoucherType: "JV",
-      VoucherNo: EntryNo ? EntryNo : null, // Ensures it takes `null` if `VoucherNo` is not provided
+      VoucherNo: EntryNo ? EntryNo : null,
       VoucherDate: formattedVoucherDate,
       ChequeNo: 123,
       ChequeDate: formattedVoucherDate,
@@ -531,21 +583,23 @@ function JV() {
         ? "https://publication.microtechsolutions.net.in/php/Voucherhdupdate.php"
         : "https://publication.microtechsolutions.net.in/php/Voucherhdpost.php";
 
-      // const response = await axios.post(voucherUrl, qs.stringify(voucherData), {
       const response = await axios.post(voucherUrl, voucherData, {
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
       });
 
+      console.log("JV API Response:", response.data);
+
       const voucherId = isEditing ? id : parseInt(response.data.Id, 10);
       const voucherNo = isEditing ? EntryNo : parseInt(response.data.VoucherNo);
 
+      // ✅ Save each JV detail row
       for (const [index, row] of rows.entries()) {
         const rowData = {
           VoucherId: voucherId,
           VoucherType: "JV",
-          SRN: rows.indexOf(row) + 1,
-          VoucherNo: EntryNo ? EntryNo : null,
-          VoucherDate: formattedVoucherDate, // ✅ Fix
+          SRN: index + 1,
+          VoucherNo: voucherNo,
+          VoucherDate: formattedVoucherDate,
 
           AccountId: parseInt(row.AccountId, 10),
           Amount: parseFloat(row.Amount),
@@ -555,7 +609,7 @@ function JV() {
           ChequeNo: row.ChequeNo,
           ChequeDate: row.ChequeDate
             ? dayjs(row.ChequeDate).format("YYYY-MM-DD")
-            : formattedVoucherDate, // ✅ Fix
+            : formattedVoucherDate,
           ChequeAmount: row.ChequeAmount,
           MICRCode: row.MICRCode,
           BankName: row.BankName,
@@ -579,6 +633,7 @@ function JV() {
         });
       }
 
+      // ✅ Update frontend list
       if (isEditing) {
         setJvheaders((prev) =>
           prev.map((voucher) =>
@@ -589,19 +644,21 @@ function JV() {
         setJvheaders((prev) => [...prev, { ...voucherData, Id: voucherId }]);
       }
 
+      // ✅ Refresh data
       fetchVouchers();
       fetchVoucherdetails();
 
+      // ✅ Success
       setIsDrawerOpen(false);
       toast.success(
         isEditing
           ? "JV & JV Details updated successfully!"
           : "JV & JV Details added successfully!"
       );
-      resetForm(); // Reset the form fields after successful submission
+      resetForm();
     } catch (error) {
-      // toast.error('Error saving record!');
-      console.error("Error saving record!");
+      console.error("Error saving record!", error);
+      toast.error("Error saving record!");
     }
   };
 
@@ -699,7 +756,7 @@ function JV() {
           PaperProps={{
             sx: {
               borderRadius: isSmallScreen ? "0" : "10px 0 0 10px",
-              width: isSmallScreen ? "100%" : "80%",
+              width: isSmallScreen ? "100%" : "85%",
               zIndex: 1000,
             },
           }}>
@@ -797,41 +854,10 @@ borderWidth: 1,
                   <tr>
                     <th>Serial No</th>
 
-                    <th>
-                      Account Id <b className="required">*</b>
-                    </th>
-                    <th>
-                      Dr/Cr <b className="required">*</b>
-                    </th>
-                    <th>
-                      Narration <b className="required">*</b>
-                    </th>
-                    <th>
-                      Amount <b className="required">*</b>
-                    </th>
-
-                    <th>
-                      Cost Center Id <b className="required">*</b>
-                    </th>
-                    <th>
-                      Cheque No <b className="required">*</b>
-                    </th>
-                    <th>
-                      Cheque Date <b className="required">*</b>
-                    </th>
-
-                    <th>
-                      Cheque Amount <b className="required">*</b>
-                    </th>
-                    <th>
-                      MICR Code <b className="required">*</b>
-                    </th>
-                    <th>
-                      Bank Name <b className="required">*</b>
-                    </th>
-                    <th>
-                      Bank Branch <b className="required">*</b>
-                    </th>
+                    <th>Account Id</th>
+                    <th>Dr/Cr</th>
+                    <th>Narration</th>
+                    <th>Amount</th>
 
                     <th>Actions</th>
                   </tr>
@@ -870,9 +896,6 @@ borderWidth: 1,
                         <td>{index + 1}</td>
 
                         <td>
-                          {/* {index === 0 ? (
-          accountOptions.find(option => option.value === row.AccountId)?.label || ''
-        ) : ( */}
                           <Autocomplete
                             options={accountOptions}
                             value={
@@ -880,14 +903,25 @@ borderWidth: 1,
                                 (option) => option.value === row.AccountId
                               ) || null
                             }
-                            onChange={(event, newValue) =>
-                              handleInputChange(
-                                index,
-                                "AccountId",
-                                newValue ? newValue.value : ""
-                              )
-                            }
-                            sx={{ width: 550 }} // Set width
+                         onChange={(e, newValue) => {
+  const id = newValue ? newValue.value : "";
+
+  // ✅ Update row properly
+  handleInputChange(index, "AccountId", id);
+
+  // ✅ Fetch party details
+  if (id) {
+    fetchPartyDetails(id);
+    setAccountId(id);   // optional (for party box)
+  } else {
+    setPartyDetails(null);
+    setAccountId(null);
+  }
+}}
+                           
+
+
+                            
                             getOptionLabel={(option) => option.label}
                             renderInput={(params) => (
                               <TextField
@@ -898,7 +932,7 @@ borderWidth: 1,
                                 sx={{
                                   "& .MuiInputBase-root": {
                                     height: "50px",
-                                    // width: "200px", // Adjust height here
+                                    width: "300px", // Adjust height here
                                   },
                                   "& .MuiInputBase-input": {
                                     padding: "14px", // Adjust padding for better alignment
@@ -907,16 +941,13 @@ borderWidth: 1,
                               />
                             )}
                           />
-                          {/* )} */}
-                        </td>
+
+
+
+                     
+</td>
 
                         <td>
-                          {/* {index === 0 ? (
-          // row.DOrC
-          // 'D'
-          dOrCOptions.find(option => option.value === row.DOrC)?.label || 'C'
-
-        ) : ( */}
                           <Autocomplete
                             options={dOrCOptions}
                             value={
@@ -931,7 +962,6 @@ borderWidth: 1,
                                 newValue ? newValue.value : ""
                               )
                             }
-                            sx={{ width: 100 }} // Set width
                             getOptionLabel={(option) => option.label}
                             renderInput={(params) => (
                               <TextField
@@ -942,7 +972,7 @@ borderWidth: 1,
                                 sx={{
                                   "& .MuiInputBase-root": {
                                     height: "50px",
-                                    // width: "150px", // Adjust height here
+                                    width: "150px", // Adjust height here
                                   },
                                   "& .MuiInputBase-input": {
                                     padding: "14px", // Adjust padding for better alignment
@@ -956,9 +986,6 @@ borderWidth: 1,
                         </td>
 
                         <td>
-                          {/* {index === 0 ? (
-          row.Narration
-        ) : ( */}
                           <input
                             type="text"
                             value={row.Narration}
@@ -972,16 +999,12 @@ borderWidth: 1,
                             style={{
                               width: "200px",
                             }}
-                            className="jvvoucher-control"
+                            className="jv-control"
                             placeholder="Enter Narration"
                           />
-                          {/* )} */}
                         </td>
 
                         <td>
-                          {/* {index === 0 ? (
-          row.Amount
-        ) : ( */}
                           <input
                             type="number"
                             value={row.Amount}
@@ -991,195 +1014,12 @@ borderWidth: 1,
                             style={{
                               width: "150px",
                             }}
-                            className="receiptvoucher-control"
+                            className="jv-control"
                             placeholder="Amount"
                           />
                           {/* )} */}
                         </td>
 
-                        <td>
-                          {/* {index === 0 ? (
-          row.CostCenterId
-        ) : ( */}
-
-                          <Autocomplete
-                            options={costcenterOptions}
-                            value={
-                              costcenterOptions.find(
-                                (option) => option.value === row.CostCenterId
-                              ) || null
-                            }
-                            onChange={(event, newValue) =>
-                              handleInputChange(
-                                index,
-                                "CostCenterId",
-                                newValue ? newValue.value : ""
-                              )
-                            }
-                            sx={{ width: 250 }} // Set width
-                            getOptionLabel={(option) => option.label}
-                            renderInput={(params) => (
-                              <TextField
-                                {...params}
-                                placeholder="Select Cost Center"
-                                size="big"
-                                fullWidth
-                                sx={{
-                                  "& .MuiInputBase-root": {
-                                    height: "50px",
-                                    // width: "200px", // Adjust height here
-                                  },
-                                  "& .MuiInputBase-input": {
-                                    padding: "14px", // Adjust padding for better alignment
-                                  },
-                                }}
-                              />
-                            )}
-                          />
-                          {/* )} */}
-                        </td>
-
-                        <td>
-                          {/* {index === 0 ? (
-          row.CheckNo
-        ) : ( */}
-                          <input
-                            type="text"
-                            value={row.ChequeNo}
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              if (value.length <= 15) {
-                                handleInputChange(index, "ChequeNo", value);
-                              }
-                            }}
-                            style={{
-                              width: "150px",
-                            }}
-                            className="jvvoucher-control"
-                            placeholder="ChequeNo"
-                          />
-                          {/* )} */}
-                        </td>
-
-                        <td>
-                          {/* {index === 0 ? (
-          row.CheckDate
-        ) : ( */}
-
-                          <input
-                            type="date"
-                            value={
-                              row.ChequeDate ||
-                              new Date().toISOString().split("T")[0]
-                            }
-                            onChange={(e) =>
-                              handleInputChange(
-                                index,
-                                "ChequeDate",
-                                e.target.value
-                              )
-                            }
-                            style={{ width: "150px" }}
-                            placeholder="Cheque Date"
-                            className="paymentvoucher-control"
-                          />
-
-                          {rowErrors[index]?.ChequeDate && (
-                            <span style={{ color: "red", fontSize: "12px" }}>
-                              {rowErrors[index].ChequeDate}
-                            </span>
-                          )}
-                          {/* )} */}
-                        </td>
-
-                        <td>
-                          {/* {index === 0 ? (
-          row.CheckAmount
-        ) : ( */}
-                          <input
-                            type="number"
-                            value={row.ChequeAmount}
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              // Validate for Check Amount as well
-                              const regex = /^\d{0,18}(\.\d{0,2})?$/;
-
-                              // Check if the value matches the regex
-                              if (value === "" || regex.test(value)) {
-                                handleInputChange(index, "ChequeAmount", value);
-                              }
-                            }}
-                            style={{
-                              width: "100px",
-                            }}
-                            placeholder="Cheque Amount"
-                            className="jvvoucher-control"
-                          />
-                          {/* )} */}
-                        </td>
-                        <td>
-                          {/* {index === 0 ? (
-          row.MICRCode
-        ) : ( */}
-                          <input
-                            type="text"
-                            value={row.MICRCode}
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              if (value.length <= 30) {
-                                handleInputChange(index, "MICRCode", value);
-                              }
-                            }}
-                            style={{
-                              width: "150px",
-                            }}
-                            placeholder="MICR Code"
-                            className="jvvoucher-control"
-                          />
-                          {/* )} */}
-                        </td>
-                        <td>
-                          {/* {index === 0 ? (
-          row.BankName
-        ) : ( */}
-                          <input
-                            type="text"
-                            value={row.BankName}
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              if (value.length <= 50) {
-                                handleInputChange(index, "BankName", value);
-                              }
-                            }}
-                            style={{
-                              width: "150px",
-                            }}
-                            placeholder="Bank Name"
-                            className="jvvoucher-control"
-                          />
-                          {/* )} */}
-                        </td>
-                        <td>
-                          {/* {index === 0 ? (
-          row.BankBranch
-        ) : ( */}
-                          <input
-                            type="text"
-                            value={row.BankBranch}
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              if (value.length <= 50) {
-                                handleInputChange(index, "BankBranch", value);
-                              }
-                            }}
-                            style={{
-                              width: "150px",
-                            }}
-                            placeholder="Bank Branch"
-                            className="jvvoucher-control"
-                          />
-                          {/* )} */}
-                        </td>
                         <td>
                           <div
                             style={{
@@ -1205,11 +1045,82 @@ borderWidth: 1,
                       </tr>
                     ))
                   )}
+
+
+                  
                 </tbody>
+
+ 
               </table>
+
+
+    
+ 
+
+ 
             </div>
 
-            {/* Total Credit & Debit Inputs Below the Table */}
+
+             {/* Ensure the box shows as soon as a PartyId is selected */}
+         {AccountId && (
+           <Box
+             sx={{
+               m: 1,
+               width: "500px",
+               p: 1,
+               backgroundColor: "#336699",
+               color: "white",
+               borderRadius: 1,
+               border: "1px solid #003366",
+               minHeight: "70px", // Ensures box has a consistent size
+               display: "flex",
+               flexDirection: "column",
+               justifyContent: "center"
+             }}
+           >
+             {partyDetails ? (
+               <>
+                 {/* Case 1: Party Info exists - Show Name */}
+                 <Typography fontWeight="bold" variant="body1">
+                   {partyDetails.AccountName || "Account Name Not Available"} ({AccountId})
+                 </Typography>
+         
+                 {/* Check for any address lines */}
+                 {(partyDetails.Address1 || partyDetails.Address2 || partyDetails.Address3) ? (
+                   <Box sx={{ mt: 0.2 }}>
+                     {partyDetails.Address1 && <Typography variant="caption" display="block">{partyDetails.Address1}</Typography>}
+                     {partyDetails.Address2 && <Typography variant="caption" display="block">{partyDetails.Address2}</Typography>}
+                     {partyDetails.Address3 && <Typography variant="caption" display="block">{partyDetails.Address3}</Typography>}
+                   </Box>
+                 ) : (
+                   <Typography variant="caption" sx={{ fontStyle: "italic", mt: 1, display: "block", color: "#FFD700" }}>
+                     ⚠️ No address info available
+                   </Typography>
+                 )}
+         
+                 {partyDetails.MobileNo && (
+                   <Typography variant="caption" display="block" mt={0.2}>
+                     Mobile: {partyDetails.MobileNo}
+                   </Typography>
+                 )}
+         
+                 <Box sx={{ m:1, borderTop: "1px solid rgba(255,255,255,0.3)" }}>
+                   <Typography fontWeight="bold">
+                     Bal. = {partyDetails.Balance || "0.00"} Dr
+                   </Typography>
+                 </Box>
+               </>
+             ) : (
+               /* Case 2: partyInfo is null or undefined (Still fetching or not found) */
+               <Box sx={{ textAlign: "center" }}>
+                  <Typography variant="body2" sx={{ fontStyle: "bold" }}>
+                   Party details not Available
+                  </Typography>
+               </Box>
+             )}
+           </Box>
+         )}
+
             <Box display="flex" justifyContent="flex-end" mt={1} gap={2}>
               <Box>
                 <Typography variant="body2" fontWeight="bold">
@@ -1217,10 +1128,17 @@ borderWidth: 1,
                 </Typography>
                 <TextField
                   variant="outlined"
-                  value={TotalCredit} // Calculate total credit
+                  value={TotalCredit}
                   size="small"
                   margin="normal"
-                  InputProps={{ readOnly: true }}
+                  InputProps={{
+                    sx: {
+                      fontSize: "1.2rem",
+                      fontWeight: "bold",
+                      color: "green",
+                      readOnly: true,
+                    },
+                  }}
                 />
               </Box>
 
@@ -1233,12 +1151,25 @@ borderWidth: 1,
                   value={TotalDebit}
                   size="small"
                   margin="normal"
-                  InputProps={{ readOnly: true }}
+                  InputProps={{
+                    sx: {
+                      fontSize: "1.2rem",
+                      fontWeight: "bold",
+                      color: "red",
+                      readOnly: true,
+                    },
+                  }}
                 />
               </Box>
             </Box>
           </Box>
 
+
+
+
+
+
+   
           <Box
             display={"flex"}
             alignItems={"center"}
@@ -1252,7 +1183,7 @@ borderWidth: 1,
                 backgroundColor: "#0a60bd",
                 color: "white",
                 "&:hover": {
-                  backgroundColor: "navy", // Darker shade on hover (optional)
+                  backgroundColor: "navy",
                 },
               }}>
               {isEditing ? "Update" : "Save"}
@@ -1261,12 +1192,12 @@ borderWidth: 1,
             <Box>
               <Button
                 onClick={handleDrawerClose}
-                variant="contained" // Use 'contained' to apply background color styles
+                variant="contained"
                 sx={{
-                  backgroundColor: "red", // Set background color to red
-                  color: "white", // Optional: text color inside the button
+                  backgroundColor: "red",
+                  color: "white",
                   "&:hover": {
-                    backgroundColor: "darkred", // Darker shade on hover (optional)
+                    backgroundColor: "darkred",
                   },
                 }}>
                 Cancel
@@ -1307,25 +1238,6 @@ borderWidth: 1,
             </Button>
           </DialogActions>
         </Dialog>
-
-        {/* <div className="bookpurchase-btn-container">
-                  <Button
-                    type="submit" onClick={handleSubmit}
-                    style={{
-                      background: "#0a60bd",
-                      color: "white",
-                    }}>
-                     {editingIndex >= 0 ? "Update" : "Save"}
-                  </Button>
-                  <Button
-                    onClick={() => setIsModalOpen(false)}
-                    style={{
-                      background: "red",
-                      color: "white",
-                    }}>
-                    Cancel
-                  </Button>
-                </div> */}
       </div>
 
       <ToastContainer />

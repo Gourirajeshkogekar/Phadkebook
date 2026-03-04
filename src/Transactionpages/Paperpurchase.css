@@ -49,13 +49,21 @@
     height: 250px;
     overflow-y: auto;
     overflow-x: auto;
-    width: 100%;
+    /* width: 100%; */
     border-collapse: collapse;
     background-color: #ffffff;
 }
 
+.paperpurchase-table thead th {
+    position: sticky;
+    top: 0;
+    padding: 10px;
+    background: #f4f4f4;
+    z-index: 1;
+}
+
 .paperpurchase-table table {
-    width: 100%;
+    /* width: 100%; */
 
     border: 1px solid #ddd;
     border-radius: 8px;
@@ -64,7 +72,7 @@
 
 .paperpurchase-table th,
 .paperpurchase-table td {
-    padding: 12px;
+    /* padding: 12px; */
     text-align: left;
     border-bottom: 1px solid #ddd;
 }
@@ -75,24 +83,13 @@
 }
 
 .paperpurchase-table input {
-    width: 100%;
-    padding: 8px;
+    /* width: 100%;
+    padding: 8px; */
     box-sizing: border-box;
     border: 1px solid #ccc;
     border-radius: 4px;
 }
 
-.paperpurchase-table tr:nth-child(even) {
-    background-color: #f9f9f9;
-}
-
-.paperpurchase-table tr:hover {
-    background-color: #f1f1f1;
-}
-
-.paperpurchase-table-container {
-    overflow-x: auto;
-}
 
 
 
@@ -149,6 +146,66 @@
     align-items: center;
     gap: 10px;
     margin-top: 20px;
+}
+
+
+/* FOOTER */
+.paperpurchase-footer {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 30px;
+    /* margin-top: 20px; */
+}
+
+/* LEFT */
+.pp-left .bp-field {
+    margin-bottom: 16px;
+}
+
+.pp-left label {
+    font-weight: 500;
+    display: block;
+    margin-bottom: 6px;
+}
+
+.pp-left textarea {
+    width: 60%;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+/* RIGHT TOTALS PANEL */
+.pp-right {
+    border: 1px solid #ccc;
+    padding: 12px;
+    background: #f9f9f9;
+    border-radius: 4px;
+}
+
+.total-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.total-row span {
+    font-weight: 500;
+}
+
+.total-row input {
+    width: 120px;
+    text-align: right;
+    padding: 5px;
+    border: 1px solid #bbb;
+    border-radius: 3px;
+    background: #fff;
+}
+
+.total-highlight input {
+    background: #fff3a0;
+    font-weight: bold;
 }
 
 

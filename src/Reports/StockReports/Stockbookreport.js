@@ -430,6 +430,7 @@ const StockBookReport = () => {
               <DatePicker
                 value={fromdate}
                 onChange={setFromDate}
+                format="DD-MM-YYYY"
                 slotProps={{ textField: { size: "small", fullWidth: true } }}
               />
             </Grid>
@@ -441,6 +442,7 @@ const StockBookReport = () => {
               <DatePicker
                 value={todate}
                 onChange={setToDate}
+                format="DD-MM-YYYY"
                 slotProps={{ textField: { size: "small", fullWidth: true } }}
               />
             </Grid>

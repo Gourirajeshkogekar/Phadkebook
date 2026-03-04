@@ -1,148 +1,152 @@
-.canvassor-container {
-    /* padding: 10px; 
-    display: flex;
-    flex-direction: column;
-    gap: 10px;  */
-}
 
-.canvassor-container h1 {
-   text-align: center;
-    font-weight: 600; 
-}
 
-.canvassortable-container{
-    /* background-color: #3c7291; */
-        height: 400px;
-        overflow-y: auto;
-        overflow-x: auto;
-}
 
-.canvassortable-master {
-    display: flex;
-    flex-direction: column;
-}
 
-.canvassortable1-master {
-    /* width: 100%;
-    background-color: #3c7291; */
-    padding: 10px;
-    border-radius: 4px;
-    box-shadow: 0 2px 4px #a4a6a6;
-}
-
-.canvassortable1-master h2 {
-    margin-bottom: 10px;
+.assigncanvassor-container h1 {
     text-align: center;
+    font-weight: 600;
+    margin-bottom: 20px;
 }
 
-.canvassor-form {
-    display: flex;
-        flex-direction: column;
-        gap: 15px;
-        margin-top: 15px;
 
-   
-}
-
-.firstcanv-row{
-    display: grid;
-        grid-template-columns: repeat(1, 1fr);
-        gap: 10px;
-}
-
-.othercanv-rows{
-    display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 10px;
-}
-
-.canvassor-control {
-    padding: 10px;
-    border-radius: 4px;
-    border: 1px solid rgb(223, 222, 222);
-    margin: 10px 0;
-    width: 250px;
-    margin-bottom: 5px;
-}
-
-.canvassor-label {
-    font-weight: 500;
-}
-
-.canvassor-modal {
-    position: fixed;
-    top: 40%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background-color: white;
-    width: 65%;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-    padding: 20px;
-    z-index: 1000;
-  }
-  
-  .canvassor-overlay {
+.assigncanvassor-overlay {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
-    z-index: 999;
-  }
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 99;
+}
 
-.canvassor-btn-container {
-    margin-top: 30px;
+/* ===== Modal Box ===== */
+.assigncanvassor-modal {
+    /* border: #084a94 3px solid; */
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    max-width: 900px;
+    height: 80vh; overflow-y: auto;
+    background: #fff;
+    padding: 25px;
+    border-radius: 10px;
+    z-index: 100;
+    box-shadow: 0 0 25px rgba(0, 0, 0, 0.3);
+}
+
+/* ===== Form Layout ===== */
+.assign-top-section {
+    padding-bottom: 15px;
+    border-bottom: 1px solid #dcdcdc;
+    /* margin-bottom: 15px; */
+}
+
+.assign-row {
     display: flex;
-    justify-content: center;
-    align-items: center;
+    gap: 20px;
+    align-items: flex-end;
+}
+
+.assign-field {
+    flex: 1;
+}
+
+.assign-field label {
+    font-weight: 600;
+    font-size: 15px;
+    margin-bottom: 5px;
+    display: block;
+}
+
+/* ===== OK Button ===== */
+.assignok-btn {
+    background: #0a60bd;
+    color: white;
+    border: none;
+    padding: 8px 18px;
+    font-weight: 600;
+    border-radius: 5px;
+    cursor: pointer;
+    height: 40px;
+}
+
+.assignok-btn:hover {
+    background: #084a94;
+}
+
+/* ===== Table Style ===== */
+.assign-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+}
+
+.assign-table th {
+    background: #e9ecef;
+    padding: 10px;
+    border: 1px solid #dcdcdc;
+    font-weight: 600;
+    text-align: center;
+}
+
+.assign-table td {
+    padding: 8px;
+    border: 1px solid #dcdcdc;
+    text-align: center;
+}
+
+/* Fix dropdown inside table */
+.assign-table td .css-13cymwt-control,
+.assign-table td .css-t3ipsp-control {
+    min-height: 35px !important;
+    height: 35px;
+    font-size: 14px;
+}
+
+.assign-table td .css-1jqq78o-placeholder {
+    font-size: 14px;
+}
+
+/* Checkbox center */
+.assign-table input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+}
+
+/* ===== Buttons Row (Select All, Save, Exit) ===== */
+.assign-btn-container {
+    margin-top: 12px;
+    display: flex;
     gap: 10px;
 }
 
+.assign-btn-container button {
+    padding: 6px 14px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    background: #f7f7f7;
+    cursor: pointer;
+    font-weight: 600;
+}
 
+.assign-btn-container button:hover {
+    background: #e4e4e4;
+}
 
-@media (max-width: 768px) {
+/* ===== Bottom Save / Cancel Buttons ===== */
+.assigncanvassor-btn-container {
+    display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+        margin-top: 20px;
+}
 
-    .canvassor-container {
-        width: 40%;
-    }
-    .canvassor-container h1{
-
-        text-align: left;
-        font-weight: 400; width: 150px;
-    }
-    .canvassortable-master {
-        width: 80%;
-
-    }
-
-    .canvassortable1-master {}
-
-    .canvassor-modal {
-        margin-top: 30px;
-        max-width: 60%;
-        margin-left: 50px;
-    }
-
-
-    .canvassor-form {
-        grid-template-columns: 1fr;
-        height: 40vh;
-        overflow-x: auto;
-    }
-
-    .canvassor-control {
-        padding: 8px;
-        margin: 8px 0;
-    }
-
-    .canvassor-label {
-        font-size: 14px;
-    }
-
-    .canvassor-btn-container {
-        flex-direction: column;
-        gap: 5px;
-    }
+.assigncanvassor-btn-container button,
+.assigncanvassor-btn-container .MuiButton-root {
+    width: 120px;
+    font-weight: 700;
+    padding: 10px 0;
+    border-radius: 6px !important;
 }

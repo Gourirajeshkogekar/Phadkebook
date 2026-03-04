@@ -130,13 +130,15 @@ function PurchaseregistersummaryReports() {
 
         groupedData[accountName].forEach((row) => {
           const basic = parseFloat(row.Basic) || 0;
-          const salesTax = parseFloat(row.salestax) || 0;
-          const other = parseFloat(row.other) || 0;
-          const serviceTax = parseFloat(row.servicetax) || 0;
-          const cess = parseFloat(row.cess) || 0;
-          const rowTotal = basic + salesTax + other + serviceTax + cess;
+          const salesTax = 0; // not in API
+          const other = 0; // not in API
+          const serviceTax = 0; // not in API
+          const cess = 0; // not in API
+          const rowTotal = basic; // only Basic exists
 
-          doc.text(row.Type, 20, y);
+          doc.setFont("times", "normal"); // reset font
+
+          doc.text(row.Type || "", 20, y);
           doc.text(basic.toFixed(2), 70, y, { align: "right" });
           doc.text(salesTax.toFixed(2), 90, y, { align: "right" });
           doc.text(other.toFixed(2), 110, y, { align: "right" });
@@ -153,12 +155,13 @@ function PurchaseregistersummaryReports() {
 
           y += 6;
 
-          // Page break
+          // Page break + reprint header
           if (y > 280) {
             doc.addPage();
             pageNumber++;
             printPageNumber();
             y = 20;
+            printTableHeader();
           }
         });
 
@@ -221,6 +224,7 @@ function PurchaseregistersummaryReports() {
               <DatePicker
                 value={fromdate}
                 onChange={setFromDate}
+                format="DD-MM-YYYY"
                 slotProps={{
                   textField: {
                     fullWidth: true,
@@ -237,6 +241,7 @@ function PurchaseregistersummaryReports() {
               <DatePicker
                 value={todate}
                 onChange={setToDate}
+                format="DD-MM-YYYY"
                 slotProps={{
                   textField: {
                     fullWidth: true,

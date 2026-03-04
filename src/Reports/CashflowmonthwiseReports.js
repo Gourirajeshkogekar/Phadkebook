@@ -187,6 +187,7 @@ function CashflowmonthwiseReports() {
               <DatePicker
                 value={fromdate}
                 onChange={setFromDate}
+                format="DD-MM-YYYY"
                 slotProps={{
                   textField: {
                     fullWidth: true,
@@ -203,6 +204,7 @@ function CashflowmonthwiseReports() {
               <DatePicker
                 value={todate}
                 onChange={setToDate}
+                format="DD-MM-YYYY"
                 slotProps={{
                   textField: {
                     fullWidth: true,

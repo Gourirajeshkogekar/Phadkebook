@@ -295,9 +295,7 @@ function Press() {
             </h2>
             <form onSubmit={handleSubmit} className="press-form">
               <div>
-                <label className="press-label">
-                  Press Name <b className="required">*</b>
-                </label>
+                <label className="press-label">Press Name</label>
                 <div>
                   <Tooltip
                     title={

@@ -96,7 +96,7 @@
   .raddisales-form {
     display: grid;
     gap: 20px;
-    grid-template-columns: 1fr 1fr ;
+    grid-template-columns: 1fr 1fr;
     margin-top: 30px;
   }
   
@@ -124,18 +124,22 @@
   }
   
   
-  .raddisales-modal {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background-color: white;
-    width: 50%;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-    padding: 20px;
-    z-index: 1000;
-  }
+    .raddisales-modal {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+      width: 90%;
+      max-width: 900px;
+      max-height: 90vh;
+      /* prevents going out of screen */
+      overflow-y: auto;
+      /* enables scrolling inside modal */
+    }
   
   
   .raddisales-btn-container {
@@ -147,56 +151,68 @@
   
   
   
-  @media (max-width: 768px) {
-  
-    .raddisales-container {
-        width: 60%;
-    }
-  
-    .raddisales-container h1{
-        font-weight: 400;
-        text-align: left; 
-    }
-  
-    .raddisalestable-container {
-        width: 65%;
-  
-    }
-  
-    .raddisalestable-master {
-        width: 60%;
-  
-  
-    }
-  
-    .raddisalestable1-master {
-  
-    }
-  
-    .raddisales-modal {
-        max-width: 60%;
-        margin-left: 50px;
-    }
-  
-  
-    .raddisales-form {
+    /* ======= Responsive Layouts ======= */
+    @media (max-width: 1024px) {
+      .raddisales-form {
         grid-template-columns: 1fr;
-  
-        height: 30vh;
-        overflow-x: auto;
+      }
     }
   
-    .raddisales-control {
+    @media (max-width: 768px) {
+      .raddisales-modal {
+        width: 95%;
+        max-width: 90%;
+        max-height: 90vh;
+      }
+  
+      .raddisales-form {
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+  
+      .raddisales-container h1 {
+        font-weight: 500;
+        text-align: center;
+      }
+  
+      .raddisales-control {
         padding: 8px;
-        margin: 8px 0;
+      }
+  
+      .raddisales-table th,
+      .raddisales-table td {
+        font-size: 13px;
+        padding: 6px;
+      }
     }
   
-    .raddisales-label {
-        font-size: 14px;
-    }
+    @media (max-width: 480px) {
+      .raddisales-modal {
+        width: 100%;
+        height: 100vh;
+        border-radius: 0;
+        top: 0;
+        left: 0;
+        transform: none;
+        overflow-y: auto;
+      }
   
-    .raddisales-btn-container {
+      .raddisales-container h1 {
+        font-size: 18px;
+      }
+  
+      .raddisales-form {
+        gap: 10px;
+      }
+  
+      .raddisales-btn-container {
         flex-direction: column;
-        gap: 5px;
+        gap: 8px;
+      }
+  
+      .raddisales-table th,
+      .raddisales-table td {
+        font-size: 12px;
+        padding: 5px;
+      }
     }
-  }

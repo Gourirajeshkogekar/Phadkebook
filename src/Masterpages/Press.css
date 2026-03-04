@@ -8,8 +8,7 @@
 }
 
 .presstable-container{
-    /* background-color: #3c7291; */
-        height: 400px;
+        height: 500px;
         overflow-y: auto;
         overflow-x: auto;
 }
@@ -20,8 +19,7 @@
 }
 
 .presstable1-master {
-    /* width: 100%;
-    background-color: #3c7291; */
+   
     padding: 10px;
     border-radius: 4px;
     box-shadow: 0 2px 4px #a4a6a6;
@@ -47,7 +45,7 @@
     border-radius: 4px;
     border: 1px solid rgb(223, 222, 222);
     margin: 10px 0;
-    width: 150px;
+    width: 300px;
     margin-bottom: 5px;
 }
 

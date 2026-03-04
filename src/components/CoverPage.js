@@ -53,8 +53,7 @@ function CoverPage() {
 
   const handleOkClick = async (e) => {
     e.preventDefault();
-
-    navigate("/dashboard");
+    navigate("/companylist");
   };
 
   return (

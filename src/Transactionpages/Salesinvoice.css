@@ -46,10 +46,18 @@
     height: 250px;
     overflow-y: auto;
     overflow-x: auto;
-    width: 100%;
+    /* width: 100%; */
     border-collapse: collapse;
     background-color: #ffffff;
   }
+
+    .salesinvoice-table thead th {
+      position: sticky;
+      top: 0;
+      padding: 10px;
+      background: #f4f4f4;
+      z-index: 1;
+    }
   
   .salesinvoice-table table {
     width: 100%;
@@ -60,42 +68,32 @@
   }
   
   .salesinvoice-table th, .salesinvoice-table td {
-    padding: 12px;
+    /* padding: 12px; */
     text-align: left;
     border-bottom: 1px solid #ddd;
   }
   
   .salesinvoice-table th {
     background-color: #f4f4f4;
-    font-weight: 600;
+    font-weight: 600; 
   }
   
   .salesinvoice-table input {
-    width: 100%;
-    padding: 8px;
+    /* width: 100%; */
+    /* padding: 8px; */
     box-sizing: border-box;
     border: 1px solid #ccc;
     border-radius: 4px;
   }
   
-  .salesinvoice-table tr:nth-child(even) {
-    background-color: #f9f9f9;
-  }
-  
-  .salesinvoice-table tr:hover {
-    background-color: #f1f1f1;
-  }
-  
-  .salesinvoice-table-container {
-    overflow-x: auto;
-  }
+
   
   
   
   
   .salesinvoice-form {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr 1fr  ;
+    grid-template-columns: 1fr 1fr 1fr 1fr ;
     margin: 1px;
     gap: 5px;
     margin-top: 20px;
@@ -109,6 +107,7 @@
       width: 150px;
       margin-bottom: 5px;
   }
+  
   
   .salesinvoice-label {
     font-weight: 500;
@@ -127,7 +126,7 @@
   
   .salesinvoice-modal {
     margin-top: 30px;
-    margin-left: 50px;
+    margin-left: 10px;
     background-color: white;
     overflow-y: auto;
     height: 550px;
@@ -136,6 +135,7 @@
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
     padding: 10px;
   }
+
   
   
   .salesinvoice-btn-container {

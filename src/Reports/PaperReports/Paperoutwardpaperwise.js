@@ -256,6 +256,7 @@ function Paperoutwardpaperwise() {
                 label="From Date"
                 value={fromdate}
                 onChange={(newVal) => setFromDate(newVal)}
+                format="DD-MM-YYYY"
                 slotProps={{ textField: { fullWidth: true } }}
               />
             </Grid>
@@ -264,6 +265,7 @@ function Paperoutwardpaperwise() {
                 label="To Date"
                 value={todate}
                 onChange={(newVal) => setToDate(newVal)}
+                format="DD-MM-YYYY"
                 slotProps={{ textField: { fullWidth: true } }}
               />
             </Grid>

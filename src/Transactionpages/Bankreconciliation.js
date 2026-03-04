@@ -27,6 +27,7 @@ import {
   FormControlLabel,
   RadioGroup,
   Radio,
+  Grid,
 } from "@mui/material";
 import {
   MaterialReactTable,
@@ -57,6 +58,7 @@ import {
 } from "@mui/material";
 import dayjs from "dayjs";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { useNavigate } from "react-router-dom";
 
 function BankReconciliation() {
   const [userId, setUserId] = useState("");
@@ -118,6 +120,8 @@ function BankReconciliation() {
   const [isEditing, setIsEditing] = useState(false);
   const [bankreconcils, setBankreconcils] = useState([]);
   const [bankreconcilDetails, setBankreconcilDetails] = useState([]);
+  const [displayRows, setDisplayRows] = useState([]);
+  const [isDisplayMode, setIsDisplayMode] = useState(false);
 
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm"));
@@ -170,25 +174,31 @@ function BankReconciliation() {
     console.log("this function is called");
   }, [pageIndex]); // Fetch data when page changes
 
+
+
   const initializeRows = (fetchedData) => {
-    const today = new Date().toISOString().split("T")[0];
-    const filledRows = fetchedData.map((row) => ({
-      ...row,
-      Trans_dt: row.Trans_dt || today,
-      Passing_dt: row.Passing_dt || today,
-    }));
-    setRows(filledRows);
-  };
+  const filledRows = fetchedData.map((row) => ({
+    ...row,
+    Trans_dt: row.Trans_dt || "",
+    Passing_dt: row.Passing_dt || "", // ✅ backend decides
+  }));
+  setRows(filledRows);
+};
+
 
   const fetchBankreconcils = async () => {
     try {
       const response = await axios.get(
-        `https://publication.microtechsolutions.net.in/php/get/gettblpage.php?Table=BankReconcilation&PageNo=${pageIndex}`
+        `https://publication.microtechsolutions.net.in/php/get/gettblpage.php?Table=BankReconcilation&PageNo=${pageIndex}`,
       );
       // setBankreconcils(response.data);
       console.log(response.data, "response of bank reconcil header");
+      // ✅ FILTER ONLY Active = 1
+      const activeRecords = response.data.data.filter(
+        (item) => item.Active === 1,
+      );
 
-      setBankreconcils(response.data.data);
+      setBankreconcils(activeRecords);
       initializeRows(response.data); // ✅ Set cleaned-up data into state
 
       setTotalPages(response.data.total_pages);
@@ -201,7 +211,7 @@ function BankReconciliation() {
   const fetchBankreconcildetails = async () => {
     try {
       const response = await axios.get(
-        "https://publication.microtechsolutions.net.in/php/get/gettable.php?Table=BankReconcilationDetail"
+        "https://publication.microtechsolutions.net.in/php/get/gettable.php?Table=BankReconcilationDetail",
       );
       console.log(response.data, "response of bank reconcil details");
       setBankreconcilDetails(response.data);
@@ -220,17 +230,17 @@ function BankReconciliation() {
       return;
     }
 
-    const today = dayjs();
-    const minDate = today.subtract(3, "day");
-    const maxDate = today.add(2, "day");
+    // const today = dayjs();
+    // const minDate = today.subtract(3, "day");
+    // const maxDate = today.add(2, "day");
 
-    if (newValue.isBefore(minDate) || newValue.isAfter(maxDate)) {
-      setDateError("You can select only 2 days before or after today");
-    } else {
-      setDateError("");
-    }
-
-    setStartsafedate(newValue);
+    // if (newValue.isBefore(minDate) || newValue.isAfter(maxDate)) {
+    //   setDateError("You can select only 2 days before or after today");
+    // } else {
+    //   setDateError("");
+    // }
+    setDateError("");
+    setStartsafedate(dayjs(newValue));
   };
 
   const [endsafedate, setEndsafedate] = useState(dayjs());
@@ -242,17 +252,17 @@ function BankReconciliation() {
       return;
     }
 
-    const today = dayjs();
-    const minDate = today.subtract(3, "day");
-    const maxDate = today.add(2, "day");
+    // const today = dayjs();
+    // const minDate = today.subtract(3, "day");
+    // const maxDate = today.add(2, "day");
 
-    if (newValue.isBefore(minDate) || newValue.isAfter(maxDate)) {
-      setEnddateerror("You can select only 2 days before or after today");
-    } else {
-      setEnddateerror("");
-    }
-
-    setEndsafedate(newValue);
+    // if (newValue.isBefore(minDate) || newValue.isAfter(maxDate)) {
+    //   setEnddateerror("You can select only 2 days before or after today");
+    // } else {
+    //   setEnddateerror("");
+    // }
+    setDateError("");
+    setEndsafedate(dayjs(newValue));
   };
 
   const [bankrecosafedate, setBankrecostartingdate] = useState(dayjs());
@@ -265,89 +275,206 @@ function BankReconciliation() {
       return;
     }
 
-    const today = dayjs();
-    const minDate = today.subtract(3, "day");
-    const maxDate = today.add(2, "day");
+    // const today = dayjs();
+    // const minDate = today.subtract(3, "day");
+    // const maxDate = today.add(2, "day");
 
-    if (newValue.isBefore(minDate) || newValue.isAfter(maxDate)) {
-      setBankrecoerror("You can select only 2 days before or after today");
-    } else {
-      setBankrecoerror("");
-    }
-
-    setBankrecostartingdate(newValue);
+    // if (newValue.isBefore(minDate) || newValue.isAfter(maxDate)) {
+    //   setBankrecoerror("You can select only 2 days before or after today");
+    // } else {
+    //   setBankrecoerror("");
+    // }
+    setDateError("");
+    setBankrecostartingdate(dayjs(newValue));
   };
 
   const [rowErrors, setRowErrors] = useState([]); // array of objects per row
 
-  // const handleInputChange = (index, field, value) => {
-  //   const updatedRows = [...rows];
-
-  //   // Update the value of the current field
-  //   updatedRows[index][field] = value;
-
-  //   // Ensure numeric fields are converted correctly
-  //   if (field === "Cr_Amt" || field === "Deb_Amt") {
-  //     updatedRows[index][field] = value ? parseFloat(value) || 0 : "";
-  //   }
-
-  //   // Update the state with the new row data
-  //   setRows(updatedRows);
-  // };
-
   const handleInputChange = (index, field, value) => {
     const updatedRows = [...rows];
     updatedRows[index][field] = value;
-
-    const selectedDate = dayjs(value);
-    const today = dayjs();
-    const minDate = today.subtract(3, "day");
-    const maxDate = today.add(2, "day");
 
     const updatedErrors = [...rowErrors];
     if (!updatedErrors[index]) {
       updatedErrors[index] = {};
     }
 
+    // 🔹 Clear any existing error for date fields
     if (field === "Trans_dt" || field === "Passing_dt") {
-      if (!selectedDate.isValid()) {
-        updatedErrors[index][field] = "Invalid date";
-      } else if (
-        selectedDate.isBefore(minDate) ||
-        selectedDate.isAfter(maxDate)
-      ) {
-        updatedErrors[index][field] =
-          "You can select only 2 days before or after today";
-      } else {
-        updatedErrors[index][field] = ""; // Clear error
-      }
+      updatedErrors[index][field] = "";
     }
 
     setRowErrors(updatedErrors);
     setRows(updatedRows);
   };
 
-  const handleAddRow = () => {
-    const today = new Date().toISOString().split("T")[0];
-    setRows([
-      ...rows,
-      {
-        SerialNo: "",
 
-        Trans_dt: today,
-        CheqNo: "",
-        TrCc: "",
-        AccountId: "",
-        Cr_Amt: "",
-        Deb_Amt: "",
-        Passing_dt: today,
-      },
-    ]);
+const mergeWithReconciliation = (vouchers, reconDetails) => {
+  return vouchers.map((v) => {
+    const matched = reconDetails.find(
+      (r) =>
+        r.CheqNo &&
+        v.ChequeNo &&
+        r.CheqNo === v.ChequeNo &&
+        r.AccountId === v.AccountId
+    );
+
+    return {
+      Id: matched?.Id || null,              // BankReconcilationDetail Id
+      VoucherDetailId: v.Id,
+
+      Trans_dt: v.VoucherDate?.date?.split(" ")[0] || "",
+
+      CheqNo: v.ChequeNo || "",
+      AccountId: v.AccountId,
+
+      Cr_Amt: v.DOrC === "C" ? v.Amount : "",
+      Deb_Amt: v.DOrC === "D" ? v.Amount : "",
+
+      // ⭐ THIS IS KEY
+      Passing_dt: matched?.Passing_dt?.date
+        ? matched.Passing_dt.date.split(" ")[0]
+        : ""                                // EMPTY = not reconciled
+    };
+  });
+};
+
+
+
+const fetchVouchersForDisplay = async () => {
+  const params = {
+    AccountId: BankId,
+    FromDate: dayjs(startsafedate).format("YYYY-MM-DD"),
+    ToDate: dayjs(endsafedate).format("YYYY-MM-DD"),
   };
 
-  const handleDeleteRow = (index) => {
-    const updatedRows = rows.filter((_, i) => i !== index);
-    setRows(updatedRows);
+  const res = await axios.get(
+    "https://publication.microtechsolutions.net.in/php/Voucherdetailget.php",
+    { params }
+  );
+
+  // ✅ SORT: oldest first, latest last
+  return res.data.sort((a, b) => {
+    const da = new Date(a.VoucherDate?.date);
+    const db = new Date(b.VoucherDate?.date);
+    return da - db;
+  });
+};
+
+
+const applyOptionFilter = (rows) => {
+  if (selectedOption === "Only Reconciled") {
+    return rows.filter(r => r.Passing_dt);
+  }
+
+  if (selectedOption === "Not reconciled") {
+    return rows.filter(r => !r.Passing_dt && r.CheqNo);
+  }
+
+  return rows;
+};
+
+
+
+const handleDisplay = async () => {
+  if (!BankId) return toast.error("Select Bank");
+
+  const vouchers = await fetchVouchersForDisplay();
+
+  // ✅ Only selected account
+  const accountFiltered = vouchers.filter(
+    (v) => v.AccountId === BankId
+  );
+
+  // ✅ Only cheque entries
+  const chequeOnly = accountFiltered.filter(
+    (v) => v.ChequeNo
+  );
+
+  const mergedRows = mergeWithReconciliation(
+    chequeOnly,
+    bankreconcilDetails
+  );
+
+  const finalRows = applyOptionFilter(mergedRows);
+
+  setRows(finalRows);
+  setDisplayRows(finalRows);
+  setIsDisplayMode(true);
+};
+
+
+
+const navigate = useNavigate("")
+const handleReport = () => {
+  if (!BankId) {
+    toast.error("Please select Bank");
+    return;
+  }
+
+  
+
+   
+
+  navigate("/transaction/bankreconciliation/bankrecoreport" );
+};
+
+
+  const handleAddRow = () => {
+  setRows([
+    ...rows,
+    {
+      SerialNo: "",
+      Trans_dt: "",
+      CheqNo: "",
+      TrCc: "",
+      AccountId: "",
+      Cr_Amt: "",
+      Deb_Amt: "",
+      Passing_dt: "", // ✅ EMPTY
+    },
+  ]);
+};
+
+
+  // const handleDeleteRow = (index) => {
+  //   const updatedRows = rows.filter((_, i) => i !== index);
+  //   setRows(updatedRows);
+  // };
+
+  const handleDeleteRow = async (index) => {
+    const rowToDelete = rows[index];
+
+    // If row does not have ID, remove it directly (new unsaved row)
+    if (!rowToDelete.Id) {
+      const updatedRows = rows.filter((_, i) => i !== index);
+      setRows(updatedRows);
+      return;
+    }
+
+    try {
+      const apiUrl =
+        "https://publication.microtechsolutions.co.in/php/delete/delrecord.php";
+
+      const formData = new FormData();
+      formData.append("Id", rowToDelete.Id);
+      formData.append("Table", "BankReconcilationDetail");
+
+      const response = await axios.post(apiUrl, formData);
+
+      // Convert response to string (API may return text)
+      const resText = JSON.stringify(response.data).toLowerCase();
+
+      if (resText.includes("deleted")) {
+        const updatedRows = rows.filter((_, i) => i !== index);
+        setRows(updatedRows);
+        toast.success("Row deleted successfully!");
+      } else {
+        toast.error("Failed to delete row!");
+      }
+    } catch (error) {
+      toast.error("Error deleting row!");
+    }
   };
 
   const handleDelete = () => {
@@ -407,7 +534,7 @@ function BankReconciliation() {
   const fetchAccounts = async () => {
     try {
       const response = await axios.get(
-        "https://publication.microtechsolutions.net.in/php/Accountget.php"
+        "https://publication.microtechsolutions.net.in/php/Accountget.php",
       );
 
       console.log(response.data, "accounts");
@@ -425,7 +552,7 @@ function BankReconciliation() {
   const fetchBooks = async () => {
     try {
       const response = await axios.get(
-        "https://publication.microtechsolutions.net.in/php/Bookget.php"
+        "https://publication.microtechsolutions.net.in/php/Bookget.php",
       );
       const bookOptions = response.data.map((book) => ({
         value: book.Id,
@@ -456,6 +583,7 @@ function BankReconciliation() {
     setBankrecostartingdate(dayjs());
     setBankrecoerror("");
     setRowErrors([]);
+    setRows([])
     setRows([
       {
         SerialNo: "",
@@ -493,7 +621,7 @@ function BankReconciliation() {
 
     // Filter purchase details to match the selected PurchaseId
     const bankreconcildetail = bankreconcilDetails.filter(
-      (detail) => detail.BankReconcilationId === bankreconcil.Id
+      (detail) => detail.BankReconcilationId === bankreconcil.Id,
     );
 
     // Map the details to rows
@@ -526,7 +654,7 @@ function BankReconciliation() {
     const startdate = convertDateForInput(bankreconcil.Startdate?.date);
     const enddate = convertDateForInput(bankreconcil.Enddate?.date);
     const recostartingdate = convertDateForInput(
-      bankreconcil.Bank_Reco_starting_dt?.date
+      bankreconcil.Bank_Reco_starting_dt?.date,
     );
 
     // Set the form fields
@@ -559,7 +687,7 @@ function BankReconciliation() {
     handleMenuClose();
     // Determine which specific detail to edit
     const specificDetail = bankreconcildetail.find(
-      (detail) => detail.Id === currentRow.original.Id
+      (detail) => detail.Id === currentRow.original.Id,
     );
     if (specificDetail) {
       setBankreconcildetailId(specificDetail.Id); // Set the specific detail Id
@@ -623,7 +751,7 @@ function BankReconciliation() {
 
     // ✅ Check for row-level date errors: ChequeDate, Trans_dt, Passing_dt
     const hasRowDateErrors = Object.values(rowErrors).some(
-      (row) => row?.ChequeDate || row?.Trans_dt || row?.Passing_dt
+      (row) => row?.ChequeDate || row?.Trans_dt || row?.Passing_dt,
     );
 
     if (hasRowDateErrors) {
@@ -671,7 +799,7 @@ function BankReconciliation() {
         qs.stringify(bankreconcilData),
         {
           headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        }
+        },
       );
 
       // const purchasereturnId = isEditing ? id : parseInt(response.data.newId, 10);
@@ -689,7 +817,7 @@ function BankReconciliation() {
           Cr_Amt: parseFloat(row.Cr_Amt) || 0, // Ensuring it's a float
           Deb_Amt: parseFloat(row.Deb_Amt) || 0, // Ensuring it's a float
           // Passing_dt: row.Passing_dt ? moment(row.Passing_dt).format('YYYY-MM-DD') : '',
-          Passing_dt: row.Passing_dt || new Date().toISOString().split("T")[0],
+Passing_dt: row.Passing_dt || "",
           Id: row.Id,
           CreatedBy: !isEditing ? userId : undefined,
           UpdatedBy: isEditing ? userId : undefined,
@@ -718,7 +846,7 @@ function BankReconciliation() {
       toast.success(
         isEditing
           ? "Bank Reconcilation & Bank Reconcilation Details updated successfully!"
-          : "Bank Reconcilation & Bank Reconcilation Details added successfully!"
+          : "Bank Reconcilation & Bank Reconcilation Details added successfully!",
       );
       resetForm(); // Reset the form fields after successful submission
     } catch (error) {
@@ -788,13 +916,13 @@ function BankReconciliation() {
         ),
       },
     ],
-    [bankreconcils]
+    [bankreconcils],
   );
 
   const table = useMaterialReactTable({
     columns,
     data: bankreconcils,
-    enablePagination: false,
+    // enablePagination: false,
     muiTableHeadCellProps: {
       style: {
         backgroundColor: "#E9ECEF", // Replace with your desired color
@@ -836,7 +964,7 @@ function BankReconciliation() {
           </div>
 
           {/* Pagination Controls */}
-          <div
+          {/* <div
             style={{
               display: "flex",
               alignItems: "center",
@@ -869,7 +997,7 @@ function BankReconciliation() {
               Next ▶
             </Button>{" "}
             Total Pages : {totalPages}
-          </div>
+          </div>*/}
         </div>
 
         {isDrawerOpen && <div onClick={() => setIsDrawerOpen(false)} />}
@@ -881,7 +1009,7 @@ function BankReconciliation() {
           PaperProps={{
             sx: {
               borderRadius: isSmallScreen ? "0" : "10px 0 0 10px",
-              width: isSmallScreen ? "100%" : "85%",
+              width: isSmallScreen ? "100%" : "90%",
               zIndex: 1000,
               paddingLeft: "16px", // Adjust this value as needed
             },
@@ -904,304 +1032,250 @@ function BankReconciliation() {
             <CloseIcon sx={{ cursor: "pointer" }} onClick={handleDrawerClose} />
           </Box>
           <form className="bankreconcil-form">
-            <div>
-              <label className="bankreconcil-label">Bank</label>
-              <div>
-                <Autocomplete
-                  options={banks}
-                  value={
-                    banks.find((option) => option.value === BankId) || null
-                  }
-                  onChange={(event, newValue) =>
-                    setBankId(newValue ? newValue.value : null)
-                  }
-                  sx={{ width: "400px", mt: "10px", mb: "5px" }}
-                  getOptionLabpxel={(option) => option.label} // Display only label in dropdown
-                  renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      placeholder="Select Bank"
-                      size="small"
-                      margin="none"
-                      fullWidth
-                    />
-                  )}
-                />
 
-                {/* <Select
-                   id="BankId"
-                   name="BankId"
-                   value={banks.find((option) => option.value === BankId)}
-                   onChange={(option) => setBankId(option.value)}
-                   options={banks} 
-                   styles={{
-                     control: (base) => ({
-                       ...base,
-                       width: "170px",
-                              marginTop: "10px",
-                              borderRadius: "4px",
-                              border: "1px solid rgb(223, 222, 222)",
-                               marginBottom: '5px'
-                     }),
-                     menu: (base) => ({
-                      ...base,
-                      zIndex: 100,
-                    }),
-                   }}
-                    placeholder="Select Bank id"
-                  />   */}
-              </div>
-              {/* <div>
-                          {errors.BankId && <b className="error-text">{errors.BankId}</b>}
-                        </div> */}
-            </div>
 
-            <div>
-              <label className="bankreconcil-label">Start Date</label>
-              <div>
-                <LocalizationProvider dateAdapter={AdapterDayjs}>
-                  <DatePicker
-                    value={startsafedate}
-                    onChange={handleDateChange1}
-                    format="DD-MM-YYYY"
-                    slotProps={{
-                      textField: {
-                        size: "small",
-                        fullWidth: true,
-                        error: !!dateError,
-                        helperText: dateError,
-                      },
-                    }}
-                    sx={{
-                      marginTop: "10px",
-                      marginBottom: "5px",
-                      width: "250px",
-                    }}
+       
+
+            <Box sx={{ border: "1px solid #ccc", p: 2 }}>
+            
+ <div>
+                <label className="bankreconcil-label">Bank</label>
+                <div>
+                  <Autocomplete
+                    options={banks}
+                    value={
+                      banks.find((option) => option.value === BankId) || null
+                    }
+                    onChange={(event, newValue) =>
+                      setBankId(newValue ? newValue.value : null)
+                    }
+                    sx={{ width: "400px", mt: "10px", mb: "5px" }}
+                    getOptionLabpxel={(option) => option.label} // Display only label in dropdown
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        placeholder="Select Bank"
+                        size="small"
+                        margin="none"
+                        fullWidth
+                      />
+                    )}
                   />
-                </LocalizationProvider>
+                </div>
               </div>
-              {/* <div>
+
+
+
+              <div>
+                <label className="bankreconcil-label">Start Date</label>
+                <div>
+                  <LocalizationProvider dateAdapter={AdapterDayjs}>
+                    <DatePicker
+                      value={startsafedate}
+                      onChange={handleDateChange1}
+                      format="DD-MM-YYYY"
+                      slotProps={{
+                        textField: {
+                          size: "small",
+                          fullWidth: true,
+                          error: !!dateError,
+                          helperText: dateError,
+                        },
+                      }}
+                      sx={{
+                        marginTop: "10px",
+                        marginBottom: "5px",
+                        width: "250px",
+                      }}
+                    />
+                  </LocalizationProvider>
+                </div>
+                {/* <div>
                           {errors.Startdate && <b className="error-text">{errors.Startdate}</b>}
                         </div> */}
-            </div>
-
-            <div>
-              <label className="bankreconcil-label">End Date</label>
-              <div>
-                <LocalizationProvider dateAdapter={AdapterDayjs}>
-                  <DatePicker
-                    value={endsafedate}
-                    onChange={handleDateChange2}
-                    format="DD-MM-YYYY"
-                    slotProps={{
-                      textField: {
-                        size: "small",
-                        fullWidth: true,
-                        error: !!enddateerror,
-                        helperText: enddateerror,
-                      },
-                    }}
-                    sx={{
-                      marginTop: "10px",
-                      marginBottom: "5px",
-                      width: "250px",
-                    }}
-                  />
-                </LocalizationProvider>
               </div>
-              {/* <div>
+
+              <div>
+                <label className="bankreconcil-label">End Date</label>
+                <div>
+                  <LocalizationProvider dateAdapter={AdapterDayjs}>
+                    <DatePicker
+                      value={endsafedate}
+                      onChange={handleDateChange2}
+                      format="DD-MM-YYYY"
+                      slotProps={{
+                        textField: {
+                          size: "small",
+                          fullWidth: true,
+                          error: !!enddateerror,
+                          helperText: enddateerror,
+                        },
+                      }}
+                      sx={{
+                        marginTop: "10px",
+                        marginBottom: "5px",
+                        width: "250px",
+                      }}
+                    />
+                  </LocalizationProvider>
+                </div>
+                {/* <div>
                           {errors.endDate && <b className="error-text">{errors.endDate}</b>}
                         </div> */}
-            </div>
+              </div>
+  
+           
 
-            {/* Radio Buttons Section */}
-            <div>
-              <label className="bankreconcil-label">Options</label>
-              <div>
-                <label>
-                  <input
-                    type="radio"
-                    name="options"
-                    value="All entries"
-                    checked={selectedOption === "All entries"}
-                    onChange={() => setSelectedOption("All entries")}
-                    style={{ marginBottom: "5px", marginTop: "10px" }}
-                  />
-                  All Entries
-                </label>
-              </div>
-              <div>
-                <label>
-                  <input
-                    type="radio"
-                    name="options"
-                    value="All reconciled"
-                    checked={selectedOption === "All reconciled"}
-                    onChange={() => setSelectedOption("All reconciled")}
-                    style={{ marginBottom: "5px" }}
-                  />
-                  All Reconciled
-                </label>
-              </div>
-              <div>
-                <label>
-                  <input
-                    type="radio"
-                    name="options"
-                    value="Only Reconciled"
-                    checked={selectedOption === "Only Reconciled"}
-                    onChange={() => setSelectedOption("Only Reconciled")}
-                    style={{ marginBottom: "5px" }}
-                  />
-                  Only Reconciled
-                </label>
-              </div>
-            </div>
+              <Box sx={{ display: "flex", gap: 1, mt: 2 }}>
+                <Button variant="contained" onClick={handleDisplay}>
+                  Display
+                </Button>
+                <Button
+                  variant="contained"
+                  color="success"
+                  onClick={handleReport}>
+                  Report
+                </Button>
+              </Box>
 
-            <div>
-              <label className="bankreconcil-label">
-                Op Balance as per Ledger
-              </label>
-              <div>
-                <input
+              <Box sx={{ display: "flex", gap: 1, mt: 2 }}>
+                <Typography>
+                  <Typography fontWeight="bold">
+                    Bank reco starting date
+                  </Typography>
+                  <div>
+                    <LocalizationProvider dateAdapter={AdapterDayjs}>
+                      <DatePicker
+                        value={bankrecosafedate}
+                        onChange={handleDateChange3}
+                        format="DD-MM-YYYY"
+                        slotProps={{
+                          textField: {
+                            size: "small",
+                            fullWidth: true,
+                            error: !!bankrecoerror,
+                            helperText: bankrecoerror,
+                          },
+                        }}
+                        sx={{
+                          marginTop: "10px",
+                          marginBottom: "5px",
+                          width: "250px",
+                        }}
+                      />
+                    </LocalizationProvider>
+                  </div>
+                </Typography>
+              </Box>
+            </Box>
+            <Box sx={{ border: "1px solid #ccc", p: 2 }}>
+ <Typography fontWeight="bold">Options</Typography>
+
+              <RadioGroup
+                value={selectedOption}
+                onChange={(e) => setSelectedOption(e.target.value)}>
+                <FormControlLabel
+                  value="All entries"
+                  control={<Radio />}
+                  label="All Reconciled"
+                />
+                <FormControlLabel
+                  value="Not reconciled"
+                  control={<Radio />}
+                  label="Not Reconciled"
+                />
+                <FormControlLabel
+                  value="Only Reconciled"
+                  control={<Radio />}
+                  label="Only Reconciled"
+                />
+              </RadioGroup>
+            </Box>
+
+             <Box sx={{ border: "1px solid #ccc", p: 2 }}>
+               <Box>
+                <Typography fontWeight="bold">
+                  Op Balance as per Ledger
+                </Typography>
+
+                <TextField
                   type="number"
-                  id="Op_bal_ledge"
-                  name="Op_bal_ledge"
+                  size="small"
+                  fullWidth
                   value={Op_bal_ledge}
                   onChange={(e) => setOpbalperledger(e.target.value)}
-                  className="bankreconcil-control"
-                  placeholder="Enter op bal per ledger"
                 />
-              </div>
-              {/* <div>
-                          {errors.endDate && <b className="error-text">{errors.endDate}</b>}
-                        </div> */}
-            </div>
+              </Box>
 
-            <div>
-              <label className="bankreconcil-label">
-                Op Balance per Passbook
-              </label>
-              <div>
-                <input
+              <Box>
+                <Typography fontWeight="bold">
+                  Op Balance as per Passbook
+                </Typography>
+                <TextField
                   type="number"
-                  id="Op_bal_passbook"
-                  name="Op_bal_passbook"
+                  size="small"
+                  fullWidth
                   value={Op_bal_passbook}
                   onChange={(e) => setOpbalperpassbook(e.target.value)}
-                  className="bankreconcil-control"
-                  placeholder="Enter op bal per passbook"
                 />
-              </div>
-              {/* <div>
-                          {errors.endDate && <b className="error-text">{errors.endDate}</b>}
-                        </div> */}
-            </div>
+              </Box>
 
-            <div>
-              <label className="bankreconcil-label">
-                Balance as per Ledger
-              </label>
-              <div>
-                <input
+              <Box>
+                <Typography fontWeight="bold">Balance per Ledger</Typography>
+                <TextField
                   type="number"
-                  id="Bal_ledge"
-                  name="Bal_ledge"
+                  size="small"
+                  fullWidth
                   value={Bal_ledge}
                   onChange={(e) => setBalperledger(e.target.value)}
-                  className="bankreconcil-control"
-                  placeholder="Enter bal per ledger"
                 />
-              </div>
-              {/* <div>
-                          {errors.endDate && <b className="error-text">{errors.endDate}</b>}
-                        </div> */}
-            </div>
+              </Box>
+             </Box>
 
-            <div>
-              <label className="bankreconcil-label">Add cheques issued </label>
-              <div>
-                <input
+            <Box sx={{ border: "1px solid #ccc", p: 2 }}>
+              <Box>
+                <Typography fontWeight="bold">
+                 Add Cheques Issued
+                </Typography>
+
+                <TextField
                   type="number"
-                  id="Add_cheq_issued"
-                  name="Add_cheq_issued"
+                  size="small"
+                  fullWidth
                   value={Add_cheq_issued}
                   onChange={(e) => setChqissuednotpresented(e.target.value)}
-                  className="bankreconcil-control"
-                  placeholder="Enter cheques issued"
                 />
-              </div>
-              {/* <div>
-                          {errors.endDate && <b className="error-text">{errors.endDate}</b>}
-                        </div> */}
-            </div>
-            <div>
-              <label className="bankreconcil-label">
-                Less cheques deposited{" "}
-              </label>
-              <div>
-                <input
+              </Box>
+
+              <Box>
+                <Typography fontWeight="bold">
+                 Less Cheques Deposited
+                </Typography>
+                <TextField
                   type="number"
-                  id="Less_cheq_deposited"
-                  name="Less_cheq_deposited"
+                  size="small"
+                  fullWidth
                   value={Less_cheq_deposited}
                   onChange={(e) => setLesschqdeponotrealised(e.target.value)}
-                  className="bankreconcil-control"
-                  placeholder="Enter less cheques deposited"
                 />
-              </div>
-              {/* <div>
-                          {errors.endDate && <b className="error-text">{errors.endDate}</b>}
-                        </div> */}
-            </div>
+              </Box>
 
-            <div>
-              <label className="bankreconcil-label">
-                Balance as per Pass Book
-              </label>
-              <div>
-                <input
+              <Box>
+                <Typography fontWeight="bold">Balance as per Passbook
+
+</Typography>
+                <TextField
                   type="number"
-                  id="Bal_passbook"
-                  name="Bal_passbook"
+                  size="small"
+                  fullWidth
                   value={Bal_passbook}
                   onChange={(e) => setBalaspassbook(e.target.value)}
-                  className="bankreconcil-control"
-                  placeholder="Enter bal as per passbook"
                 />
-              </div>
-              {/* <div>
-                          {errors.endDate && <b className="error-text">{errors.endDate}</b>}
-                        </div> */}
-            </div>
+              </Box>
+            </Box>
 
-            <div>
-              <label className="bankreconcil-label">
-                Bank reco starting date
-              </label>
-              <div>
-                <LocalizationProvider dateAdapter={AdapterDayjs}>
-                  <DatePicker
-                    value={bankrecosafedate}
-                    onChange={handleDateChange3}
-                    format="DD-MM-YYYY"
-                    slotProps={{
-                      textField: {
-                        size: "small",
-                        fullWidth: true,
-                        error: !!bankrecoerror,
-                        helperText: bankrecoerror,
-                      },
-                    }}
-                    sx={{
-                      marginTop: "10px",
-                      marginBottom: "5px",
-                      width: "250px",
-                    }}
-                  />
-                </LocalizationProvider>
-              </div>
-            </div>
+           
+    
           </form>
 
           <div className="bankreconcil-table">
@@ -1209,24 +1283,14 @@ function BankReconciliation() {
               <thead>
                 <tr>
                   <th>Serial No</th>
-                  <th>
-                    Trans Date<b className="required">*</b>
-                  </th>
-                  <th>
-                    Chq.No<b className="required">*</b>
-                  </th>
-                  <th>
-                    Tr.cc<b className="required">*</b>
-                  </th>
-                  <th>
-                    Account<b className="required">*</b>
-                  </th>
-                  <th>
-                    Cr. Amt<b className="required">*</b>
-                  </th>
-                  <th>
-                    Dr.Amt<b className="required">*</b>
-                  </th>
+                  <th>Trans Date</th>
+                  <th>Chq.No</th>
+                  {/* <th>
+                    Tr.cc  
+                  </th> */}
+                  <th>Account</th>
+                  <th>Cr. Amt</th>
+                  <th>Dr.Amt</th>
                   <th>Passing Date</th>
                   <th>Actions</th>
                 </tr>
@@ -1259,35 +1323,28 @@ function BankReconciliation() {
                     </td>
                   </tr>
                 ) : (
-                  rows.map((row, index) => (
+                  (isDisplayMode ? displayRows : rows).map((row, index) => (
                     <tr key={index}>
                       <td>{index + 1}</td>
 
                       <td>
-                        <div
-                          style={{ display: "flex", flexDirection: "column" }}>
-                          <input
-                            type="date"
-                            value={
-                              row.Trans_dt ||
-                              new Date().toISOString().split("T")[0]
-                            }
-                            onChange={(e) =>
-                              handleInputChange(
-                                index,
-                                "Trans_dt",
-                                e.target.value
-                              )
-                            }
-                            style={{ width: "150px" }}
-                            className="bankreconcilation-control"
-                          />
-                          {rowErrors[index]?.Trans_dt && (
-                            <span style={{ color: "red", fontSize: "12px" }}>
-                              {rowErrors[index].Trans_dt}
-                            </span>
-                          )}
-                        </div>
+                        <input
+                          type="date"
+                          value={
+                            row.Trans_dt ||
+                            new Date().toISOString().split("T")[0]
+                          }
+                          onChange={(e) =>
+                            handleInputChange(index, "Trans_dt", e.target.value)
+                          }
+                          style={{ width: "120px" }}
+                          className="bankreconcil-control"
+                        />
+                        {rowErrors[index]?.Trans_dt && (
+                          <span style={{ color: "red", fontSize: "12px" }}>
+                            {rowErrors[index].Trans_dt}
+                          </span>
+                        )}
                       </td>
 
                       <td>
@@ -1298,36 +1355,38 @@ function BankReconciliation() {
                             handleInputChange(index, "CheqNo", e.target.value)
                           }
                           placeholder="Cheque no"
-                          style={{ width: "150px" }}
+                          style={{ width: "100px" }}
+                          className="bankreconcil-control"
                         />
                       </td>
-                      <td>
+                      {/* <td>
                         <input
                           type="text"
                           value={row.TrCc}
                           onChange={(e) =>
                             handleInputChange(index, "TrCc", e.target.value)
                           }
-                          style={{ width: "150px" }}
+                          style={{ width: "100px" }}
+                          className="bankreconcil-control"
                           placeholder="Enter Tr cc"
                         />
-                      </td>
+                      </td> */}
                       <td>
                         <Autocomplete
                           options={accountOptions}
                           value={
                             accountOptions.find(
-                              (option) => option.value === row.AccountId
+                              (option) => option.value === row.AccountId,
                             ) || null
                           }
                           onChange={(event, newValue) =>
                             handleInputChange(
                               index,
                               "AccountId",
-                              newValue ? newValue.value : ""
+                              newValue ? newValue.value : "",
                             )
                           }
-                          sx={{ width: "500px" }} // Set width
+                          sx={{ width: "350px" }}
                           getOptionLabel={(option) => option.label} // Fix the typo
                           renderInput={(params) => (
                             <TextField
@@ -1367,7 +1426,8 @@ function BankReconciliation() {
                           onChange={(e) =>
                             handleInputChange(index, "Cr_Amt", e.target.value)
                           }
-                          style={{ width: "110px" }}
+                          style={{ width: "100px" }}
+                          className="bankreconcil-control"
                           placeholder="Enter Cr Amount"
                         />
                       </td>
@@ -1378,7 +1438,8 @@ function BankReconciliation() {
                           onChange={(e) =>
                             handleInputChange(index, "Deb_Amt", e.target.value)
                           }
-                          style={{ width: "110px" }}
+                          style={{ width: "100px" }}
+                          className="bankreconcil-control"
                           placeholder="Enter Dr Amount"
                         />
                       </td>
@@ -1389,22 +1450,18 @@ function BankReconciliation() {
                             display: "flex",
                             flexDirection: "column",
                           }}>
-                          <input
-                            type="date"
-                            value={
-                              row.Passing_dt ||
-                              new Date().toISOString().split("T")[0]
-                            }
-                            onChange={(e) =>
-                              handleInputChange(
-                                index,
-                                "Passing_dt",
-                                e.target.value
-                              )
-                            }
-                            style={{ width: "150px" }}
-                            className="bankreconcilation-control"
-                          />
+          <input
+  type="date"
+  value={row.Passing_dt || ""}
+  onChange={(e) =>
+    handleInputChange(index, "Passing_dt", e.target.value)
+  }
+  disabled={!row.CheqNo}   // ✅ No cheque → no reconciliation
+  className="bankreconcil-control"
+  style={{ width: "150px" }}
+/>
+
+
                           {rowErrors[index]?.Passing_dt && (
                             <span style={{ color: "red", fontSize: "12px" }}>
                               {rowErrors[index].Passing_dt}
@@ -1443,7 +1500,7 @@ function BankReconciliation() {
           </div>
 
           {/* Total Debit and Credit Inputs */}
-          <div style={{ marginTop: "10px", display: "flex", gap: "20px" }}>
+          {/* <div style={{ marginTop: "10px", display: "flex", gap: "20px" }}>
             <label className="bankreconcil-label">
               Total Credit:
               <input
@@ -1451,7 +1508,12 @@ function BankReconciliation() {
                 value={Ttl_credit}
                 className="bankreconcil-control"
                 readOnly
-                style={{ marginLeft: "10px" }}
+                style={{
+                  marginLeft: "10px",
+                  fontSize: "1.2rem",
+                  fontWeight: "bold",
+                  color: "green",
+                }}
               />
             </label>
             <label className="bankreconcil-label">
@@ -1461,10 +1523,15 @@ function BankReconciliation() {
                 value={Ttl_debit}
                 className="bankreconcil-control"
                 readOnly
-                style={{ marginLeft: "10px" }}
+                style={{
+                  marginLeft: "10px",
+                  fontSize: "1.2rem",
+                  fontWeight: "bold",
+                  color: "red",
+                }}
               />
             </label>
-          </div>
+          </div> */}
 
           <div className="bankreconcil-btn-container">
             <Button

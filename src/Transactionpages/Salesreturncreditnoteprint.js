@@ -165,7 +165,7 @@ function Salesreturncreditnoteprint() {
           fontSize: "18px",
           color: "red",
         }}>
-        🚫 No data available for this ID.
+        🚫 No data available for this Credit Note No.
         <div style={{ marginTop: "20px" }}>
           <Button
             variant="contained"

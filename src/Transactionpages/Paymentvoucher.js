@@ -1,7 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import "./Paymentvoucher.css";
 import { useNavigate } from "react-router-dom";
-import Select from "react-select";
 import axios from "axios";
 import { Button, TextField, Modal, setRef } from "@mui/material";
 import {
@@ -23,13 +22,14 @@ import {
 
 import {
   Box,
-  Typography,
+  Grid,
   Table,
   TableBody,
   TableCell,
   Checkbox,
   TableContainer,
   TableHead,
+  Typography,
   TableRow,
   Paper,
   IconButton,
@@ -41,7 +41,6 @@ import {
   RadioGroup,
   Radio,
 } from "@mui/material";
-
 import {
   Alert,
   useMediaQuery,
@@ -57,6 +56,10 @@ import { Edit, Delete, Add, MoreVert, Print } from "@mui/icons-material";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
+import PrintIcon from "@mui/icons-material/Print";
+
+import { Select as MuiSelect, Select } from "@mui/material";
+import { v4 as uuidv4 } from "uuid";
 
 function Paymentvoucher() {
   const [userId, setUserId] = useState("");
@@ -87,19 +90,35 @@ function Paymentvoucher() {
   const [selectedIndex, setSelectedIndex] = useState(null);
   const [VoucherType, setVoucherType] = useState("PY");
   const [VoucherNo, setVoucherNo] = useState(null);
-  const [VoucherDate, setVoucherDate] = useState("");
+  const [VoucherDate, setVoucherDate] = useState(dayjs());
+  const [ChequeDate, setChequeDate] = useState(dayjs());
+
   const [PaymentType, setPaymentType] = useState("");
+
+  const [editingRowId, setEditingRowId] = useState(null);
+
+  const paymentTypeMap = {
+    0: "Cash",
+    1: "Bank",
+    2: "UPI",
+  };
   const [ChequeNo, setChequeNo] = useState("");
-  const [ChequeDate, setChequeDate] = useState("");
+  const [Balance, setBalance] = useState("");
+
+  // const [ChequeDate, setChequeDate] = useState("");
   const [IsOldCheque, setIsoldcheque] = useState(false);
   const [AccountPayeeCheque, setAccountpayeecheque] = useState(false);
   const [Narration, setNarration] = useState("");
   const [DOrC, setDrOrCr] = useState("C");
   const [AccountId, setAccountId] = useState("");
+  const [bankAccountId, setBankAccountId] = useState(null); // Cash/Bank
+  const [partyAccountId, setPartyAccountId] = useState(null); // Party
+  const [bankRow, setBankRow] = useState(null);
+
   const [Amount, setAmount] = useState("");
 
-  const [TotalDebit, setTotaldebit] = useState("");
-  const [TotalCredit, setTotalcredit] = useState("");
+  // const [TotalDebit, setTotaldebit] = useState("");
+  // const [TotalCredit, setTotalcredit] = useState("");
 
   const handleafterprint = (e) => {
     e.preventDefault();
@@ -116,7 +135,10 @@ function Paymentvoucher() {
   const [paymentdetails, setPaymentdetails] = useState([]);
 
   const [accountOptions, setAccountOptions] = useState([]);
-
+  const [banks, setBanks] = useState([]);
+  const [selectedBank, setSelectedBank] = useState("");
+  const [selectedParty, setSelectedParty] = useState("");
+  const [parties, setParties] = useState([]);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [deleteIndex, setDeleteIndex] = useState(null);
   const [deleteId, setDeleteId] = useState(null);
@@ -124,9 +146,9 @@ function Paymentvoucher() {
   const [rows, setRows] = useState([
     {
       SerialNo: "",
-      AccountId: "", // Default value for the first row
+      AccountId: "",
       Amount: 0,
-      DOrC: "C",
+      DOrC: "",
       CostCenterId: 0,
       Narration: "",
       ChequeNo: 0,
@@ -152,6 +174,38 @@ function Paymentvoucher() {
     setIsDrawerOpen(false);
   };
 
+  const [editIndex, setEditIndex] = useState(null);
+  const [accountList, setAccountList] = useState([]); // Your accounts
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setRows((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleAdd = () => {
+    if (!rows.AccountId || !rows.Amount) return; // Basic validation
+
+    if (editIndex !== null) {
+      // Update existing row
+      const updatedRows = rows.map((row, idx) =>
+        idx === editIndex ? { ...rows } : row,
+      );
+      setRows(updatedRows);
+      setEditIndex(null);
+    } else {
+      // Add new row
+      setRows([...rows, { ...rows }]);
+    }
+
+    // Reset form
+    setRows({ AccountId: "", DOrC: "", Amount: "", Narration: "" });
+  };
+
+  const handleRowClick = (row, index) => {
+    setRows(row);
+    setEditIndex(index);
+  };
+
   const [currentRow, setCurrentRow] = useState(null);
 
   const handleMenuOpen = (event, row) => {
@@ -168,13 +222,43 @@ function Paymentvoucher() {
     fetchVouchers();
     fetchVoucherdetails();
     fetchAccounts();
-    fetchCostcenters();
   }, []);
+
+  useEffect(() => {
+    if (
+      isEditing &&
+      accountOptions.length > 0 &&
+      bankAccountId &&
+      partyAccountId
+    ) {
+      // forces Autocomplete re-evaluation
+      setBankAccountId((prev) => prev);
+      setPartyAccountId((prev) => prev);
+    }
+  }, [accountOptions]);
+
+  useEffect(() => {
+    let debit = 0;
+    let credit = 0;
+
+    rows.forEach((row) => {
+      const amt = Number(row.Amount) || 0;
+
+      if (row.DOrC === "D") {
+        debit += amt;
+      } else if (row.DOrC === "C") {
+        credit += amt;
+      }
+    });
+
+    setTotalDebit(debit);
+    setTotalCredit(credit);
+  }, [rows]);
 
   const fetchPayments = async () => {
     try {
       const response = await axios.get(
-        "https://publication.microtechsolutions.net.in/php/Vouchertypeget.php?VoucherType=PY"
+        "https://publication.microtechsolutions.net.in/php/Vouchertypeget.php?VoucherType=PY",
       );
       console.log(response.data, "payment vouchers");
       setPayments(response.data);
@@ -187,7 +271,7 @@ function Paymentvoucher() {
   const fetchVouchers = async () => {
     try {
       const response = await axios.get(
-        "https://publication.microtechsolutions.net.in/php/Voucherhdget.php?VoucherType=PY"
+        "https://publication.microtechsolutions.net.in/php/Voucherhdget.php?VoucherType=PY",
       );
       setPayments(response.data);
     } catch (error) {
@@ -199,7 +283,7 @@ function Paymentvoucher() {
   const fetchVoucherdetails = async () => {
     try {
       const response = await axios.get(
-        "https://publication.microtechsolutions.net.in/php/Voucherdetailget.php"
+        "https://publication.microtechsolutions.net.in/php/Voucherdetailget.php",
       );
       setPaymentdetails(response.data);
     } catch (error) {
@@ -211,7 +295,7 @@ function Paymentvoucher() {
   const fetchAccounts = async () => {
     try {
       const response = await axios.get(
-        "https://publication.microtechsolutions.net.in/php/Accountget.php"
+        "https://publication.microtechsolutions.net.in/php/Accountget.php",
       );
       const accountOptions = response.data.map((acc) => ({
         value: acc.Id,
@@ -219,74 +303,32 @@ function Paymentvoucher() {
       }));
       setAccountOptions(accountOptions);
     } catch (error) {
-      // toast.error("Error fetching Accounts:", error);
-      console.error("Error fetching Accounts:", error);
+      toast.error("Error fetching Accounts:", error);
     }
   };
 
-  const fetchCostcenters = async () => {
-    try {
-      const response = await axios.get(
-        "https://publication.microtechsolutions.net.in/php/Costcenterget.php"
-      );
-      const costcenterOptions = response.data.map((cos) => ({
-        value: cos.Id,
-        label: cos.CostCenterName,
-      }));
-      setCostcenteroptions(costcenterOptions);
-    } catch (error) {
-      // toast.error("Error fetching cost centers:", error);
-      console.error("Error fetching cost centers:", error);
+const [partyDetails, setPartyDetails] = useState(null);
+ const fetchPartyDetails = async (accountId) => {
+  try {
+    const response = await axios.get(
+      `https://publication.microtechsolutions.net.in/php/Addressget.php?AccountId=${accountId}`
+    );
+
+    console.log("Party Details:", response.data);
+
+    if (
+      response.data?.status === "success" &&
+      response.data?.data?.length > 0
+    ) {
+      setPartyDetails(response.data.data[0]); // ✅ correct path
+    } else {
+      setPartyDetails(null);
     }
-  };
-
-  // const handleInputChange = (index, field, value) => {
-  //   const updatedRows = [...rows];
-  //   updatedRows[index] = { ...updatedRows[index], [field]: value };
-
-  //   // Recalculate total debit and credit
-  //   let totalCredit = 0;
-  //   let totalDebit = 0;
-
-  //   updatedRows.forEach(row => {
-  //     if (row.DOrC === "C") {
-  //       totalCredit += parseFloat(row.Amount) || 0;
-  //     } else if (row.DOrC === "D") {
-  //       totalDebit += parseFloat(row.Amount) || 0;
-  //     }
-  //   });
-
-  //   setRows(updatedRows);
-  //   setTotalcredit(totalCredit);
-  //   setTotaldebit(totalDebit);
-  // };
-
-  // const handleInputChange = (index, field, value) => {
-  //   const updatedRows = [...rows];
-  //   updatedRows[index] = { ...updatedRows[index], [field]: value };
-
-  //   let totalCredit = 0;
-  //   let totalDebit = 0;
-
-  //   console.log("Updated Rows:", updatedRows); // Debugging
-
-  //   updatedRows.forEach((row) => {
-  //     console.log(`Row: ${JSON.stringify(row)}`); // Debug each row
-
-  //     let amount = parseFloat(row.Amount) || 0;
-  //     if (row.DOrC === "C") {
-  //       totalCredit += amount;
-  //     } else if (row.DOrC === "D") {
-  //       totalDebit += amount;
-  //     }
-  //   });
-
-  //   console.log("Total Credit:", totalCredit, "Total Debit:", totalDebit);
-
-  //   setRows(updatedRows);
-  //   setTotalcredit(Amount);
-  //   setTotaldebit(totalDebit);
-  // };
+  } catch (error) {
+    console.error("Error fetching party details:", error);
+    setPartyDetails(null);
+  }
+};
 
   const handleInputChange = (index, field, value) => {
     const updatedRows = [...rows];
@@ -340,8 +382,8 @@ function Paymentvoucher() {
     setRows(updatedRows);
     setRowErrors(updatedErrors);
 
-    setTotalcredit(totalCredit); // ✅ First row's amount is now Total Credit
-    setTotaldebit(totalDebit);
+    // setTotalcredit(totalCredit); // ✅ First row's amount is now Total Credit
+    // setTotaldebit(totalDebit);
   };
 
   const handleAddRow = () => {
@@ -372,27 +414,33 @@ function Paymentvoucher() {
   };
 
   const resetForm = () => {
-    // setVoucherDate("");
     setVouchersafedate(dayjs());
     setDateError("");
     setVoucherNo("");
     setChequeNo("");
-    // setChequeDate("");
     setchequesafeDate(dayjs());
     setChequedateerror("");
     setNarration("");
-    setTotalcredit("");
-    setTotaldebit("");
     setAmount("");
     setIsoldcheque("");
     setAccountpayeecheque("");
     setAccountId("");
+    setRowAmount("");
+    setRowNarration("");
+    setBankAccountId("");
+    setPartyAccountId("");
+
     setRows([
       {
         SerialNo: "",
         AccountId: "", // Default value for the first row
         Amount: 0,
         DOrC: "",
+        bankAccountId: "",
+        partyAccountId: "",
+        rowAmount: 0,
+        rowNarration: "",
+        rowDC: "",
         CostCenterId: 0,
         Narration: "",
         ChequeNo: 0,
@@ -405,6 +453,8 @@ function Paymentvoucher() {
         AccountPayeeCheque: false,
       },
     ]);
+
+    setRows([]);
   };
 
   const handleNewClick = () => {
@@ -419,6 +469,18 @@ function Paymentvoucher() {
 
   const [idwiseData, setIdwiseData] = useState("");
 
+  const handleEditRow = (row) => {
+    // ❌ never edit BANK row
+    if (row.type === "BANK") return;
+
+    setEditingRowId(row?.id);
+
+    setPartyAccountId(row?.AccountId);
+    setRowAmount(row?.Amount);
+    setRowDC(row?.DOrC);
+    setRowNarration(row?.Narration);
+  };
+
   const handleEdit = () => {
     if (currentRow) {
       console.log("Editing item with ID:", currentRow.original.Id);
@@ -431,8 +493,10 @@ function Paymentvoucher() {
     console.log(paymentheader, "payment voucher header");
     // Filter purchase details to match the selected PurchaseId
     const paymentdetail = paymentdetails.filter(
-      (detail) => detail.VoucherId === paymentheader.Id
+      (detail) => detail.VoucherId === paymentheader.Id,
     );
+
+    console.log(paymentdetail, "paymentdetail");
 
     // Helper function to safely parse date strings
     const convertDateForInput = (dateStr) => {
@@ -456,7 +520,6 @@ function Paymentvoucher() {
       console.warn("Invalid VoucherDate:", paymentheader.VoucherDate);
     }
 
-    // --- Safely parse and set ChequeDate ---
     const chequeDate = convertDateForInput(paymentheader.ChequeDate?.date);
     if (chequeDate && dayjs(chequeDate).isValid()) {
       setchequesafeDate(dayjs(chequeDate));
@@ -465,79 +528,76 @@ function Paymentvoucher() {
       console.warn("Invalid ChequeDate:", paymentheader.ChequeDate);
     }
 
-    // // Convert date strings to DD-MM-YYYY format
-    // const convertDateForInput = (dateStr) => {
-    //   if (typeof dateStr === "string" && dateStr.includes("-")) {
-    //     const [year, month, day] = dateStr.split(" ")[0].split("-");
-    //     return `${year}-${month}-${day}`;
-    //   } else {
-    //     console.error("Invalid date format:", dateStr);
-    //     return ""; // Return an empty string or handle it as needed
-    //   }
-    // };
+    const mappedRows = paymentdetail.map((detail) => {
+      const acc = accountOptions.find((a) => a.value === detail.AccountId);
 
-    // Map the details to rows
-    const mappedRows = paymentdetail.map((detail) => ({
-      VoucherId: detail.VoucherId,
-      // SRN:detail.SRN ,
-      AccountId: detail.AccountId,
-      Amount: detail.Amount,
-      DOrC: detail.DOrC,
-      IsOldCheque: detail.IsOldCheque,
-      AccountPayeeCheque: detail.AccountPayeeCheque,
-      Narration: detail.Narration,
-      CostCenterId: detail.CostCenterId,
-      ChequeNo: detail.ChequeNo,
-      ChequeAmount: detail.ChequeAmount,
-      ChequeDate: detail.ChequeDate
-        ? convertDateForInput(detail.ChequeDate.date)
-        : "", // Ensure valid date
-      MICRCode: detail.MICRCode,
-      BankName: detail.BankName,
-      BankBranch: detail.BankBranch,
-      Id: detail.Id,
-    }));
+      return {
+        id: uuidv4(), // ✅ frontend-only id
+        dbId: detail.Id, // ✅ backend id (important for update)
 
-    // const voucherdate = convertDateForInput(paymentheader.VoucherDate?.date);
+        VoucherId: detail.VoucherId,
+        AccountId: detail.AccountId,
+        AccountName: acc ? acc.label : "",
+        Amount: detail.Amount,
+        DOrC: detail.DOrC,
+        Narration: detail.Narration,
+        type: detail.DOrC === "C" ? "BANK" : "PARTY",
 
-    // const chequeDate = convertDateForInput(paymentheader.ChequeDate?.date);
+        IsOldCheque: detail.IsOldCheque === 1,
+        AccountPayeeCheque: detail.AccountPayeeCheque === 1,
 
-    // Set the form fields
+        CostCenterId: detail.CostCenterId,
+        ChequeNo: detail.ChequeNo,
+        ChequeAmount: detail.ChequeAmount,
+        ChequeDate: detail.ChequeDate
+          ? convertDateForInput(detail.ChequeDate.date)
+          : "",
+        MICRCode: detail.MICRCode,
+        BankName: detail.BankName,
+        BankBranch: detail.BankBranch,
+      };
+    });
+
+    const bankRow = mappedRows.find((r) => r.DOrC === "C");
+    const partyRow = mappedRows.find((r) => r.DOrC === "D");
+    // Prefer bank row, fallback to party row
+    const chequeRow = bankRow || partyRow;
+
+    if (chequeRow) {
+      setAccountpayeecheque(chequeRow.AccountPayeeCheque === true);
+    }
+    if (bankRow) {
+      setBankAccountId(bankRow.AccountId);
+      setRowNarration(partyRow.Narration);
+    }
+
+    if (partyRow) {
+      setPartyAccountId(partyRow.AccountId);
+      setRowAmount(partyRow.Amount);
+      setRowNarration(partyRow?.Narration);
+    }
+
     setVoucherNo(paymentheader.VoucherNo);
     setVouchersafedate(dayjs(voucherdate));
     setchequesafeDate(dayjs(chequeDate));
-
-    // setVoucherDate(voucherdate);
-    setAccountId(paymentheader.AccountId);
     setChequeNo(paymentheader.ChequeNo);
-    // setChequeDate(chequeDate);
-    setAccountId(paymentdetail[0]?.AccountId);
-    setNarration(paymentdetail[0]?.Narration);
-    setTotalcredit(paymentdetail[0]?.Amount);
-    setTotaldebit(paymentdetail[1]?.Amount);
-    setPaymentType(paymentheader.PaymentType);
-    setAmount(paymentdetail[0]?.Amount);
-    setAccountpayeecheque(paymentdetail[0]?.AccountPayeeCheque);
-    setIsoldcheque(paymentdetail[0]?.IsOldCheque);
-
+    setPaymentType(Number(paymentheader.PaymentType));
     console.log(paymentheader, "payment header");
     console.log(paymentdetail, "payment detail");
     console.log(mappedRows, "mapped rows");
-    // Set the rows for the table with all the details
-    setRows(mappedRows);
 
-    // Set editing state
+    setRows([]); // clear old rows
+    setRows(mappedRows); // load DB rows
     setEditingIndex(currentRow.index);
     setIsDrawerOpen(true);
     setIsEditing(true);
     setId(paymentheader.Id);
     handleMenuClose();
-    // Determine which specific detail to edit
     const specificDetail = paymentdetail.find(
-      (detail) => detail.Id === currentRow.original.Id
+      (detail) => detail.Id === currentRow.original.Id,
     );
     if (specificDetail) {
-      setPaymentdetailId(specificDetail.Id); // Set the specific detail Id
+      setPaymentdetailId(specificDetail.Id);
     }
 
     fetchVoucherdetails().then(() => {
@@ -643,45 +703,69 @@ function Paymentvoucher() {
     setchequesafeDate(newValue);
   };
 
-  const [rowErrors, setRowErrors] = useState([]); // array of objects per row
-
-  // const validateForm = () => {
-  //   let formErrors = {};
-  //   let isValid = true;
-
-  //   setErrors(formErrors);
-  //   return isValid;
-  // };
+  const [rowErrors, setRowErrors] = useState([]);
+  const isCashOrBankAccount = (accountId) => {
+    return Number(accountId) === Number(bankAccountId);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (
-      !vouchersafedate ||
-      !dayjs(vouchersafedate).isValid() ||
-      dateError ||
-      !chequesafeDate ||
-      !dayjs(chequesafeDate).isValid() ||
-      chequedateerror
-    ) {
-      toast.error("Please correct all the date fields before submitting.");
+    let TotalDebit = 0;
+    let TotalCredit = 0;
+
+    rows.forEach((row) => {
+      const amount = parseFloat(row.Amount || 0);
+      const dc = row.DOrC;
+
+      if (dc === "D") {
+        TotalDebit += amount;
+      } else if (dc === "C") {
+        TotalCredit += amount;
+      }
+    });
+
+    if (TotalDebit !== TotalCredit) {
+      toast.error(
+        `Debit (${TotalDebit}) and Credit (${TotalCredit}) amounts must be equal!`,
+      );
       return;
     }
 
-    const formattedVoucherDate = dayjs(vouchersafedate).format("YYYY-MM-DD");
-    const formattedChequeDate = dayjs(chequesafeDate).format("YYYY-MM-DD");
+    const cashBankRows = rows.filter((r) => isCashOrBankAccount(r.AccountId));
+
+    const totalCashBank = cashBankRows.reduce(
+      (sum, r) => sum + (r.DOrC === "C" ? r.Amount : -r.Amount),
+      0,
+    );
+
+    if (totalCashBank <= 0) {
+      toast.error("Payment Voucher must reduce Cash/Bank balance");
+      return;
+    }
+
+    const bankCredits = rows.filter(
+      (r) => isCashOrBankAccount(r.AccountId) && r.DOrC === "C",
+    );
+
+    if (bankCredits.length !== 1) {
+      toast.error("Exactly one Cash/Bank Credit entry is required");
+      return;
+    }
+
+    const formattedVoucherDate = dayjs(VoucherDate).format("YYYY-MM-DD");
+    const formattedChequeDate = dayjs(ChequeDate).format("YYYY-MM-DD");
 
     const voucherData = {
-      Id: isEditing ? id : "", // Include the Id for updating, null for new records
+      Id: isEditing ? id : "",
       VoucherType: "PY",
-      VoucherNo: VoucherNo ? VoucherNo : null, // Ensures it takes `null` if `VoucherNo` is not provided
+      VoucherNo: VoucherNo ? VoucherNo : null,
       VoucherDate: formattedVoucherDate,
       ChequeNo: ChequeNo,
       ChequeDate: formattedChequeDate,
       RefNo: "RefNo",
       Narration: Narration,
       PaymentType: PaymentType,
-
       CreatedBy: !isEditing ? userId : undefined,
       UpdatedBy: isEditing ? userId : undefined,
     };
@@ -691,8 +775,6 @@ function Paymentvoucher() {
         ? "https://publication.microtechsolutions.net.in/php/Voucherhdupdate.php"
         : "https://publication.microtechsolutions.net.in/php/Voucherhdpost.php";
 
-      // Submit purchase header data
-      // const response = await axios.post(voucherUrl, qs.stringify(voucherData), {
       const response = await axios.post(voucherUrl, voucherData, {
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
       });
@@ -708,31 +790,39 @@ function Paymentvoucher() {
         const rowData = {
           VoucherId: voucherId,
           VoucherType: "PY",
-          SRN: rows.indexOf(row) + 1,
+          SRN: index + 1,
           VoucherNo: VoucherNo ? voucherNo : null,
           VoucherDate: formattedVoucherDate,
           AccountId: parseInt(row.AccountId, 10),
           Amount: parseFloat(row.Amount),
-          DOrC: index === 0 ? "C" : row.DOrC, // Set to 'D' for the first row
+          DOrC: row.DOrC,
           Narration: row.Narration,
           CostCenterId: row.CostCenterId,
-          ChequeNo: row.ChequeNo,
+  ChequeNo: ChequeNo,          // ✅ USE HEADER VALUE
           ChequeDate: row.ChequeDate
             ? dayjs(row.ChequeDate).format("YYYY-MM-DD")
-            : formattedVoucherDate, // ✅ Fix
+            : formattedVoucherDate,
           ChequeAmount: row.ChequeAmount,
           MICRCode: row.MICRCode,
           BankName: row.BankName,
           BankBranch: row.BankBranch,
           IsOldCheque: IsOldCheque,
-          AccountPayeeCheque: AccountPayeeCheque,
-          Id: row.Id,
-          CreatedBy: row.Id ? undefined : userId,
-          UpdatedBy: row.Id ? userId : undefined,
+          AccountPayeeCheque: AccountPayeeCheque ? 1 : 0,
+          // Id: row.Id,
+          // CreatedBy: row.Id ? undefined : userId,
+          // UpdatedBy: row.Id ? userId : undefined,
+          Id: row.dbId, // ✅ backend id
+          CreatedBy: row.dbId ? undefined : userId,
+          UpdatedBy: row.dbId ? userId : undefined,
         };
 
+        // const voucherdetailurl =
+        //   isEditing && row.Id
+        //     ? "https://publication.microtechsolutions.net.in/php/Voucherdetailupdate.php"
+        //     : "https://publication.microtechsolutions.net.in/php/Voucherdetailpost.php";
+
         const voucherdetailurl =
-          isEditing && row.Id
+          isEditing && row.dbId
             ? "https://publication.microtechsolutions.net.in/php/Voucherdetailupdate.php"
             : "https://publication.microtechsolutions.net.in/php/Voucherdetailpost.php";
 
@@ -743,11 +833,14 @@ function Paymentvoucher() {
         });
       }
 
+      // rest of your success logic...
+
+      // ✅ Step 7: Update frontend
       if (isEditing) {
         setPayments((prev) =>
           prev.map((voucher) =>
-            voucher.Id === id ? { ...voucher, ...voucherData } : voucher
-          )
+            voucher.Id === id ? { ...voucher, ...voucherData } : voucher,
+          ),
         );
       } else {
         setPayments((prev) => [...prev, { ...voucherData, Id: voucherId }]);
@@ -759,13 +852,13 @@ function Paymentvoucher() {
       setIsDrawerOpen(false);
       toast.success(
         isEditing
-          ? "Payment Voucher & Payment Voucher Details updated successfully!"
-          : "Payment Voucher & Payment Voucher Details added successfully!"
+          ? "Payment Voucher & Details updated successfully!"
+          : "Payment Voucher & Details added successfully!",
       );
-      resetForm(); // Reset the form fields after successful submission
+      resetForm();
     } catch (error) {
-      // toast.error('Error saving record!');
-      console.error("Error saving record!");
+      console.error("Error saving record!", error);
+      toast.error("Error saving record!");
     }
   };
 
@@ -773,7 +866,7 @@ function Paymentvoucher() {
 
   const handlePrint = () => {
     navigate(
-      `/transaction/paymentvoucher/paymentvoucherprint/${currentRow.original.Id}`
+      `/transaction/paymentvoucher/paymentvoucherprint/${currentRow.original.Id}`,
     );
   };
 
@@ -782,7 +875,141 @@ function Paymentvoucher() {
     { value: "C", label: "C" },
   ];
 
-  const [costcenterOptions, setCostcenteroptions] = useState([]);
+  const [rowAmount, setRowAmount] = useState("");
+  const [rowDC, setRowDC] = useState("D");
+  const [rowNarration, setRowNarration] = useState("");
+
+  // Totals
+  const [TotalDebit, setTotalDebit] = useState(0);
+  const [TotalCredit, setTotalCredit] = useState(0);
+
+  const addRow = () => {
+    if (!partyAccountId || !rowAmount || !bankAccountId) return;
+
+    const partyAcc = accountOptions.find((a) => a.value === partyAccountId);
+
+    setRows((prev) => {
+      let partyRows = prev.filter((r) => r.type === "PARTY");
+
+      // EDIT MODE
+      if (editingRowId) {
+        partyRows = partyRows.map((r) =>
+          r.id === editingRowId
+            ? {
+                ...r,
+                AccountId: partyAccountId,
+                AccountName: partyAcc.label,
+                Amount: Number(rowAmount),
+                DOrC: "D",
+                Narration: rowNarration,
+              }
+            : r,
+        );
+      }
+      // ADD MODE
+      else {
+        partyRows.push({
+          id: uuidv4(),
+          AccountId: partyAccountId,
+          AccountName: partyAcc.label,
+          Amount: Number(rowAmount),
+          DOrC: "D",
+          Narration: rowNarration,
+          type: "PARTY",
+        });
+      }
+
+      // 🔥 Recalculate BANK row
+      const totalPartyAmount = partyRows.reduce(
+        (sum, r) => sum + Number(r.Amount),
+        0,
+      );
+
+      const bankAcc = accountOptions.find((a) => a.value === bankAccountId);
+
+      const bankRow = {
+        id: "BANK",
+        AccountId: bankAccountId,
+        AccountName: bankAcc.label,
+        Amount: totalPartyAmount,
+        DOrC: "C",
+        Narration: "Payment",
+        type: "BANK",
+      };
+
+      return [...partyRows, bankRow];
+    });
+
+    // reset form
+    setEditingRowId(null);
+    setPartyAccountId(null);
+    setRowAmount("");
+    setRowNarration("");
+  };
+
+  const deleteRow = async (rowId) => {
+    setRows((prev) => {
+      const row = prev.find((r) => r.id === rowId);
+
+      // ❌ Bank row protection
+      if (row?.type === "BANK") {
+        toast.warning("Bank row cannot be deleted");
+        return prev;
+      }
+
+      const partyRows = prev.filter(
+        (r) => r.type === "PARTY" && r.id !== rowId,
+      );
+
+      // ❌ At least one party required
+      if (partyRows.length < 1) {
+        toast.warning("At least one party entry is required");
+        return prev;
+      }
+
+      // 🔥 Recalculate BANK row
+      const total = partyRows.reduce((s, r) => s + Number(r.Amount), 0);
+      const bankRow = prev.find((r) => r.type === "BANK");
+
+      return [
+        ...partyRows,
+        {
+          ...bankRow,
+          Amount: total,
+        },
+      ];
+    });
+
+    // ✅ BACKEND DELETE (EDIT MODE ONLY)
+    if (isEditing) {
+      const row = rows.find((r) => r.id === rowId);
+
+      if (row?.dbId) {
+        try {
+          await axios.post(
+            "https://publication.microtechsolutions.net.in/php/Voucherdetaildelete.php",
+            qs.stringify({ Id: row.dbId }),
+            {
+              headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+              },
+            },
+          );
+        } catch (err) {
+          toast.error("Failed to delete row from server");
+          console.error(err);
+        }
+      }
+    }
+
+    // 🧹 Reset edit form if needed
+    if (editingRowId === rowId) {
+      setEditingRowId(null);
+      setPartyAccountId(null);
+      setRowAmount("");
+      setRowNarration("");
+    }
+  };
 
   const columns = useMemo(
     () => [
@@ -793,11 +1020,11 @@ function Paymentvoucher() {
         Cell: ({ row }) => row.index + 1,
       },
 
-      {
-        accessorKey: "VoucherType",
-        header: "Voucher Type",
-        size: 50,
-      },
+      // {
+      //   accessorKey: "AccountName",
+      //   header: "Account Name",
+      //   size: 50,
+      // },
 
       {
         accessorKey: "VoucherNo",
@@ -830,7 +1057,7 @@ function Paymentvoucher() {
         ),
       },
     ],
-    [payments]
+    [payments],
   );
 
   const table = useMaterialReactTable({
@@ -886,7 +1113,7 @@ function Paymentvoucher() {
           PaperProps={{
             sx: {
               borderRadius: isSmallScreen ? "0" : "10px 0 0 10px",
-              width: isSmallScreen ? "100%" : "80%",
+              width: isSmallScreen ? "100%" : "85%",
               zIndex: 1000,
             },
           }}>
@@ -905,702 +1132,444 @@ function Paymentvoucher() {
             <CloseIcon sx={{ cursor: "pointer" }} onClick={handleDrawerClose} />
           </Box>
 
-          <Box
-            sx={{
-              display: "flex",
-              flexDirection: "column",
-              gap: 1,
-              m: 1,
-              mt: 2,
-            }}>
-            <Box sx={{ display: "flex", gap: 1 }}>
-              {/* left side of drawer */}
-              <Box
-                sx={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 1,
-                  padding: 2,
-                  // border: "1px solid red",
-                }}>
-                {/* Entry No & Voucher Date Row */}
-                <Box sx={{ display: "flex", gap: 1 }}>
-                  <Box flex={1}>
-                    <Typography variant="body2" fontWeight="bold">
-                      Entry No
-                    </Typography>
-                    <TextField
-                      value={VoucherNo}
-                      onChange={(e) => setVoucherNo(e.target.value)}
-                      size="small"
-                      margin="none"
-                      style={{ background: "#f5f5f5" }}
-                      placeholder="Auto-Incremented"
-                      InputProps={{ readOnly: true }}
-                      fullWidth
-                    />
-                  </Box>
+          <Paper sx={{ p: 1, mb: 1 }} elevation={2}>
+            <Grid container spacing={1} alignItems="center">
+              <Grid item xs={2}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                  Entry No
+                </Typography>{" "}
+                <TextField
+                  size="small"
+                  value={VoucherNo}
+                  onChange={(e) => setVoucherNo(e.target.value)}
+                />
+              </Grid>
 
-                  <Box flex={1}>
-                    <Typography variant="body2" fontWeight="bold">
-                      Voucher Date
-                    </Typography>
-                    <LocalizationProvider dateAdapter={AdapterDayjs}>
-                      <DatePicker
-                        value={vouchersafedate || null}
-                        // onChange={(newValue) => setVouchersafedate(newValue)}
-                        onChange={handleDateChange1}
-                        format="DD-MM-YYYY"
-                        slotProps={{
-                          textField: {
-                            size: "small",
-                            fullWidth: true,
-                            error: !!dateError,
-                            helperText: dateError,
-                          },
-                        }}
-                      />
-                    </LocalizationProvider>
-                  </Box>
-                </Box>
-
-                {/* Payment Type Below Voucher Date */}
-                <Box sx={{ padding: 1 }}>
-                  <Typography variant="body2" fontWeight="bold">
-                    Payment Type
-                  </Typography>
-                  <RadioGroup
-                    row
-                    value={PaymentType}
-                    onChange={(e) => setPaymentType(e.target.value)}>
-                    <FormControlLabel
-                      value={0}
-                      control={<Radio />}
-                      label="Cash"
-                    />
-                    <FormControlLabel
-                      value={1}
-                      control={<Radio />}
-                      label="Bank"
-                    />
-                    <FormControlLabel
-                      value={2}
-                      control={<Radio />}
-                      label="NEFT"
-                    />
-                  </RadioGroup>
-                </Box>
-              </Box>
-
-              {/* Right side of drawer */}
-              <Box
-                sx={{
-                  display: "flex",
-                  flexDirection: "column", // Stack items vertically
-                  gap: 1,
-                  // border: "1px solid green",
-                  padding: 2, // Add some padding for better spacing
-                }}>
-                {/* Account ID (First Row) */}
-                <Box>
-                  <Typography fontWeight="bold" variant="body2">
-                    Cash/Bank Account
-                  </Typography>
-                  <Autocomplete
-                    options={accountOptions}
-                    value={
-                      accountOptions.find(
-                        (option) => option.value === AccountId
-                      ) || null
-                    }
-                    onChange={(event, newValue) => {
-                      setAccountId(newValue ? newValue.value : null);
-                      if (rows.length > 0) {
-                        handleInputChange(
-                          0,
-                          "AccountId",
-                          newValue ? newValue.value : null
-                        ); // Update first row
-                      }
+              <Grid item xs={3}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                  Date
+                </Typography>
+                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                  <DatePicker
+                    value={VoucherDate}
+                    onChange={(newValue) => setVoucherDate(newValue)}
+                    format="DD-MM-YYYY"
+                    slotProps={{
+                      textField: { size: "small", fullWidth: true },
                     }}
-                    getOptionLabel={(option) => option.label} // Display only label in dropdown
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        placeholder="Select Cash/Bank Name"
-                        size="small"
-                        margin="none"
-                        fullWidth
-                      />
-                    )}
                   />
-                </Box>
+                </LocalizationProvider>
+              </Grid>
 
-                {/* Cheque No & Cheque Date (Second Row) */}
-                <Box sx={{ display: "flex", gap: 1 }}>
-                  <Box flex={1}>
-                    <Typography variant="body2" fontWeight="bold">
-                      Cheque No
-                    </Typography>
+              <Grid item xs={5}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                  Cash/Bank A/c
+                </Typography>
+                <Autocomplete
+                  options={accountOptions}
+                  value={
+                    accountOptions.find((o) => o.value === bankAccountId) ||
+                    null
+                  }
+                  onChange={(e, newValue) => {
+                    setBankAccountId(newValue ? newValue.value : null);
+                  }}
+                  renderInput={(params) => (
                     <TextField
-                      value={ChequeNo}
-                      onChange={(e) => setChequeNo(e.target.value)}
+                      {...params}
                       size="small"
-                      margin="none"
-                      placeholder="Cheque No"
-                      fullWidth
+                      placeholder="Select Cash/Bank"
                     />
-                  </Box>
+                  )}
+                />
+              </Grid>
 
-                  <Box flex={1}>
-                    <Typography variant="body2" fontWeight="bold">
-                      Cheque Date
-                    </Typography>
-                    <LocalizationProvider dateAdapter={AdapterDayjs}>
-                      <DatePicker
-                        value={chequesafeDate}
-                        onChange={handleDateChange2}
-                        format="DD-MM-YYYY"
-                        slotProps={{
-                          textField: {
-                            size: "small",
-                            fullWidth: true,
-                            error: !!chequedateerror,
-                            helperText: chequedateerror,
-                          },
-                        }}
-                      />
-                    </LocalizationProvider>
-                  </Box>
-                </Box>
+              <Grid item xs={3}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                  Cheque No
+                </Typography>
+                <TextField
+                  size="small"
+                  value={ChequeNo}
+                  onChange={(e) => setChequeNo(e.target.value)}
+                  fullWidth
+                />
+              </Grid>
 
-                {/* Checkboxes (Third Row) */}
-                <Box>
-                  <Typography variant="body2" fontWeight="bold">
-                    Cash/ Bank Particulars
-                  </Typography>
-                  <Box sx={{ display: "flex", gap: 1 }}>
-                    {/* <FormControlLabel
-                      control={
-                        <Checkbox
-                          checked={IsOldCheque}
-                          onChange={(e) => setIsoldcheque(e.target.checked)}
-                        />
-                      }
-                      label="Is Old Cheque?"
-                    /> */}
-                    <FormControlLabel
-                      control={
-                        <Checkbox
-                          checked={AccountPayeeCheque}
-                          onChange={(e) =>
-                            setAccountpayeecheque(e.target.checked)
+              <Grid item xs={2}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                  Cheque Date
+                </Typography>
+                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                  <DatePicker
+                    value={ChequeDate}
+                    onChange={(newValue) => setChequeDate(newValue)}
+                    format="DD-MM-YYYY"
+                    slotProps={{
+                      textField: { size: "small", fullWidth: true },
+                    }}
+                  />
+                </LocalizationProvider>
+              </Grid>
+
+              <Grid item xs={3}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                  Balance
+                </Typography>
+                <TextField
+                  size="small"
+                  value={Balance}
+                  onChange={(e) => setBalance(e.target.value)}
+                  fullWidth
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <Box
+                  sx={{
+                    mt: 0,
+                    p: 1,
+                    bgcolor: "#E8F5FF",
+                    borderRadius: 1,
+                  }}>
+                  <Grid container alignItems="center" spacing={2} wrap="wrap">
+                    {/* Payment Mode Label */}
+                    <Grid item>
+                      <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                        Payment Mode
+                      </Typography>
+                    </Grid>
+
+                    {/* Radio Buttons */} 
+                    <Grid item>
+                      <RadioGroup
+                        row
+                        value={PaymentType}
+                        onChange={(e) =>
+                          setPaymentType(Number(e.target.value))
+                        }>
+                        <FormControlLabel
+                          value={0}
+                          control={<Radio />}
+                          label={
+                            <Typography fontWeight="bold">Cash</Typography>
                           }
                         />
-                      }
-                      label="Account Payee Cheque?"
-                    />
-                  </Box>
+                        <FormControlLabel
+                          value={1}
+                          control={<Radio />}
+                          label={
+                            <Typography fontWeight="bold">Bank</Typography>
+                          }
+                        />
+                        <FormControlLabel
+                          value={2}
+                          control={<Radio />}
+                          label={<Typography fontWeight="bold">UPI</Typography>}
+                        />
+                      </RadioGroup>
+                    </Grid>
+
+                    {/* Particulars Label */}
+                    <Grid item>
+                      <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                        Cash / Bank Particulars
+                      </Typography>
+                    </Grid>
+
+                    {/* Checkbox */}
+                    <Grid item>
+                      <FormControlLabel
+                        control={
+                          <Checkbox
+                            checked={AccountPayeeCheque}
+                            onChange={(e) =>
+                              setAccountpayeecheque(e.target.checked)
+                            }
+                          />
+                        }
+                        label={
+                          <Typography fontWeight="bold">
+                            Account Payee Cheque?
+                          </Typography>
+                        }
+                      />
+                    </Grid>
+
+                    <Grid>
+                      <Button variant="contained" color="primary" size="large">
+                        Print <br />
+                        Cheque
+                      </Button>
+                    </Grid>
+                  </Grid>
                 </Box>
-              </Box>
-            </Box>
-            <Box sx={{ display: "flex", padding: 1 }}>
-              <Box flex={1}>
-                <Typography variant="body2" fontWeight="bold">
+              </Grid>
+            </Grid>
+          </Paper>
+
+          {/* Row form - Account (Parties), Amount, Dr/Cr, Narration, Add/Drop */}
+          <Paper sx={{ p: 1, mb: 1 }} elevation={2}>
+            <Grid container spacing={1} alignItems="center">
+              <Grid item xs={6}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                  Account
+                </Typography>
+                <Autocomplete
+                  options={accountOptions}
+                  value={
+                    accountOptions.find((o) => o.value === partyAccountId) ||
+                    null
+                  }
+                 onChange={(e, newValue) => {
+  const id = newValue ? newValue.value : null;
+  setPartyAccountId(id);
+
+  if (id) {
+    fetchPartyDetails(id);  // 🔥 CALL API
+  } else {
+    setPartyDetails(null);
+  }
+}}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      size="small"
+                      placeholder="Select Party"
+                    />
+                  )}
+                />
+              </Grid>
+
+              <Grid item xs={2}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
                   Amount
                 </Typography>
                 <TextField
-                  type="number"
-                  value={Amount}
-                  //  onChange={(e) => setAmount(e.target.value)}
-                  onChange={(e) => {
-                    setAmount(e.target.value);
-                    setTotalcredit(e.target.value);
-
-                    if (rows.length > 0) {
-                      handleInputChange(0, "Amount", e.target.value); // Update first row
-                    }
-                  }}
                   size="small"
-                  margin="none"
-                  placeholder="Amount"
+                  value={rowAmount}
+                  onChange={(e) => setRowAmount(e.target.value)}
+                  fullWidth
                 />
-              </Box>
-              <Box flex={1}>
-                <Typography fontWeight="bold" variant="body2">
+              </Grid>
+
+              <Grid item xs={1}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                  Dr/Cr
+                </Typography>
+                <MuiSelect
+                  value={rowDC}
+                  size="small"
+                  onChange={(e) => setRowDC(e.target.value)}
+                  fullWidth>
+                  <MenuItem value={"D"}>D</MenuItem>
+                  <MenuItem value={"C"}>C</MenuItem>
+                </MuiSelect>
+              </Grid>
+
+              <Grid item xs={2}>
+                <Button variant="contained" onClick={addRow}>
+                  {editingRowId ? "Update Row" : "Add"}
+                </Button>
+
+                <Button
+                  variant="outlined"
+                  onClick={() => {
+                    setEditingRowId(null);
+                    setPartyAccountId(null);
+                    setRowAmount("");
+                    setRowDC("D");
+                    setRowNarration("");
+                  }}
+                  sx={{ mt: 2, ml: 1 }}>
+                  Drop
+                </Button>
+              </Grid>
+
+              <Grid item xs={12}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
                   Narration
                 </Typography>
                 <TextField
-                  value={Narration}
-                  onChange={(e) => {
-                    setNarration(e.target.value);
-                    if (rows.length > 0) {
-                      handleInputChange(0, "Narration", e.target.value); // Update first row
-                    }
-                  }}
                   size="small"
-                  margin="none"
-                  placeholder="Narration"
-                />
-              </Box>
-            </Box>
-            <div className="paymentvoucher-table">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Serial No</th>
-
-                    <th>
-                      Account Id <b className="required">*</b>
-                    </th>
-                    <th>
-                      Dr/Cr <b className="required">*</b>
-                    </th>
-                    <th>
-                      Narration <b className="required">*</b>
-                    </th>
-                    <th>
-                      Amount <b className="required">*</b>
-                    </th>
-
-                    {/* <th>
-                      Cost Center Id <b className="required">*</b>
-                    </th> */}
-                    <th>
-                      Cheque No <b className="required">*</b>
-                    </th>
-                    <th>
-                      Cheque Date <b className="required">*</b>
-                    </th>
-
-                    <th>
-                      Cheque Amount <b className="required">*</b>
-                    </th>
-                    <th>
-                      MICR Code <b className="required">*</b>
-                    </th>
-                    <th>
-                      Bank Name <b className="required">*</b>
-                    </th>
-                    <th>
-                      Bank Branch <b className="required">*</b>
-                    </th>
-
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-
-                <tbody>
-                  {isLoading ? (
-                    <tr>
-                      <td
-                        colSpan="10"
-                        style={{
-                          textAlign: "center",
-                          fontWeight: "bold",
-                          padding: "10px",
-                          color: "blue",
-                        }}>
-                        Loading data...
-                      </td>
-                    </tr>
-                  ) : rows.length === 0 ? ( // Check if rows is empty
-                    <tr>
-                      <td
-                        colSpan="10"
-                        style={{
-                          textAlign: "center",
-                          fontWeight: "bold",
-                          padding: "10px",
-                          color: "red",
-                        }}>
-                        No data available
-                      </td>
-                    </tr>
-                  ) : (
-                    rows.map((row, index) => (
-                      <tr key={index}>
-                        <td>{index + 1}</td>
-
-                        <td>
-                          {index === 0 ? (
-                            accountOptions.find(
-                              (option) => option.value === row.AccountId
-                            )?.label || ""
-                          ) : (
-                            <Autocomplete
-                              options={accountOptions}
-                              value={
-                                accountOptions.find(
-                                  (option) => option.value === row.AccountId
-                                ) || null
-                              }
-                              onChange={(event, newValue) =>
-                                handleInputChange(
-                                  index,
-                                  "AccountId",
-                                  newValue ? newValue.value : ""
-                                )
-                              }
-                              sx={{ width: 300 }} // ✅ Set desired width here
-                              getOptionLabel={(option) => option.label}
-                              renderInput={(params) => (
-                                <TextField
-                                  {...params}
-                                  placeholder="Select Acc"
-                                  size="big"
-                                  fullWidth
-                                  sx={{
-                                    "& .MuiInputBase-root": {
-                                      height: "50px",
-                                      // width: "250px", // Adjust height here
-                                    },
-                                    "& .MuiInputBase-input": {
-                                      // padding: "14px", // Adjust padding for better alignment
-                                    },
-                                  }}
-                                />
-                              )}
-                            />
-                          )}
-                        </td>
-
-                        <td>
-                          {index === 0 ? (
-                            row.DOrC || "C" // Ensure it shows "C" if undefined
-                          ) : (
-                            //   <Select
-                            //     value={dOrCOptions.find(
-                            //       (option) => option.value === row.DOrC
-                            //     )}
-                            //     onChange={(option) =>
-                            //       handleInputChange(index, "DOrC", option.value)
-                            //     }
-                            //     options={dOrCOptions}
-                            //     placeholder="DOrC"
-                            //     styles={{
-                            //       control: (base) => ({ ...base, width: "70px" }),
-                            //       menu: (base) => ({ ...base, zIndex: 100 }),
-                            //     }}
-                            //   />
-                            // )}
-                            <Autocomplete
-                              options={dOrCOptions}
-                              value={
-                                dOrCOptions.find(
-                                  (option) => option.value === row.DOrC
-                                ) || null
-                              }
-                              onChange={(event, newValue) =>
-                                handleInputChange(
-                                  index,
-                                  "DOrC",
-                                  newValue ? newValue.value : ""
-                                )
-                              }
-                              sx={{ width: "250" }} // Set width
-                              getOptionLabel={(option) => option.label}
-                              renderInput={(params) => (
-                                <TextField
-                                  {...params}
-                                  placeholder="Select DOrC"
-                                  size="big"
-                                  fullWidth
-                                  sx={{
-                                    "& .MuiInputBase-root": {
-                                      height: "50px",
-                                      width: "150px", // Adjust height here
-                                    },
-                                    "& .MuiInputBase-input": {
-                                      padding: "14px", // Adjust padding for better alignment
-                                    },
-                                  }}
-                                />
-                              )}
-                            />
-                          )}
-                        </td>
-
-                        <td>
-                          {index === 0 ? (
-                            row.Narration
-                          ) : (
-                            <input
-                              type="text"
-                              value={row.Narration}
-                              onChange={(e) => {
-                                const value = e.target.value;
-                                // Limit to 500 characters
-                                if (value.length <= 500) {
-                                  handleInputChange(index, "Narration", value);
-                                }
-                              }}
-                              className="paymentvoucher-control"
-                              placeholder="Enter Narration"
-                              style={{
-                                width: "200px",
-                              }} // Set width here (or use 100% if preferred)
-                            />
-                          )}
-                        </td>
-
-                        <td>
-                          {/* {index === 0 ? (
-          row.Amount
-        ) : ( */}
-                          <input
-                            type="number"
-                            value={row.Amount}
-                            onChange={(e) =>
-                              handleInputChange(index, "Amount", e.target.value)
-                            }
-                            style={{
-                              width: "150px",
-                            }}
-                            className="paymentvoucher-control"
-                            placeholder="Amount"
-                          />
-                          {/* )} */}
-                        </td>
-
-                        {/* <td>
-                           {index === 0 ? (
-          row.CostCenterId
-        ) : (
-
-                          <Select
-                            value={costcenterOptions.find(
-                              (option) => option.value === row.CostCenterId
-                            )}
-                            onChange={(option) =>
-                              handleInputChange(
-                                index,
-                                "CostCenterId",
-                                option.value
-                              )
-                            }
-                            options={costcenterOptions}
-                            placeholder="CostCenterId"
-                            styles={{
-                              control: (base) => ({
-                                ...base,
-                                width: "150px",
-                              }),
-
-                              menu: (base) => ({
-                                ...base,
-                                zIndex: 100,
-                              }),
-                            }}
-                          />
-                          )}
-                        </td> */}
-
-                        <td>
-                          {/* {index === 0 ? (
-          row.CheckNo
-        ) : ( */}
-                          <input
-                            type="text"
-                            value={row.ChequeNo}
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              if (value.length <= 15) {
-                                handleInputChange(index, "ChequeNo", value);
-                              }
-                            }}
-                            style={{
-                              width: "150px",
-                            }}
-                            className="paymentvoucher-control"
-                            placeholder="ChequeNo"
-                          />
-                          {/* )} */}
-                        </td>
-
-                        <td>
-                          {/* {index === 0 ? (
-          row.CheckDate
-        ) : ( */}
-
-                          <input
-                            type="date"
-                            value={
-                              row.ChequeDate ||
-                              new Date().toISOString().split("T")[0]
-                            }
-                            onChange={(e) =>
-                              handleInputChange(
-                                index,
-                                "ChequeDate",
-                                e.target.value
-                              )
-                            }
-                            style={{ width: "150px" }}
-                            placeholder="Cheque Date"
-                            className="paymentvoucher-control"
-                          />
-
-                          {rowErrors[index]?.ChequeDate && (
-                            <span style={{ color: "red", fontSize: "12px" }}>
-                              {rowErrors[index].ChequeDate}
-                            </span>
-                          )}
-                          {/* )} */}
-                        </td>
-
-                        <td>
-                          {/* {index === 0 ? (
-          row.CheckAmount
-        ) : ( */}
-                          <input
-                            type="number"
-                            value={row.ChequeAmount}
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              // Validate for Check Amount as well
-                              const regex = /^\d{0,18}(\.\d{0,2})?$/;
-
-                              // Check if the value matches the regex
-                              if (value === "" || regex.test(value)) {
-                                handleInputChange(index, "ChequeAmount", value);
-                              }
-                            }}
-                            style={{
-                              width: "100px",
-                            }}
-                            placeholder="Cheque Amount"
-                            className="receiptvoucher-control"
-                          />
-                          {/* )} */}
-                        </td>
-                        <td>
-                          {/* {index === 0 ? (
-          row.MICRCode
-        ) : ( */}
-                          <input
-                            type="text"
-                            value={row.MICRCode}
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              if (value.length <= 30) {
-                                handleInputChange(index, "MICRCode", value);
-                              }
-                            }}
-                            style={{
-                              width: "150px",
-                            }}
-                            placeholder="MICR Code"
-                            className="receiptvoucher-control"
-                          />
-                          {/* )} */}
-                        </td>
-                        <td>
-                          {/* {index === 0 ? (
-          row.BankName
-        ) : ( */}
-                          <input
-                            type="text"
-                            value={row.BankName}
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              if (value.length <= 50) {
-                                handleInputChange(index, "BankName", value);
-                              }
-                            }}
-                            style={{
-                              width: "150px",
-                            }}
-                            placeholder="Bank Name"
-                            className="receiptvoucher-control"
-                          />
-                          {/* )} */}
-                        </td>
-                        <td>
-                          {/* {index === 0 ? (
-          row.BankBranch
-        ) : ( */}
-                          <input
-                            type="text"
-                            value={row.BankBranch}
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              if (value.length <= 50) {
-                                handleInputChange(index, "BankBranch", value);
-                              }
-                            }}
-                            style={{
-                              width: "150px",
-                            }}
-                            placeholder="Bank Branch"
-                            className="receiptvoucher-control"
-                          />
-                          {/* )} */}
-                        </td>
-                        <td>
-                          <div
-                            style={{
-                              display: "flex",
-                              justifyContent: "space-between",
-                            }}>
-                            <Button
-                              onClick={handleAddRow}
-                              style={{
-                                background: "#0a60bd",
-                                color: "white",
-                                marginRight: "5px",
-                              }}>
-                              Add
-                            </Button>
-                            <Button
-                              onClick={() => handleDeleteRow(index)}
-                              style={{ background: "red", color: "white" }}>
-                              <RiDeleteBin5Line />
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-            <Box
-              display="flex"
-              justifyContent="flex-end"
-              mt={0.5}
-              gap={1}
-              mb={3}>
-              <Box>
-                <Typography variant="body2" fontWeight="bold">
-                  Total Credit
-                </Typography>
-                <TextField
-                  value={TotalCredit}
-                  onChange={(e) => setTotalcredit(e.target.value)}
-                  size="small"
-                  margin="none"
-                  placeholder="Total Credit"
                   fullWidth
+                  value={rowNarration}
+                  onChange={(e) => setRowNarration(e.target.value)}
                 />
-              </Box>
+              </Grid>
+            </Grid>
+          </Paper>
 
-              <Box>
-                <Typography variant="body2" fontWeight="bold">
+          {/* Table */}
+          <Paper elevation={2}>
+            <TableContainer sx={{ maxHeight: 300 }}>
+              <Table stickyHeader size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Sr.No</TableCell>
+                    <TableCell>Account Name</TableCell>
+                    <TableCell>Amount</TableCell>
+                    <TableCell>Dr/Cr</TableCell>
+                    <TableCell>Particulars</TableCell>
+                    <TableCell>Action</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {rows.map((r, i) => (
+                    <TableRow
+                      key={r.id}
+                      onClick={() => handleEditRow(r)}
+                      sx={{
+                        cursor: r.type === "BANK" ? "not-allowed" : "pointer",
+                        backgroundColor:
+                          r.type === "BANK" ? "#f5f5f5" : "inherit",
+                      }}>
+                      <TableCell>{i + 1}</TableCell>
+                      <TableCell>{r.AccountName}</TableCell>
+                      <TableCell>{r.Amount}</TableCell>
+                      <TableCell>{r.DOrC}</TableCell>
+                      <TableCell>{r.Narration}</TableCell>
+                      <TableCell>
+                        <Button
+                          size="small"
+                          color="error"
+                          disabled={r.type === "BANK"}
+                          onClick={(e) => {
+                            e.stopPropagation(); // 🔥 prevents edit click
+                            deleteRow(r.id); // 🔥 pass correct row id
+                          }}>
+                          Delete
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+
+                  {rows.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={6} align="center">
+                        No entries
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
+
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "flex-end",
+                p: 1,
+                gap: 2,
+              }}>
+              <Box
+                sx={{
+                  p: 1,
+                  bgcolor: "#F3E5F5",
+                  minWidth: 120,
+                  textAlign: "center",
+                }}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
                   Total Debit
                 </Typography>
-                <TextField
-                  value={TotalDebit}
-                  onChange={(e) => setTotaldebit(e.target.value)}
-                  size="small"
-                  margin="none"
-                  placeholder="Total debit"
-                  fullWidth
-                />
+                <Typography>
+                  <b>{TotalDebit}</b>
+                </Typography>
+              </Box>
+
+              <Box
+                sx={{
+                  p: 1,
+                  bgcolor: "#F3E5F5",
+                  minWidth: 120,
+                  textAlign: "center",
+                }}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                  Total Credit
+                </Typography>
+                <Typography>
+                  <b>{TotalCredit}</b>
+                </Typography>
               </Box>
             </Box>
-          </Box>
 
+            {TotalDebit !== TotalCredit && (
+              <Alert severity="error" sx={{ mt: 1 }}>
+                Debit and Credit totals must be equal
+              </Alert>
+            )}
+          </Paper>
+
+
+         
+         {/* Ensure the box shows as soon as a PartyId is selected */}
+{partyAccountId && (
+  <Box
+    sx={{
+      m: 1,
+      width: "500px",
+      p: 1.5,
+      backgroundColor: "#336699",
+      color: "white",
+      borderRadius: 1,
+      border: "1px solid #003366",
+      height: "150px",
+      display: "flex",
+      flexDirection: "column",
+      justifyContent: "center"
+    }}
+  >
+    {partyDetails ? (
+      <>
+        <Typography fontWeight="bold" variant="body1">
+          {partyDetails.AccountName || "Account Name Not Available"} ({partyAccountId})
+        </Typography>
+
+        {(partyDetails.Address1 || partyDetails.Address2 || partyDetails.Address3) ? (
+          <Box sx={{ mt: 0.5 }}>
+            {partyDetails.Address1 && (
+              <Typography variant="caption" display="block">
+                {partyDetails.Address1}
+              </Typography>
+            )}
+            {partyDetails.Address2 && (
+              <Typography variant="caption" display="block">
+                {partyDetails.Address2}
+              </Typography>
+            )}
+            {partyDetails.Address3 && (
+              <Typography variant="caption" display="block">
+                {partyDetails.Address3}
+              </Typography>
+            )}
+          </Box>
+        ) : (
+          <Typography
+            variant="caption"
+            sx={{ fontStyle: "italic", mt: 1, display: "block", color: "#FFD700" }}
+          >
+            No address info available
+          </Typography>
+        )}
+
+        {partyDetails.MobileNo && (
+          <Typography variant="caption" display="block" mt={0.5}>
+            Mobile: {partyDetails.MobileNo}
+          </Typography>
+        )}
+
+        <Box sx={{ mt: 1, pt: 1, borderTop: "1px solid rgba(255,255,255,0.3)" }}>
+          <Typography fontWeight="bold">
+            Bal. = {partyDetails.Balance || "0.00"} Dr
+          </Typography>
+        </Box>
+      </>
+    ) : (
+      <Typography variant="body2">
+        Loading or Party details not available...
+      </Typography>
+    )}
+  </Box>
+)}
           <Box
             display={"flex"}
             alignItems={"center"}

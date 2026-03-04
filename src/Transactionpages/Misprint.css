@@ -41,53 +41,48 @@
 
 
 .misprint-table {
-  margin-top: 20px;
-  height: 250px;
-  overflow-y: auto;
-  overflow-x: auto;
-  width: 100%;
-  border-collapse: collapse;
-  background-color: #ffffff;
+  margin-top: 5px;
+    height: 40vh;
+    overflow-y: auto;
+    overflow-x: auto;
+    width: 100%;
+    background-color: #ffffff;
 }
 
 .misprint-table table {
   width: 100%;
-  
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border-collapse: collapse;
 }
 
 .misprint-table th, .misprint-table td {
-  padding: 12px;
+  /* padding: 12px; */
   text-align: left;
   border-bottom: 1px solid #ddd;
 }
 
+
+.misprint-table thead th {
+  position: sticky;
+  top: 0;
+  padding: 10px;
+  background: #f4f4f4;
+  z-index: 1;
+}
+
 .misprint-table th {
-  background-color: #f4f4f4;
-  font-weight: 600;
+  padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
 }
 
 .misprint-table input {
-  width: 100%;
-  padding: 8px;
-  box-sizing: border-box;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+    width: 100%;
+      padding: 8px;
+      box-sizing: border-box;
+      border: 1px solid #ccc;
+      border-radius: 4px;
 }
 
-.misprint-table tr:nth-child(even) {
-  background-color: #f9f9f9;
-}
-
-.misprint-table tr:hover {
-  background-color: #f1f1f1;
-}
-
-.misprint-table-container {
-  overflow-x: auto;
-}
 
 
 

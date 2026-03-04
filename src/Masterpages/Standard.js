@@ -316,9 +316,7 @@ function Standard() {
 
             <form className="standard-form">
               <div>
-                <label className="standard-label">
-                  Standard Code<b className="required">*</b>
-                </label>
+                <label className="standard-label">Standard Code</label>
                 <div>
                   <input
                     type="number"
@@ -343,9 +341,7 @@ function Standard() {
               </div>
 
               <div>
-                <label className="standard-label">
-                  Standard Name<b className="required">*</b>
-                </label>
+                <label className="standard-label">Standard Name</label>
                 <div>
                   <Tooltip
                     title={
@@ -376,9 +372,7 @@ function Standard() {
               </div>
 
               <div>
-                <label className="standard-label">
-                  Short Name<b className="required">*</b>
-                </label>
+                <label className="standard-label">Short Name</label>
                 <div>
                   <Tooltip
                     title={

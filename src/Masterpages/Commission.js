@@ -44,7 +44,7 @@ function Commission() {
   const [TypeCode, setTypecode] = useState("");
   const [BookOrGroupId, setBookorGroupid] = useState("");
   const [StandardId, setStandardId] = useState("");
-  const [ProfessorCategoryId, setProfessorCategoryId] = useState("");
+  const [CostCenterId, setCostCenterId] = useState("");
   const [StartCopy, setStartCopy] = useState("");
   const [EndCopy, setEndCopy] = useState("");
   const [CommissionPercentage, setCommissionPercentage] = useState("");
@@ -99,7 +99,7 @@ function Commission() {
     fetchStandards();
     fetchBookgroups();
     fetchBooks();
-    fetchProfcategories();
+    fetchPartycategories();
   }, []);
 
   const fetchStandards = async () => {
@@ -149,18 +149,22 @@ function Commission() {
     }
   };
 
-  const fetchProfcategories = async () => {
+  const fetchPartycategories = async () => {
     try {
       const response = await axios.get(
-        "https://publication.microtechsolutions.net.in/php/Professorcategoryget.php"
+        "https://publication.microtechsolutions.net.in/php/Costcenterget.php"
       );
-      const catOptions = response.data.map((cat) => ({
-        value: cat.Id,
-        label: cat.CategoryName,
+
+      console.log("Party Category API:", response.data); // ← check keys here
+
+      const partycatOptions = response.data.map((p) => ({
+        value: p.Id || p.CostCenterId, // fallback fix
+        label: p.CostcenterName || p.CostCenterName, // fallback fix
       }));
-      setCategories(catOptions);
+
+      setCategories(partycatOptions);
     } catch (error) {
-      // console.error("Error fetching  categories:", error);
+      console.error("Error fetching Party categories:", error);
     }
   };
 
@@ -168,7 +172,7 @@ function Commission() {
     setTypecode("");
     setBookorGroupid("");
     setStandardId("");
-    setProfessorCategoryId("");
+    setCostCenterId("");
     setStartCopy("");
     setEndCopy("");
     setCommissionPercentage("");
@@ -191,7 +195,7 @@ function Commission() {
     setTypecode(comm.TypeCode); // Ensure this matches your data field
     setBookorGroupid(comm.BookOrGroupId);
     setStandardId(comm.StandardId);
-    setProfessorCategoryId(comm.ProfessorCategoryId);
+    setCostCenterId(comm.ProfessorCategoryId);
     setStartCopy(comm.StartCopy);
     setEndCopy(comm.EndCopy);
     setCommissionPercentage(comm.CommissionPercentage);
@@ -266,7 +270,7 @@ function Commission() {
       TypeCode: TypeCode,
       BookOrGroupId: BookOrGroupId,
       StandardId: StandardId,
-      ProfessorCategoryId: ProfessorCategoryId,
+      ProfessorCategoryId: CostCenterId,
       StartCopy: StartCopy,
       EndCopy: EndCopy,
       CommissionPercentage: CommissionPercentage,
@@ -367,7 +371,7 @@ function Commission() {
   return (
     <>
       <div className="commission-container">
-        <h1>Commission Master</h1>
+        <h1>Discount Master</h1>
         <div className="commissiontable-master">
           <div className="commissiontable1-master">
             <Button
@@ -402,7 +406,7 @@ function Commission() {
                   fontSize: "27px",
                   marginBottom: "10px",
                 }}>
-                {editingIndex >= 0 ? "Edit Commission" : "Add Commission"}
+                {editingIndex >= 0 ? "Edit Discount" : "Add Discount"}
               </h1>
 
               <div>
@@ -513,21 +517,21 @@ function Commission() {
                     </label>
                     <div>
                       <Select
-                        id="ProfessorCategoryId"
-                        name="ProfessorCategoryId"
-                        value={categories.find(
-                          (option) => option.value === ProfessorCategoryId
-                        )}
-                        onChange={(option) =>
-                          setProfessorCategoryId(option.value)
+                        id="CostCenterId"
+                        name="CostCenterId"
+                        value={
+                          categories.find(
+                            (option) => option.value === CostCenterId
+                          ) || null
                         }
+                        onChange={(option) => setCostCenterId(option.value)}
                         ref={profcatidRef}
                         onKeyDown={(e) => handleKeyDown(e, stdidRef)}
                         options={categories}
                         styles={{
                           control: (base) => ({
                             ...base,
-                            width: "300px", // 🔥 Increased width
+                            width: "300px",
                             marginTop: "10px",
                             borderRadius: "4px",
                             border: "1px solid rgb(223, 222, 222)",
@@ -538,7 +542,7 @@ function Commission() {
                             zIndex: 100,
                           }),
                         }}
-                        placeholder="Professor category"
+                        placeholder="Party category"
                       />
                     </div>
                   </div>{" "}

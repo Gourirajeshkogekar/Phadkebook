@@ -384,6 +384,7 @@ function SalesreturnregisterReport() {
               <DatePicker
                 value={fromdate}
                 onChange={setFromDate}
+                format="DD-MM-YYYY"
                 slotProps={{ textField: { fullWidth: true, size: "small" } }}
               />
             </Grid>
@@ -394,6 +395,7 @@ function SalesreturnregisterReport() {
               <DatePicker
                 value={todate}
                 onChange={setToDate}
+                format="DD-MM-YYYY"
                 slotProps={{
                   textField: {
                     fullWidth: true,

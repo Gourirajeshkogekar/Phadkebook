@@ -47,10 +47,29 @@ const User = () => {
   const [Name, setName] = useState("");
   const [UserId, setUserid] = useState("");
   const [Password, setPassword] = useState("");
+  const [ConfirmPassword, setConfirmPassword] = useState("");
   const [LevelId, setLevelId] = useState("");
   const [LoginStatus, setLoginStatus] = useState("");
   const [BranchId, setBranchId] = useState("");
   const [CompanyId, setCompanyId] = useState("");
+
+  const [CreatedOn, setCreatedOn] = useState("");
+  const [Designation, setDesignation] = useState("");
+  const [AllowPayroll, setAllowPayroll] = useState("");
+  const [CanChangeOnFirstLogin, setCanChangeOnFirstLogin] = useState("");
+  const [Status, setStatus] = useState("");
+  const [statusOptions, setStatusOptions] = useState([
+    { value: "Active", label: "Active" },
+    { value: "Inactive", label: "Inactive" },
+  ]);
+
+  const [designationOptions, setDesignationOptions] = useState([
+    { value: "Administrator", label: "Administrator" },
+    { value: "Clerk", label: "Clerk" },
+    { value: "Salesman", label: "Salesman" },
+    { value: "Auditor", label: "Auditor" },
+  ]);
+
   const [levelOptions, setLevelOptions] = useState([]);
   const [branchOptions, setBranchOptions] = useState([]);
   const [companyOptions, setCompanyOptions] = useState([]);
@@ -220,65 +239,108 @@ const User = () => {
     setDeleteIndex(null);
   };
 
-  const validateForm = () => {
-    let formErrors = {};
-    let isValid = true;
+  // const handleSubmit = async (e) => {
+  //   e.preventDefault();
 
-    if (!Name) {
-      formErrors.Name = " Name is required.";
-      isValid = false;
-    }
+  //   const data = {
+  //     Name: Name,
+  //     UserId: UserId,
+  //     Password: Password,
+  //     LevelId: LevelId,
+  //     LoginStatus: LoginStatus,
+  //     BranchId: BranchId,
+  //     CompanyId: CompanyId,
+  //     CreatedBy: userId,
+  //   };
 
-    // if (!UserId) {
-    //   formErrors.UserId = "User is required.";
-    //   isValid = false;
-    // }
+  //   const url = isEditing
+  //     ? "https://publication.microtechsolutions.net.in/php/Userupdate.php"
+  //     : "https://publication.microtechsolutions.net.in/php/Userpost.php";
 
-    if (!Password) {
-      formErrors.Password = "Password is required.";
-      isValid = false;
-    }
+  //   if (isEditing) {
+  //     data.Id = id;
+  //     data.UpdatedBy = userId;
+  //   }
 
-    //   if (!LevelId) {
-    //     formErrors.LevelId = "Level is required.";
-    //     isValid = false;
-    // }
+  //   try {
+  //     await axios.post(url, data, {
+  //       headers: {
+  //         "Content-Type": "application/x-www-form-urlencoded",
+  //       },
+  //     });
 
-    // if (!BranchId) {
-    //   formErrors.BranchId = "Branch is required.";
-    //   isValid = false;
-    // }
-
-    // if (!CompanyId) {
-    //   formErrors.CompanyId = "Company is required.";
-    //   isValid = false;
-    // }
-
-    setErrors(formErrors);
-    return isValid;
-  };
+  //     if (isEditing) {
+  //       toast.success("User updated successfully!");
+  //     } else {
+  //       toast.success("User added successfully!");
+  //     }
+  //     setIsModalOpen(false);
+  //     resetFormFields();
+  //     fetchUsers(); // Refresh the list after submit
+  //   } catch (error) {
+  //     toast.error("Error saving record!");
+  //   }
+  // };
 
   const handleSubmit = async (e) => {
-    e.preventDefault(); // Prevent the default form submission
-    if (!validateForm()) return;
+    e.preventDefault();
 
+    // === VALIDATION ===
+    if (!Name.trim()) {
+      toast.error("Please enter Name");
+      return;
+    }
+
+    if (!UserId.trim()) {
+      toast.error("Please enter User Id");
+      return;
+    }
+
+    if (!Password.trim()) {
+      toast.error("Please enter Password");
+      return;
+    }
+
+    if (!ConfirmPassword.trim()) {
+      toast.error("Please confirm the Password");
+      return;
+    }
+
+    if (Password !== ConfirmPassword) {
+      toast.error("Password and Confirm Password do not match");
+      return;
+    }
+
+    if (!Designation) {
+      toast.error("Please select Designation");
+      return;
+    }
+
+    if (!Status) {
+      toast.error("Please select Status");
+      return;
+    }
+
+    // === DATA PREPARATION ===
     const data = {
-      Name: Name,
-      UserId: UserId,
-      Password: Password,
-      LevelId: LevelId,
-      LoginStatus: LoginStatus,
-      BranchId: BranchId,
-      CompanyId: CompanyId,
+      Name,
+      UserId,
+      Password,
+      LevelId,
+      LoginStatus,
+      BranchId,
+      CompanyId,
+      Designation,
+      Status,
+      AllowPayroll: AllowPayroll ? 1 : 0,
+      CanChangeOnFirstLogin: CanChangeOnFirstLogin ? 1 : 0,
       CreatedBy: userId,
     };
 
-    // Determine the URL based on whether we're editing or adding
     const url = isEditing
       ? "https://publication.microtechsolutions.net.in/php/Userupdate.php"
       : "https://publication.microtechsolutions.net.in/php/Userpost.php";
 
-    // If editing, include the author ID in the payload
     if (isEditing) {
       data.Id = id;
       data.UpdatedBy = userId;
@@ -291,17 +353,15 @@ const User = () => {
         },
       });
 
-      if (isEditing) {
-        toast.success("User updated successfully!");
-      } else {
-        toast.success("User added successfully!");
-      }
+      toast.success(
+        isEditing ? "User updated successfully!" : "User added successfully!"
+      );
+
       setIsModalOpen(false);
       resetFormFields();
-      fetchUsers(); // Refresh the list after submit
+      fetchUsers();
     } catch (error) {
-      // console.error("Error saving record:", error);
-      toast.error("Error saving record!");
+      toast.error("Error saving user!");
     }
   };
 
@@ -409,68 +469,46 @@ const User = () => {
                 fontSize: "27px",
                 marginBottom: "10px",
               }}>
-              {isEditing ? "Edit User" : "Add New User"}
+              {isEditing ? "Edit User" : "Add User"}
             </h1>
             <form className="user-form">
               <div>
-                <label className="user-label">
-                  {" "}
-                  Name <b className="required">*</b>
-                </label>
-                <div>
-                  <Tooltip
-                    title={
-                      <span style={{ fontSize: "14px", fontWeight: "bold" }}>
-                        {Name}
-                      </span>
-                    }
-                    arrow>
-                    <input
-                      type="text"
-                      id="Name"
-                      name="Name"
-                      value={Name}
-                      onChange={(e) => setName(e.target.value)}
-                      maxLength={100}
-                      ref={nameRef}
-                      onKeyDown={(e) => handleKeyDown(e, userRef)}
-                      className="user-control"
-                      placeholder="Enter Name"
-                    />
-                  </Tooltip>
-                  <div>
-                    {errors.Name && <b className="error-text">{errors.Name}</b>}
-                  </div>
-                </div>
-              </div>
-              <div>
-                <label className="user-label">
-                  User Id <b className="required">*</b>
-                </label>
+                <label className="user-label"> Name</label>
                 <div>
                   <input
-                    type="number"
+                    type="text"
+                    id="Name"
+                    name="Name"
+                    value={Name}
+                    onChange={(e) => setName(e.target.value)}
+                    maxLength={100}
+                    ref={nameRef}
+                    onKeyDown={(e) => handleKeyDown(e, userRef)}
+                    className="user-control"
+                    placeholder="Enter Name"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="user-label">User Id</label>
+                <div>
+                  <input
+                    type="text"
                     id="UserId"
                     name="UserId"
                     value={UserId}
-                    onChange={(e) => setUserid(e.target.value)}
+                    onChange={(e) => setUserid(e.target.value)} // ✅ FIXED
                     maxLength={50}
-                    ref={userRef}
-                    onKeyDown={(e) => handleKeyDown(e, passwordRef)}
+                    style={{ width: "150px" }}
+                    placeholder="Enter User Id"
                     className="user-control"
-                    placeholder="Enter user id"
                   />
-                  <div>
-                    {errors.UserId && (
-                      <b className="error-text">{errors.UserId}</b>
-                    )}
-                  </div>
                 </div>
               </div>
+
               <div>
-                <label className="user-label">
-                  Password <b className="required">*</b>
-                </label>
+                <label className="user-label">Password</label>
                 <div>
                   <input
                     id="Password"
@@ -478,146 +516,98 @@ const User = () => {
                     value={Password}
                     onChange={(e) => setPassword(e.target.value)}
                     maxLength={50}
+                    style={{ width: "250px" }}
                     ref={passwordRef}
                     onKeyDown={(e) => handleKeyDown(e, levelRef)}
                     placeholder="Enter Password"
                     className="user-control"
                   />
-                  <div>
-                    {errors.Password && (
-                      <b className="error-text">{errors.Password}</b>
-                    )}
-                  </div>
                 </div>
               </div>
-              <div>
-                <label className="user-label">
-                  Level <b className="required">*</b>
-                </label>
-                <div>
-                  <Select
-                    id="LevelId"
-                    name="LevelId"
-                    value={levelOptions.find(
-                      (option) => option.value.toString() === LevelId.toString()
-                    )}
-                    onChange={(option) => setLevelId(option.value)}
-                    ref={levelRef}
-                    onKeyDown={(e) => handleKeyDown(e, loginstatusRef)}
-                    options={levelOptions}
-                    styles={{
-                      control: (base) => ({
-                        ...base,
-                        width: "170px",
-                        marginTop: "10px",
-                        borderRadius: "4px",
-                        border: "1px solid rgb(223, 222, 222)",
-                        marginBottom: "5px",
-                      }),
-                    }}
-                    placeholder="Select Level"
-                  />
 
-                  <div>
-                    {errors.LevelId && (
-                      <b className="error-text">{errors.LevelId}</b>
-                    )}
-                  </div>
+              <div>
+                <label className="user-label">Confirm Password</label>
+                <div>
+                  <input
+                    id="ConfirmPassword"
+                    name="ConfirmPassword"
+                    value={ConfirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    maxLength={50}
+                    style={{ width: "250px" }}
+                    ref={passwordRef}
+                    onKeyDown={(e) => handleKeyDown(e, levelRef)}
+                    placeholder="Enter confirm password"
+                    className="user-control"
+                  />
                 </div>
               </div>
+
               <div>
-                <label className="user-label">Login Status</label>
-                {/* <div> */}
+                <label className="user-label"></label>
                 <input
                   type="checkbox"
-                  id="LoginStatus"
-                  name="LoginStatus"
-                  checked={LoginStatus}
-                  onChange={(e) => setLoginStatus(e.target.checked)}
-                  ref={loginstatusRef}
-                  onKeyDown={(e) => handleKeyDown(e, branchRef)}
-                  // className="user-control"
-                  style={{ marginLeft: "10px" }}
-                  placeholder="Select Login Status"
+                  checked={CanChangeOnFirstLogin}
+                  onChange={(e) => setCanChangeOnFirstLogin(e.target.checked)}
                 />
-                <div>
-                  {errors.LoginStatus && (
-                    <b className="error-text">{errors.LoginStatus}</b>
-                  )}
-                </div>
-                {/* </div> */}
+                <span style={{ marginLeft: "10px" }}>
+                  User can change password on first login
+                </span>
               </div>
+
               <div>
-                <label className="user-label">
-                  Branch <b className="required">*</b>
-                </label>
+                <label className="user-label"></label>
+
+                <input
+                  type="checkbox"
+                  checked={AllowPayroll}
+                  onChange={(e) => setAllowPayroll(e.target.checked)}
+                />
+                <span style={{ marginLeft: "10px" }}>
+                  Allow to work in Payroll System?
+                </span>
+              </div>
+
+              <div>
+                <label className="user-label">Designation</label>
+
                 <div>
+                  {" "}
                   <Select
-                    id="BranchId"
-                    name="BranchId"
-                    value={branchOptions.find(
-                      (option) =>
-                        option.value.toString() === BranchId.toString()
+                    options={designationOptions}
+                    value={designationOptions.find(
+                      (o) => o.value === Designation
                     )}
-                    onChange={(option) => setBranchId(option.value)}
-                    ref={branchRef}
-                    onKeyDown={(e) => handleKeyDown(e, companyRef)}
-                    options={branchOptions}
+                    onChange={(o) => setDesignation(o.value)}
                     styles={{
                       control: (base) => ({
                         ...base,
-                        width: "170px",
+                        width: "300px",
                         marginTop: "10px",
-                        borderRadius: "4px",
-                        border: "1px solid rgb(223, 222, 222)",
-                        marginBottom: "5px",
+                        border: "1px solid #cfcfcf",
                       }),
                     }}
-                    placeholder="Select Branch"
                   />
-
-                  <div>
-                    {errors.BranchId && (
-                      <b className="error-text">{errors.BranchId}</b>
-                    )}
-                  </div>
                 </div>
               </div>
 
               <div>
-                <label className="user-label">
-                  Company <b className="required">*</b>
-                </label>
+                <label className="user-label">Status</label>
                 <div>
                   <Select
-                    id="CompanyId"
-                    name="CompanyId"
-                    value={companyOptions.find(
-                      (option) =>
-                        option.value.toString() === CompanyId.toString()
-                    )}
-                    onChange={(option) => setCompanyId(option.value)}
-                    ref={companyRef}
-                    onKeyDown={(e) => handleKeyDown(e, saveRef)}
-                    options={companyOptions}
+                    options={statusOptions}
+                    value={statusOptions.find((o) => o.value === Status)}
+                    onChange={(o) => setStatus(o.value)}
                     styles={{
                       control: (base) => ({
                         ...base,
-                        width: "170px",
+                        width: "300px",
                         marginTop: "10px",
-                        borderRadius: "4px",
-                        border: "1px solid rgb(223, 222, 222)",
-                        marginBottom: "5px",
+
+                        border: "1px solid #cfcfcf",
                       }),
                     }}
-                    placeholder="Select Company"
                   />
-
-                  <div>
-                    {errors.CompanyId && (
-                      <b className="error-text">{errors.CompanyId}</b>
-                    )}
-                  </div>
                 </div>
               </div>
             </form>
@@ -626,7 +616,6 @@ const User = () => {
               <Button
                 onClick={handleSubmit}
                 ref={saveRef}
-                // onKeyDown={(e) => handleKeyDown(e, accgroupnameRef)}
                 style={{
                   background: "#0a60bd",
                   color: "white",
@@ -645,7 +634,6 @@ const User = () => {
           </div>
         </Modal>
 
-        {/* Confirmation Dialog for Delete */}
         <Dialog open={isDeleteDialogOpen} onClose={cancelDelete}>
           <DialogTitle style={{ color: "navy", fontWeight: "600" }}>
             Confirm Deletion

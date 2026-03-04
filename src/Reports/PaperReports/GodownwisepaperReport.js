@@ -245,6 +245,7 @@ function GodownwisepaperReport() {
                 label="From Date"
                 value={fromDate}
                 onChange={(newVal) => setFromDate(newVal)}
+                format="DD-MM-YYYY"
                 slotProps={{ textField: { fullWidth: true } }}
               />
             </Grid>
@@ -253,6 +254,7 @@ function GodownwisepaperReport() {
                 label="To Date"
                 value={toDate}
                 onChange={(newVal) => setToDate(newVal)}
+                format="DD-MM-YYYY"
                 slotProps={{ textField: { fullWidth: true } }}
               />
             </Grid>

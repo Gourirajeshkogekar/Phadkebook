@@ -5,6 +5,7 @@ import React, {
   useSyncExternalStore,
 } from "react";
 import "./Purchasereturndebitnote.css";
+import { useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import Select from "react-select";
 import axios from "axios";
@@ -61,6 +62,7 @@ import { DatePicker } from "@mui/x-date-pickers";
 import { Edit, Delete, Add, MoreVert, Print } from "@mui/icons-material";
 import dayjs from "dayjs";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { set } from "date-fns";
 
 function Purchasereturndebitnote() {
   const [userId, setUserId] = useState("");
@@ -105,21 +107,26 @@ function Purchasereturndebitnote() {
   const [pageIndex, setPageIndex] = useState(1); // Current page
   const [totalPages, setTotalPages] = useState(1);
   const [PurchaseReturnNo, setPurchaseReturnNo] = useState(null);
-  const [PurchaseReturnDate, setPurchaseReturnDate] = useState("");
+  const [PurchaseReturnDate, setPurchaseReturnDate] = useState(dayjs());
   const [RefrenceNo, setRefrenceNo] = useState("");
   const [SupplierId, setSupplierId] = useState("");
   const [AccountId, setAccountId] = useState("");
+  const [CreditAccountId, setCreditAccountId] = useState("");
+
   const [SubTotal, setSubTotal] = useState("");
   const [Extra1, setExtra1] = useState("");
+  const [Extra1Percentage, setExtr1Percentage] = useState("");
   const [Extra1Amount, setExtra1Amount] = useState("");
   const [Extra2, setExtra2] = useState("");
+  const [Extra2Percentage, setExtr2Percentage] = useState("");
+
   const [Extra2Amount, setExtra2Amount] = useState("");
   const [Total, setTotal] = useState("");
   const [TotalCopies, setTotalCopies] = useState("");
+
   const [Remark, setRemark] = useState("");
 
   const [editingIndex, setEditingIndex] = useState(-1);
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [id, setId] = useState("");
   const [anchorEl, setAnchorEl] = useState(null);
 
@@ -128,11 +135,106 @@ function Purchasereturndebitnote() {
   const [isEditing, setIsEditing] = useState(false);
   const [purchasereturns, setPurchasereturns] = useState([]);
   const [purchasereturndetails, setPurchasereturnDetails] = useState([]);
+  const theme = useTheme();
 
+  const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm"));
+
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+
+  const handleDrawerClose = () => {
+    setIsDrawerOpen(false);
+  };
   const [currentRow, setCurrentRow] = useState(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [deleteIndex, setDeleteIndex] = useState(null);
   const [deleteId, setDeleteId] = useState(null);
+
+  const [adjustments, setAdjustments] = useState([
+    {
+      type: "ADD",
+      particular: "",
+      percentage: "",
+      amount: "",
+      isManual: false, // to detect manual amount edit
+    },
+  ]);
+
+  const firstAdj = adjustments[0] || {};
+  const secondAdj = adjustments[1] || {};
+
+  const handlePercentageChange = (index, value) => {
+    const updated = [...adjustments];
+    updated[index].percentage = value;
+    updated[index].isManual = false; // auto mode
+    setAdjustments(updated);
+  };
+
+  const handleAmountChange = (index, value) => {
+    const updated = [...adjustments];
+    updated[index].amount = value;
+    updated[index].isManual = true; // manual mode
+    setAdjustments(updated);
+  };
+
+  useEffect(() => {
+    const base = parseFloat(SubTotal || 0);
+
+    if (!base) return;
+
+    const updated = adjustments.map((row) => {
+      if (row.percentage && !row.isManual && !isNaN(row.percentage)) {
+        const amt = (base * parseFloat(row.percentage)) / 100;
+        return { ...row, amount: amt.toFixed(2) };
+      }
+      return row;
+    });
+
+    setAdjustments(updated);
+  }, [SubTotal, adjustments.map((a) => a.percentage).join(",")]);
+
+  const handleTypeChange = (index, value) => {
+    const updated = [...adjustments];
+    updated[index].type = value;
+
+    if (!updated[index].isManual && updated[index].percentage) {
+      const base = parseFloat(SubTotal || 0);
+      const percent = parseFloat(updated[index].percentage || 0);
+      updated[index].amount = ((base * percent) / 100).toFixed(2);
+    }
+
+    setAdjustments(updated);
+  };
+
+  const handleAdjustmentChange = (index, field, value) => {
+    const updated = [...adjustments];
+    updated[index][field] = value;
+    setAdjustments(updated);
+  };
+
+  const addAdjustmentRow = () => {
+    if (adjustments.length >= 2) {
+      toast.error("Only 2 Add / Less rows allowed");
+      return;
+    }
+
+    setAdjustments([
+      ...adjustments,
+      { type: "ADD", particular: "", percentage: "", amount: "" },
+    ]);
+  };
+
+  const removeAdjustmentRow = (index) => {
+    const updated = adjustments.filter((_, i) => i !== index);
+    setAdjustments(updated);
+  };
+
+  const adjustmentTotal = adjustments.reduce((sum, row) => {
+    const amt = parseFloat(row.amount || 0);
+    return row.type === "ADD" ? sum + amt : sum - amt;
+  }, 0);
+
+  const totalAmount = parseFloat(SubTotal || 0) + adjustmentTotal;
+
   const handleMenuOpen = (event, row) => {
     setAnchorEl(event.currentTarget);
     setCurrentRow(row);
@@ -162,15 +264,6 @@ function Purchasereturndebitnote() {
     fetchBooks();
     fetchAccounts();
   }, []);
-
-  // const fetchPurchasereturns = async () => {
-  //   try {
-  //     const response = await axios.get("https://publication.microtechsolutions.net.in/php/Purchasereturnheaderget.php");
-  //     setPurchasereturns(response.data);
-  //   } catch (error) {
-  //     // toast.error("Error fetching Purchase returns:", error);
-  //   }
-  // };
 
   useEffect(() => {
     fetchPurchasereturns();
@@ -245,35 +338,35 @@ function Purchasereturndebitnote() {
 
     rows.forEach((row) => {
       totalCopies += Number(row.Copies) || 0;
-      subtotal += Number(row.DiscountAmount) || 0;
-      total += Number(row.Amount) || 0;
+      subtotal += Number(row.Amount) || 0; // Subtotal should be sum of row amounts
     });
+
+    // Add extra amounts if present
+    const extra1 = parseFloat(Extra1Amount) || 0;
+    const extra2 = parseFloat(Extra2Amount) || 0;
+
+    total = subtotal + extra1 + extra2;
+
     setTotalCopies(totalCopies);
-    setSubTotal(subtotal);
-    setTotal(total);
+    setSubTotal(subtotal.toFixed(2));
+    setTotal(total.toFixed(2));
   };
+
   const [purchasesafedate, setPurchasesafedate] = useState(dayjs());
   const [purchaseerror, setPurchaseerror] = useState("");
   const [receiveddateerror, setReceiveddateerror] = useState("");
+  const [safedate, setSafedate] = useState(dayjs());
 
   const handleDateChange1 = (newValue) => {
     if (!newValue || !dayjs(newValue).isValid()) {
-      setPurchaseerror("Invalid date");
-      setPurchasesafedate(null);
+      setDateError("Invalid date");
+      setSafedate(null);
       return;
     }
 
-    const today = dayjs();
-    const minDate = today.subtract(3, "day");
-    const maxDate = today.add(2, "day");
-
-    if (newValue.isBefore(minDate) || newValue.isAfter(maxDate)) {
-      setPurchaseerror("You can select only 2 days before or after today");
-    } else {
-      setPurchaseerror("");
-    }
-
-    setPurchasesafedate(newValue);
+    // ✅ No min / max validation
+    setDateError("");
+    setSafedate(newValue);
   };
 
   const handleInputChange = (index, field, value) => {
@@ -390,13 +483,19 @@ function Purchasereturndebitnote() {
     setSupplierId("");
     setAccountId("");
     setSubTotal("");
-    setExtra1("");
-    setExtra1Amount("");
-    setExtra2("");
-    setExtra2Amount("");
+
     setTotal("");
     setTotalCopies("");
     setRemark("");
+    setAdjustments([
+      {
+        type: "ADD",
+        particular: "",
+        percentage: "",
+        amount: "",
+        isManual: false, // to detect manual amount edit
+      },
+    ]);
     setRows([
       {
         BookId: "",
@@ -411,11 +510,11 @@ function Purchasereturndebitnote() {
 
   useEffect(() => {
     calculateTotals();
-  }, [rows]);
+  }, [rows, adjustments]);
 
   const handleNewClick = () => {
     resetForm();
-    setIsModalOpen(true);
+    setIsDrawerOpen(true);
     setIsEditing(false);
     setEditingIndex(-1);
   };
@@ -423,6 +522,52 @@ function Purchasereturndebitnote() {
   const [isLoading, setIsLoading] = useState(false);
 
   const [idwiseData, setIdwiseData] = useState("");
+
+  const buildAdjustmentsForEdit = (data) => {
+    const list = [];
+
+    // ----- Other Charge 1 -----
+    if (
+      data.Extra1 ||
+      Number(data.Extra1Amount) ||
+      Number(data.Extra1Percentage)
+    ) {
+      list.push({
+        type: Number(data.Extra1Amount) < 0 ? "LESS" : "ADD",
+        particular: data.Extra1 || "",
+        percentage: data.Extra1Percentage || "",
+        amount: Math.abs(Number(data.Extra1Amount || 0)),
+        isManual: true,
+      });
+    }
+
+    // ----- Other Charge 2 -----
+    if (
+      data.Extra2 ||
+      Number(data.Extra2Amount) ||
+      Number(data.Extra2Percentage)
+    ) {
+      list.push({
+        type: Number(data.Extra2Amount) < 0 ? "LESS" : "ADD",
+        particular: data.Extra2 || "",
+        percentage: data.Extra2Percentage || "",
+        amount: Math.abs(Number(data.Extra2Amount || 0)),
+        isManual: true,
+      });
+    }
+
+    return list.length
+      ? list
+      : [
+          {
+            type: "ADD",
+            particular: "",
+            percentage: "",
+            amount: "",
+            isManual: false,
+          },
+        ];
+  };
 
   const handleEdit = () => {
     if (currentRow) {
@@ -433,17 +578,19 @@ function Purchasereturndebitnote() {
 
     const purchasereturn = purchasereturns[currentRow.index];
 
+    console.log(purchasereturn, "purchasereturn to edit");
     // Filter purchase details to match the selected PurchaseId
     const purchasereturndetail = purchasereturndetails.filter(
       (detail) => detail.PurchaseReturnId === purchasereturn.Id
     );
 
     // Map the details to rows
-    const mappedRows = purchasereturndetail.map((detail) => ({
+    let mappedRows = purchasereturndetail.map((detail) => ({
       // PurchaseReturnId: detail.PurchaseReturnId,
 
       PurchaseReturnId: detail.PurchaseReturnId,
       BookId: detail.BookId,
+
       Copies: detail.Copies,
       Rate: detail.Rate,
       DiscountPercentage: detail.DiscountPercentage,
@@ -452,7 +599,18 @@ function Purchasereturndebitnote() {
       Id: detail.Id, // Include the detail Id in the mapped row for tracking
     }));
 
-    // Convert date strings to DD-MM-YYYY format
+    // ⭐ No API call needed — match from local bookOptions
+    mappedRows = mappedRows.map((row) => {
+      const book = bookOptions.find((b) => b.value === row.BookId);
+
+      return {
+        ...row,
+        BookCode: book?.code || "",
+        BookName: book?.label || "",
+        Rate: row.Rate || book?.price || 0,
+      };
+    });
+
     const convertDateForInput = (dateStr) => {
       if (typeof dateStr === "string" && dateStr.includes("-")) {
         const [year, month, day] = dateStr.split(" ")[0].split("-");
@@ -467,30 +625,24 @@ function Purchasereturndebitnote() {
       purchasereturn.PurchaseReturnDate.date
     );
 
-    // Set the form fields
     setPurchaseReturnNo(purchasereturn.PurchaseReturnNo);
     setPurchaseReturnDate(purchasereturnDate);
     setRefrenceNo(purchasereturn.RefrenceNo);
     setSupplierId(purchasereturn.SupplierId);
     setAccountId(purchasereturn.AccountId);
     setSubTotal(purchasereturn.SubTotal);
-    setExtra1(purchasereturn.Extra1);
-    setExtra1Amount(purchasereturn.Extra1Amount);
-    setExtra2(purchasereturn.Extra2);
-    setExtra2Amount(purchasereturn.Extra2Amount);
+
+    setAdjustments(buildAdjustmentsForEdit(purchasereturn));
+
     setTotal(purchasereturn.Total);
     setTotalCopies(purchasereturn.TotalCopies);
     setRemark(purchasereturn.Remark);
 
-    //   console.log(purchasereturn, 'purchase return');
-    //   console.log(purchasereturndetail, 'purchase return detail')
-    // console.log(mappedRows, 'mapped rows')
-    // Set the rows for the table with all the details
     setRows(mappedRows);
 
     // Set editing state
     setEditingIndex(currentRow.index);
-    setIsModalOpen(true);
+    setIsDrawerOpen(true);
     setIsEditing(true);
     setId(purchasereturn.Id);
     handleMenuClose();
@@ -507,14 +659,85 @@ function Purchasereturndebitnote() {
     });
   };
 
+  const bookCodeTimer = useRef(null);
+
+  const handleBookCodeChange = (rowIndex, value) => {
+    const updatedRows = [...rows];
+    updatedRows[rowIndex].BookCode = value;
+    setRows(updatedRows);
+
+    // 🔴 Clear previous timer
+    if (bookCodeTimer.current) {
+      clearTimeout(bookCodeTimer.current);
+    }
+
+    // if book code is blank → reset row fields
+    if (value.trim() === "") {
+      updatedRows[rowIndex].BookName = "";
+      updatedRows[rowIndex].BookNameMarathi = "";
+      updatedRows[rowIndex].Rate = "";
+      updatedRows[rowIndex].BookRate = "";
+      updatedRows[rowIndex].BookId = "";
+      updatedRows[rowIndex].Copies = "";
+      updatedRows[rowIndex].Amount = "";
+      updatedRows[rowIndex].DiscountPercentage = "";
+      updatedRows[rowIndex].FinalAmount = "";
+
+      setRows(updatedRows);
+      return; // stop here
+    }
+
+    // 🟡 Wait until user finishes typing (500ms)
+    bookCodeTimer.current = setTimeout(() => {
+      // 🔒 Minimum length check (VERY IMPORTANT)
+      if (value.length < 2) return;
+
+      // Fetch data
+      fetchBookDataForRow(rowIndex, value);
+    }, 400);
+  };
+
+  const fetchBookDataForRow = async (rowIndex, bookCode) => {
+    if (!bookCode) return; // guard clause
+
+    try {
+      const response = await fetch(
+        `https://publication.microtechsolutions.net.in/php/Bookcodeget.php?BookCode=${bookCode}`
+      );
+      const data = await response.json();
+
+      if (Array.isArray(data) && data.length > 0) {
+        const book = data[0];
+
+        setRows((prevRows) => {
+          const updatedRows = [...prevRows];
+          updatedRows[rowIndex] = {
+            ...updatedRows[rowIndex],
+            BookName: book.BookName || book.BookNameMarathi || "",
+            Rate: book.BookRate || 0,
+            BookId: book.Id || "", // This is important
+          };
+          return updatedRows;
+        });
+
+        // // Now call the last API with the fetched BookId
+        // if (AccountId && book.Id) {
+        //   fetchBookHistory(rowIndex, book.Id, AccountId);
+        // }
+      } else {
+        // ❌ Now this WILL fire correctly
+        toast.error("Invalid Book Code");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to fetch Book");
+    }
+  };
+
   const validateForm = () => {
     let formErrors = {};
     let isValid = true;
 
-    // if (!PurchaseReturnNo) {
-    //   formErrors.PurchaseReturnNo = "Purchase Return No  is required.";
-    //   isValid = false;
-    // }
     if (!purchasesafedate) {
       formErrors.purchasesafedate = "Purchase Return Date is required.";
       isValid = false;
@@ -574,7 +797,7 @@ function Purchasereturndebitnote() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!validateForm()) return;
+    // if (!validateForm()) return;
 
     if (
       !purchasesafedate ||
@@ -596,10 +819,12 @@ function Purchasereturndebitnote() {
       SupplierId: SupplierId,
       AccountId: AccountId,
       SubTotal: SubTotal,
-      Extra1: Extra1,
-      Extra1Amount: Extra1Amount,
-      Extra2: Extra2,
-      Extra2Amount: Extra2Amount,
+      Extra1: firstAdj.particular || "",
+      Extra1Percentage: firstAdj.percentage || "",
+      Extra1Amount: Number(firstAdj.amount) || 0,
+      Extra2: secondAdj.particular || "",
+      Extra2Percentage: secondAdj.percentage || "",
+      Extra2Amount: Number(secondAdj.amount) || 0,
       Total: Total,
       TotalCopies: TotalCopies,
       Remark: Remark,
@@ -653,7 +878,7 @@ function Purchasereturndebitnote() {
 
       fetchPurchasereturns();
       fetchPurchasereturnDetails();
-      setIsModalOpen(false);
+      setIsDrawerOpen(false);
       toast.success(
         isEditing
           ? "Purchase return & Purchase Return Details updated successfully!"
@@ -805,181 +1030,148 @@ function Purchasereturndebitnote() {
           </div>{" "}
         </div>
 
-        {isModalOpen && (
-          <div
-            className="preturn-overlay"
-            onClick={() => setIsModalOpen(false)}
-          />
-        )}
+        {isDrawerOpen && <div onClick={() => setIsDrawerOpen(false)} />}
 
-        <Modal open={isModalOpen}>
-          <div className="preturn-modal">
-            <h2
-              style={{
-                textAlign: "center",
-                fontWeight: "620",
-                margin: "2px",
-                fontSize: "27px",
-              }}>
-              {editingIndex >= 0
-                ? "Edit Purchase Return Debit Note "
-                : "Add Purchase Return Debit Note"}
-            </h2>
-            <form className="preturn-form">
-              <div>
-                <label className="preturn-label">
-                  Purchase Return No <b className="required">*</b>
-                </label>
-                <div>
-                  <input
-                    type="text"
-                    id="PurchaseReturnNo"
-                    name="PurchaseReturnNo"
-                    value={PurchaseReturnNo}
-                    onChange={(e) => setPurchaseReturnNo(e.target.value)}
-                    style={{ background: "#f5f5f5" }}
-                    className="preturn-control"
-                    placeholder="Auto-Incremented"
-                    readOnly
+        <Drawer
+          anchor="right"
+          open={isDrawerOpen}
+          // onClose={handleDrawerClose}
+          PaperProps={{
+            sx: {
+              borderRadius: isSmallScreen ? "0" : "10px 0 0 10px",
+              width: isSmallScreen ? "100%" : "85%",
+              zIndex: 1000,
+              paddingLeft: "5px",
+            },
+          }}>
+          <Box
+            sx={{
+              padding: 2,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}>
+            <Typography variant="h6">
+              <b>
+                {isEditing
+                  ? "Edit Purchase Return Debit note"
+                  : "Create Purchase Return Debit note"}
+              </b>
+            </Typography>{" "}
+            <CloseIcon sx={{ cursor: "pointer" }} onClick={handleDrawerClose} />
+          </Box>
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              // border: "1px solid red",
+              gap: 1,
+              ml: 2,
+            }}>
+            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+              <Box>
+                <Typography variant="body2" fontWeight="bold">
+                  Note No
+                </Typography>
+                <TextField
+                  value={PurchaseReturnNo}
+                  onChange={(e) => setPurchaseReturnNo(e.target.value)}
+                  size="small"
+                  margin="none"
+                  style={{ background: "#f5f5f5" }}
+                  placeholder="Auto-Incremented"
+                  InputProps={{ readOnly: true }}
+                />
+              </Box>
+              <Box>
+                <Typography variant="body2" fontWeight="bold">
+                  Party's Ref No
+                </Typography>
+                <TextField
+                  value={RefrenceNo}
+                  onChange={(e) => setRefrenceNo(e.target.value)}
+                  size="small"
+                  margin="none"
+                  placeholder="party ref No"
+                  fullWidth
+                />
+              </Box>
+
+              <Box>
+                <Typography variant="body2" fontWeight="bold">
+                  Date
+                </Typography>
+                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                  <DatePicker
+                    value={safedate}
+                    onChange={handleDateChange1}
+                    format="DD-MM-YYYY"
+                    slotProps={{
+                      textField: {
+                        size: "small",
+                        fullWidth: true,
+                        error: !!dateError,
+                        helperText: dateError,
+                      },
+                    }}
                   />
-                </div>
+                </LocalizationProvider>
+              </Box>
 
-                <div>
-                  {errors.PurchaseReturnNo && (
-                    <b className="error-text">{errors.PurchaseReturnNo}</b>
-                  )}
-                </div>
-              </div>
-
-              <div>
-                <label className="preturn-label">
-                  Purchase Return Date <b className="required">*</b>
-                </label>
-                <div>
-                  <LocalizationProvider dateAdapter={AdapterDayjs}>
-                    <DatePicker
-                      value={purchasesafedate}
-                      onChange={handleDateChange1}
-                      format="DD-MM-YYYY"
-                      slotProps={{
-                        textField: {
-                          size: "small",
-                          fullWidth: true,
-                          error: !!purchaseerror,
-                          helperText: purchaseerror,
-                        },
-                      }}
-                      sx={{
-                        marginTop: "10px",
-                        marginBottom: "5px",
-                        width: "250px",
-                      }}
+              <Box sx={{ width: "415px" }}>
+                <Typography fontWeight="bold" variant="body2">
+                  Party Name
+                </Typography>
+                <Autocomplete
+                  options={accountOptions}
+                  value={
+                    accountOptions.find(
+                      (option) => option.value === SupplierId
+                    ) || null
+                  }
+                  onChange={(event, newValue) =>
+                    setSupplierId(newValue ? newValue.value : null)
+                  }
+                  getOptionLabel={(option) => option.label} // Display only label in dropdown
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      placeholder="Select Party Name"
+                      size="small"
+                      fullWidth
                     />
-                  </LocalizationProvider>
-                </div>
-
-                <div>
-                  {errors.PurchaseReturnDate && (
-                    <b className="error-text">{errors.PurchaseReturnDate}</b>
                   )}
-                </div>
-              </div>
+                />
+              </Box>
+            </Box>
 
-              <div>
-                <label className="preturn-label">
-                  Reference No <b className="required">*</b>
-                </label>
-                <div>
-                  <input
-                    type="text"
-                    id="RefrenceNo"
-                    name="RefrenceNo"
-                    value={RefrenceNo}
-                    onChange={(e) => setRefrenceNo(e.target.value)}
-                    maxLength={50}
-                    className="preturn-control"
-                    placeholder="Enter Reference No"
-                  />
-                </div>
-
-                <div>
-                  {errors.RefrenceNo && (
-                    <b className="error-text">{errors.RefrenceNo}</b>
+            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+              <Box sx={{ width: "450px" }}>
+                <Typography fontWeight="bold" variant="body2">
+                  Credit Account
+                </Typography>
+                <Autocomplete
+                  options={accountOptions}
+                  value={
+                    accountOptions.find(
+                      (option) => option.value === AccountId
+                    ) || null
+                  }
+                  onChange={(event, newValue) =>
+                    setAccountId(newValue ? newValue.value : null)
+                  }
+                  getOptionLabel={(option) => option.label} // Display only label in dropdown
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      placeholder="Select Credit acc"
+                      size="small"
+                      margin="none"
+                    />
                   )}
-                </div>
-              </div>
-
-              <div>
-                <label className="preturn-label">
-                  Supplier <b className="required">*</b>
-                </label>
-                <div>
-                  <Autocomplete
-                    options={accountOptions}
-                    value={
-                      accountOptions.find(
-                        (option) => option.value === SupplierId
-                      ) || null
-                    }
-                    onChange={(event, newValue) =>
-                      setSupplierId(newValue ? newValue.value : null)
-                    }
-                    getOptionLabel={(option) => option.label} // Display only label in dropdown
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        placeholder="Select Supp id"
-                        size="small"
-                        margin="none"
-                        fullWidth
-                      />
-                    )}
-                    sx={{ mt: 1.25, mb: 0.625, width: 310 }} // Equivalent to 10px and 5px
-                  />
-                </div>
-                <div>
-                  {errors.SupplierId && (
-                    <b className="error-text">{errors.SupplierId}</b>
-                  )}
-                </div>
-              </div>
-
-              <div>
-                <label className="preturn-label">
-                  {" "}
-                  Account <b className="required">*</b>
-                </label>
-                <div>
-                  <Autocomplete
-                    options={accountOptions}
-                    value={
-                      accountOptions.find(
-                        (option) => option.value === AccountId
-                      ) || null
-                    }
-                    onChange={(event, newValue) =>
-                      setAccountId(newValue ? newValue.value : null)
-                    }
-                    getOptionLabel={(option) => option.label} // Display only label in dropdown
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        placeholder="Select Acc id"
-                        size="small"
-                        margin="none"
-                        fullWidth
-                      />
-                    )}
-                    sx={{ mt: 1.25, mb: 0.625, width: 300 }} // Equivalent to 10px and 5px
-                  />
-                </div>
-                <div>
-                  {errors.AccountId && (
-                    <b className="error-text">{errors.AccountId}</b>
-                  )}
-                </div>
-              </div>
-            </form>
+                />
+              </Box>
+            </Box>
 
             <div className="preturn-table">
               <table>
@@ -987,447 +1179,286 @@ function Purchasereturndebitnote() {
                   <tr>
                     <th>Serial No</th>
                     <th>Book Code</th>
-                    <th>
-                      Book Name <b className="required">*</b>
-                    </th>
-                    <th>
-                      Copies <b className="required">*</b>
-                    </th>
-                    <th>
-                      Rate <b className="required">*</b>
-                    </th>
-                    <th>
-                      Discount Percentage <b className="required">*</b>
-                    </th>
-                    <th>
-                      Discount Amount <b className="required">*</b>
-                    </th>
-                    <th>
-                      Amount <b className="required">*</b>
-                    </th>
+                    <th>Book Name</th>
+                    <th>Copies</th>
+                    <th>Price</th>
+                    <th>Discount</th>
+                    <th>Amount</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
+
                 <tbody>
                   {isLoading ? (
                     <tr>
                       <td
                         colSpan="10"
-                        style={{
-                          textAlign: "center",
-                          fontWeight: "bold",
-                          padding: "10px",
-                          color: "blue",
-                        }}>
+                        style={{ textAlign: "center", color: "blue" }}>
                         Loading data...
                       </td>
                     </tr>
-                  ) : rows.length === 0 ? ( // Check if rows is empty
+                  ) : rows.length === 0 ? (
                     <tr>
                       <td
                         colSpan="10"
-                        style={{
-                          textAlign: "center",
-                          fontWeight: "bold",
-                          padding: "10px",
-                          color: "red",
-                        }}>
+                        style={{ textAlign: "center", color: "red" }}>
                         No data available
                       </td>
                     </tr>
                   ) : (
                     rows.map((row, index) => (
-                      <tr key={index}>
-                        <td>{index + 1}</td>
+                      <React.Fragment key={index}>
+                        {/* 🔹 Main Book Row */}
+                        <tr>
+                          <td>{index + 1}</td>
 
-                        <td>
-                          {bookOptions.find(
-                            (option) => option.value === row.BookId
-                          )?.code || ""}
-                        </td>
-                        <td>
-                          <Autocomplete
-                            options={bookOptions}
-                            value={
-                              bookOptions.find(
-                                (option) => option.value === row.BookId
-                              ) || null
-                            }
-                            onChange={(event, newValue) =>
-                              handleInputChange(
-                                index,
-                                "BookId",
-                                newValue ? newValue.value : ""
-                              )
-                            }
-                            sx={{ width: 500 }} // Set width
-                            getOptionLabel={(option) => option.label}
-                            renderInput={(params) => (
-                              <TextField
-                                {...params}
-                                placeholder="Select Book"
-                                size="big"
-                                fullWidth
-                                sx={{
-                                  "& .MuiInputBase-root": {
-                                    height: "50px",
-                                    // width: "200px", // Adjust height here
-                                  },
-                                  "& .MuiInputBase-input": {
-                                    padding: "14px", // Adjust padding for better alignment
-                                  },
-                                }}
-                              />
-                            )}
-                          />
-                        </td>
-                        <td>
-                          <input
-                            type="number"
-                            value={row.Copies}
-                            onChange={(e) =>
-                              handleInputChange(index, "Copies", e.target.value)
-                            }
-                            style={{
-                              width: "100px",
-                            }}
-                            placeholder="Copies"
-                            className="preturn-control"
-                          />
-                        </td>
-                        <td>
-                          <input
-                            type="number"
-                            value={row.Rate}
-                            readOnly
-                            style={{ width: "150px" }}
-                            placeholder="Rate"
-                            className="preturn-control"
-                          />
-                          {/* 
-                          {bookOptions.find(
-                            (option) => option.value === row.BookId
-                          )?.price || ""} */}
-                        </td>
-                        <td>
-                          <input
-                            type="number"
-                            value={row.DiscountPercentage}
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              // Regex to validate decimal numbers with at most 18 digits total and 2 decimal places
-                              const regex = /^\d{0,18}(\.\d{0,2})?$/;
-
-                              // Check if the value matches the regex
-                              if (value === "" || regex.test(value)) {
+                          <td>
+                            <input
+                              type="text"
+                              value={row.BookCode || ""}
+                              onChange={(e) =>
+                                handleBookCodeChange(index, e.target.value)
+                              }
+                              placeholder="Enter Book Code"
+                              style={{ width: "100px" }}
+                              className="preturn-control"
+                            />
+                          </td>
+                          <td>
+                            <input
+                              type="text"
+                              value={row.BookName || row.BookNameMarathi || ""}
+                              readOnly
+                              placeholder="Book Name / Book Name Marathi"
+                              style={{ width: "400px" }}
+                              className="preturn-control"
+                            />
+                          </td>
+                          <td>
+                            <input
+                              type="number"
+                              value={row.Copies}
+                              onChange={(e) =>
+                                handleInputChange(
+                                  index,
+                                  "Copies",
+                                  e.target.value
+                                )
+                              }
+                              style={{
+                                width: "65px",
+                              }}
+                              className="preturn-control"
+                              placeholder="Copies"
+                            />
+                          </td>
+                          <td>
+                            <input
+                              type="text"
+                              value={row.Rate || row.BookRate || ""}
+                              readOnly
+                              placeholder="Rate"
+                              style={{ width: "100px" }}
+                              className="preturn-control"
+                            />
+                          </td>
+                          <td>
+                            <input
+                              type="number"
+                              value={row.DiscountPercentage || ""}
+                              onChange={(e) =>
                                 handleInputChange(
                                   index,
                                   "DiscountPercentage",
-                                  value
-                                );
+                                  e.target.value
+                                )
                               }
-                            }}
-                            style={{
-                              width: "100px",
-                            }}
-                            placeholder="Discount %"
-                            className="preturn-control"
-                          />
-                        </td>
-                        <td>
-                          <input
-                            type="number"
-                            value={row.DiscountAmount}
-                            readOnly
-                            style={{
-                              width: "150px",
-                            }}
-                            placeholder="Discount Amount"
-                            className="preturn-control"
-                          />
-                        </td>
-                        <td>
-                          <input
-                            type="number"
-                            value={row.Amount}
-                            readOnly
-                            style={{
-                              width: "150px",
-                            }}
-                            placeholder="Amount"
-                            className="preturn-control"
-                          />
-                        </td>
-                        <td>
-                          <div
-                            style={{
-                              display: "flex",
-                              justifyContent: "space-between",
-                            }}>
-                            <Button
-                              onClick={handleAddRow}
+                              style={{ width: "80px" }}
+                              className="preturn-control"
+                              placeholder="Discount Percentage"
+                            />
+                          </td>
+
+                          <td>
+                            <input
+                              type="number"
+                              value={row.Amount || ""}
+                              readOnly
+                              style={{ width: "100px" }}
+                              placeholder="Amount"
+                              className="preturn-control"
+                            />
+                          </td>
+
+                          <td>
+                            <div
                               style={{
-                                background: "#0a60bd",
-                                color: "white",
-                                marginRight: "5px",
+                                display: "flex",
+                                justifyContent: "space-between",
                               }}>
-                              Add
-                            </Button>
-                            <Button
-                              onClick={() => handleDeleteRow(index)}
-                              style={{ background: "red", color: "white" }}>
-                              <RiDeleteBin5Line />
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
+                              <Button
+                                onClick={handleAddRow}
+                                style={{
+                                  background: "#0a60bd",
+                                  color: "white",
+                                  marginRight: "5px",
+                                }}>
+                                Add
+                              </Button>
+                              <Button
+                                onClick={() => handleDeleteRow(index)}
+                                style={{ background: "red", color: "white" }}>
+                                <RiDeleteBin5Line />
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      </React.Fragment>
                     ))
                   )}
+
+                  {/* 🔹 Totals Row (NO index here) */}
+                  <tr>
+                    <td
+                      colSpan="3"
+                      style={{ textAlign: "right", fontWeight: "bold" }}>
+                      Total Copies:
+                    </td>
+                    <td style={{ fontWeight: "bold", paddingLeft: "10px" }}>
+                      {TotalCopies}
+                    </td>
+                    <td colSpan="2"></td>
+                    <td style={{ fontWeight: "bold" }}>{SubTotal}</td>
+                    <td></td>
+                  </tr>
                 </tbody>
               </table>
             </div>
-            <form className="preturn-form">
-              <div>
-                <label className="preturn-label">
-                  Sub Total <b className="required">*</b>
-                </label>
-                <div>
-                  <input
-                    type="text"
-                    id="SubTotal"
-                    name="SubTotal"
-                    value={SubTotal}
-                    onChange={(e) => {
-                      const value = e.target.value;
 
-                      // Regex to validate decimal numbers with at most 18 digits total and 2 decimal places
-                      const regex = /^\d{0,18}(\.\d{0,2})?$/;
+            {/* Add / Less Section */}
+            <Box mr={8} display="flex" justifyContent="flex-end">
+              <Box width="500px">
+                <Typography fontWeight="bold" mb={1}>
+                  Add / Less
+                </Typography>
 
-                      // Check if the value matches the regex
-                      if (value === "" || regex.test(value)) {
-                        setSubTotal(value);
+                {adjustments.map((row, index) => (
+                  <Box
+                    key={index}
+                    display="flex"
+                    gap={1}
+                    alignItems="center"
+                    mb={1}>
+                    <TextField
+                      select
+                      SelectProps={{ native: true }}
+                      value={row.type}
+                      onChange={(e) => handleTypeChange(index, e.target.value)}
+                      size="small"
+                      sx={{ width: 90 }}>
+                      <option value="ADD">Add</option>
+                      <option value="LESS">Less</option>
+                    </TextField>
+
+                    <TextField
+                      placeholder="Particulars"
+                      value={row.particular}
+                      onChange={(e) =>
+                        handleAdjustmentChange(
+                          index,
+                          "particular",
+                          e.target.value
+                        )
                       }
-                    }}
-                    className="preturn-control"
-                    placeholder="Enter Sub Total"
-                  />
-                </div>
+                      size="small"
+                      sx={{ flex: 1 }}
+                    />
 
-                <div>
-                  {errors.SubTotal && (
-                    <b className="error-text">{errors.SubTotal}</b>
-                  )}
-                </div>
-              </div>
-
-              <div>
-                <label className="preturn-label">
-                  Extra1 <b className="required">*</b>
-                </label>
-                <div>
-                  <input
-                    type="text"
-                    id="Extra1"
-                    name="Extra1"
-                    value={Extra1}
-                    onChange={(e) => setExtra1(e.target.value)}
-                    maxLength={50}
-                    className="preturn-control"
-                    placeholder="Enter Extra1"
-                  />
-                </div>
-
-                <div>
-                  {errors.Extra1 && (
-                    <b className="error-text">{errors.Extra1}</b>
-                  )}
-                </div>
-              </div>
-              <div>
-                <label className="preturn-label">
-                  Extra1 Amount <b className="required">*</b>
-                </label>
-                <div>
-                  <input
-                    type="text"
-                    id="Extra1Amount"
-                    name="Extra1Amount"
-                    value={Extra1Amount}
-                    onChange={(e) => {
-                      const value = e.target.value;
-
-                      // Regex to validate decimal numbers with at most 18 digits total and 2 decimal places
-                      const regex = /^\d{0,18}(\.\d{0,2})?$/;
-
-                      // Check if the value matches the regex
-                      if (value === "" || regex.test(value)) {
-                        setExtra1Amount(value);
+                    <TextField
+                      type="number"
+                      placeholder="Percentage"
+                      value={row.percentage}
+                      onChange={(e) =>
+                        handlePercentageChange(index, e.target.value)
                       }
-                    }}
-                    className="preturn-control"
-                    placeholder="Enter Extra1 Amount"
-                  />
-                </div>
-                <div>
-                  {errors.Extra1Amount && (
-                    <b className="error-text">{errors.Extra1Amount}</b>
-                  )}
-                </div>
-              </div>
-              <div>
-                <label className="preturn-label">
-                  Extra2 <b className="required">*</b>
-                </label>
-                <div>
-                  <input
-                    type="text"
-                    id="Extra2"
-                    name="Extra2"
-                    value={Extra2}
-                    onChange={(e) => setExtra2(e.target.value)}
-                    maxLength={50}
-                    className="preturn-control"
-                    placeholder="Enter Extra2"
-                  />
-                </div>
+                      size="small"
+                      sx={{ width: 120 }}
+                    />
 
-                <div>
-                  {errors.Extra2 && (
-                    <b className="error-text">{errors.Extra2}</b>
-                  )}
-                </div>
-              </div>
-              <div>
-                <label className="preturn-label">
-                  Extra2 Amount <b className="required">*</b>
-                </label>
-                <div>
-                  <input
-                    type="text"
-                    id="Extra2Amount"
-                    name="Extra2Amount"
-                    value={Extra2Amount}
-                    onChange={(e) => {
-                      const value = e.target.value;
-
-                      // Regex to validate decimal numbers with at most 18 digits total and 2 decimal places
-                      const regex = /^\d{0,18}(\.\d{0,2})?$/;
-
-                      // Check if the value matches the regex
-                      if (value === "" || regex.test(value)) {
-                        setExtra2Amount(value);
+                    <TextField
+                      type="number"
+                      placeholder="Amount"
+                      value={row.amount}
+                      onChange={(e) =>
+                        handleAmountChange(index, e.target.value)
                       }
-                    }}
-                    className="preturn-control"
-                    placeholder="Enter Extra2 Amount"
-                  />
-                </div>
+                      size="small"
+                      sx={{ width: 120 }}
+                    />
 
-                <div>
-                  {errors.Extra2Amount && (
-                    <b className="error-text">{errors.Extra2Amount}</b>
-                  )}
-                </div>
-              </div>
+                    <Button
+                      color="error"
+                      variant="contained"
+                      onClick={() => removeAdjustmentRow(index)}>
+                      ×
+                    </Button>
+                  </Box>
+                ))}
 
-              <div>
-                <label className="preturn-label">
-                  Total <b className="required">*</b>
-                </label>
-                <div>
-                  <input
-                    type="text"
-                    id="Total"
-                    name="Total"
-                    value={Total}
-                    onChange={(e) => {
-                      const value = e.target.value;
+                <Button
+                  variant="outlined"
+                  onClick={addAdjustmentRow}
+                  sx={{ mt: 1 }}>
+                  + Add Row
+                </Button>
+              </Box>
+            </Box>
 
-                      // Regex to validate decimal numbers with at most 18 digits total and 2 decimal places
-                      const regex = /^\d{0,18}(\.\d{0,2})?$/;
+            {/* Final Total */}
+            <Box mt={1} display="flex" justifyContent="flex-end" mr={15}>
+              <Box>
+                <Typography variant="body2" fontWeight="bold">
+                  Total Amount
+                </Typography>
+                <TextField
+                  type="number"
+                  value={totalAmount}
+                  variant="outlined"
+                  InputProps={{
+                    sx: {
+                      fontSize: "1.2rem",
+                      fontWeight: "bold",
+                      height: "50px",
+                      width: "205px",
+                      color: "green",
+                    },
+                    readOnly: true,
+                  }}
+                />
+              </Box>
+            </Box>
+          </Box>
 
-                      // Check if the value matches the regex
-                      if (value === "" || regex.test(value)) {
-                        setTotal(value);
-                      }
-                    }}
-                    className="bookpurchase-control"
-                    placeholder="Enter Total"
-                  />
-                </div>
-
-                <div>
-                  {errors.Total && <b className="error-text">{errors.Total}</b>}
-                </div>
-              </div>
-
-              <div>
-                <label className="bookpurchase-label">
-                  Total Copies <b className="required">*</b>
-                </label>
-                <div>
-                  <input
-                    type="text"
-                    id="TotalCopies"
-                    name="TotalCopies"
-                    value={TotalCopies}
-                    onChange={(e) => setTotalCopies(e.target.value)}
-                    className="bookpurchase-control"
-                    placeholder="Enter Total Copies"
-                  />
-                </div>
-                <div>
-                  {errors.TotalCopies && (
-                    <b className="error-text">{errors.TotalCopies}</b>
-                  )}
-                </div>
-              </div>
-
-              <div>
-                <label className="bookpurchase-label">
-                  Remark <b className="required">*</b>
-                </label>
-                <div>
-                  <input
-                    type="text"
-                    id="Remark"
-                    name="Remark"
-                    value={Remark}
-                    onChange={(e) => setRemark(e.target.value)}
-                    maxLength={300}
-                    className="bookpurchase-control"
-                    placeholder="Enter Remark"
-                  />
-                </div>
-
-                <div>
-                  {errors.Remark && (
-                    <b className="error-text">{errors.Remark}</b>
-                  )}
-                </div>
-              </div>
-            </form>
-            <div className="bookpurchase-btn-container">
-              <Button
-                type="submit"
-                onClick={handleSubmit}
-                style={{
-                  background: "#0a60bd",
-                  color: "white",
-                }}>
-                {editingIndex >= 0 ? "Update" : "Save"}
-              </Button>
-              <Button
-                onClick={() => setIsModalOpen(false)}
-                style={{
-                  background: "red",
-                  color: "white",
-                }}>
-                Cancel
-              </Button>
-            </div>
+          <div className="preturn-btn-container">
+            <Button
+              type="submit"
+              onClick={handleSubmit}
+              style={{
+                background: "#0a60bd",
+                color: "white",
+              }}>
+              {editingIndex >= 0 ? "Update" : "Save"}
+            </Button>
+            <Button
+              onClick={() => setIsDrawerOpen(false)}
+              style={{
+                background: "red",
+                color: "white",
+              }}>
+              Cancel
+            </Button>
           </div>
-        </Modal>
+        </Drawer>
 
         <Dialog open={isDeleteDialogOpen} onClose={cancelDelete}>
           <DialogTitle style={{ color: "navy", fontWeight: "600" }}>

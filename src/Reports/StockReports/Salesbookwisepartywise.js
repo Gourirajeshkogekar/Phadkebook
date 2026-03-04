@@ -1,394 +1,332 @@
-import React, { useState, useRef, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Box,
+  Typography,
+  Grid,
   Button,
   TextField,
-  Typography,
-  Autocomplete,
-  Grid,
+  Checkbox,
+  RadioGroup,
+  FormControlLabel,
+  Radio,
+  Paper,
+  Divider,
 } from "@mui/material";
-import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
-import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import jsPDF from "jspdf";
-import html2canvas from "html2canvas";
+
+import PrintIcon from "@mui/icons-material/Print";
+import CloseIcon from "@mui/icons-material/Close";
+
 import axios from "axios";
 import dayjs from "dayjs";
-import autoTable from "jspdf-autotable";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
 
-const Salesbookwisepartywise = () => {
-  const componentRef = useRef();
+export default function SalesBookwisePartywise() {
+  const reportRef = useRef();
+  const [printing, setPrinting] = useState(false);
+  const [showBooks, setShowBooks] = useState("no");
 
-  const [fromdate, setFromDate] = useState(dayjs());
-  const [todate, setToDate] = useState(dayjs());
-  const [bookName, setBookName] = useState("");
-  const [selectedBookLabel, setSelectedBookLabel] = useState("");
-  const [bookOptions, setBookOptions] = useState([]);
-  const [previewImage, setPreviewImage] = useState(null);
-  const [showPreview, setShowPreview] = useState(false);
-  const [bookReportData, setBookreportdata] = useState([]);
-  const hiddenReportRef = useRef();
-  const [loading, setLoading] = useState(false);
-  const [companyName, setCompanyName] = useState("");
+  const today = dayjs();
+  const fyYear = today.month() >= 3 ? today.year() : today.year() - 1;
+
+  const [startDate, setStartDate] = useState(`${fyYear}-04-01`);
+  const [endDate, setEndDate] = useState(`${fyYear + 1}-03-31`);
+
+  const [publications, setPublications] = useState([]);
+  const [selectedPublications, setSelectedPublications] = useState([]);
+
+  const [parties, setParties] = useState([]);
+  const [selectedParties, setSelectedParties] = useState([]);
+
+  const [bookCode, setBookCode] = useState("");
+  const [bookInfo, setBookInfo] = useState(null);
 
   useEffect(() => {
-    fetchBooks();
-    fetchCompanies();
+    loadInitialData();
   }, []);
 
-  const fetchBooks = async () => {
+  const loadInitialData = async () => {
     try {
-      const response = await axios.get(
-        "https://publication.microtechsolutions.net.in/php/Bookget.php"
-      );
-      const options = response.data.map((book) => ({
-        value: book.Id,
-        label: book.BookName || book.BookNameMarathi,
-        code: book.BookCode,
-      }));
-      setBookOptions(options);
-    } catch (error) {
-      console.error("Error fetching books:", error);
+      const [pubRes, accRes] = await Promise.all([
+        axios.get("https://publication.microtechsolutions.net.in/php/Publicationget.php"),
+        axios.get("https://publication.microtechsolutions.net.in/php/Accountget.php")
+      ]);
+      setPublications(pubRes.data.map(x => x.PublicationName || Object.values(x)[0]));
+      setParties(accRes.data.map(x => x.AccountName || Object.values(x)[0]));
+    } catch (err) {
+      console.error("Failed to load data", err);
     }
   };
 
-  const fetchCompanies = async () => {
-    try {
-      const response = await axios.get(
-        "https://publication.microtechsolutions.net.in/php/CompanyMasterget.php"
-      );
-
-      if (response.data.length > 0) {
-        setCompanyName(response.data[0].CompanyName); // Assuming you want the first one
-      }
-    } catch (error) {
-      console.error("Error fetching companies:", error);
-    }
-  };
-
-  const totalInvoiceCopies = bookReportData.reduce(
-    (sum, row) => sum + Number(row.salestotal || 0),
-    0
-  );
-  const totalsalesreturnCopies = bookReportData.reduce(
-    (sum, row) => sum + Number(row.salesreturntotal || 0),
-    0
-  );
-  const totalnetsale = bookReportData.reduce(
-    (sum, row) => sum + Number(row.netsale || 0),
-    0
-  );
-
-  const fetchData = async () => {
-    if (!bookName) return alert("Please select a book.");
-
-    const selectedBook = bookOptions.find((b) => b.value === bookName);
-    if (!selectedBook) return;
-
-    const bookCode = selectedBook.code;
+  const loadBookInfo = async (code) => {
+    if (!code) return setBookInfo(null);
     try {
       const res = await axios.get(
-        `https://publication.microtechsolutions.net.in/php/getsalesbookwiseparty.php?fromdate=${fromdate.format(
-          "YYYY-MM-DD"
-        )}&todate=${todate.format("YYYY-MM-DD")}&BookCode=${bookCode}`
+        `https://publication.microtechsolutions.net.in/php/Bookcodeget.php?BookCode=${code}`
       );
-      if (res.data && res.data.length > 0) {
-        setBookreportdata(res.data);
-        // setRenderPreview(true);
-      } else {
-        console.error("No data available for selected date range.");
-        // setRenderPreview(false);
-      }
-    } catch (err) {
-      toast.error("Error fetching data", err);
+      setBookInfo(res.data.length > 0 ? res.data[0] : null);
+    } catch {
+      setBookInfo(null);
     }
   };
-  const handleGeneratePDF = async () => {
-    setLoading(true);
-    await fetchData();
 
-    setTimeout(() => {
-      openPreviewWindow().finally(() => {
-        setLoading(false);
-      });
+  const togglePublication = (name) => {
+    setSelectedPublications(prev =>
+      prev.includes(name) ? prev.filter(x => x !== name) : [...prev, name]
+    );
+  };
+
+  const toggleParty = (name) => {
+    setSelectedParties(prev =>
+      prev.includes(name) ? prev.filter(x => x !== name) : [...prev, name]
+    );
+  };
+
+  const handlePrint = async () => {
+    setPrinting(true);
+    setTimeout(async () => {
+      const element = reportRef.current;
+      const canvas = await html2canvas(element, { scale: 2 });
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF("p", "mm", "a4");
+      pdf.addImage(imgData, "PNG", 0, 0, 210, 297);
+      window.open(pdf.output("bloburl"), "_blank");
+      setPrinting(false);
     }, 500);
   };
 
-  const openPreviewWindow = async () => {
-    setLoading(true);
-
-    const input = componentRef.current;
-    if (!input) return;
-
-    const canvas = await html2canvas(input, {
-      scale: 2,
-      useCORS: true,
-    });
-
-    const imgWidth = canvas.width;
-    const imgHeight = canvas.height;
-
-    const pdf = new jsPDF("p", "mm", "a4");
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = pdf.internal.pageSize.getHeight();
-
-    const ratio = pdfWidth / imgWidth;
-    const scaledHeight = imgHeight * ratio;
-
-    const headerHeight = 20;
-    const marginTop = 20;
-    const marginBottom = 10;
-    const availableHeight = pdfHeight - marginTop - marginBottom;
-
-    const pageHeightPx = availableHeight / ratio;
-    const totalPages = Math.ceil(imgHeight / pageHeightPx);
-
-    for (let i = 0; i < totalPages; i++) {
-      const sourceY = i * pageHeightPx;
-
-      const pageCanvas = document.createElement("canvas");
-      pageCanvas.width = imgWidth;
-      pageCanvas.height = Math.min(pageHeightPx, imgHeight - sourceY);
-
-      const ctx = pageCanvas.getContext("2d");
-      ctx.drawImage(
-        canvas,
-        0,
-        sourceY,
-        imgWidth,
-        pageCanvas.height,
-        0,
-        0,
-        imgWidth,
-        pageCanvas.height
-      );
-
-      const pageImgData = pageCanvas.toDataURL("image/png");
-
-      if (i > 0) pdf.addPage();
-
-      // header
-      pdf.setFontSize(11);
-      pdf.setFont("helvetica", "bold");
-      pdf.text(companyName || "Phadke Prakashan, Kolhapur", pdfWidth / 2, 8, {
-        align: "center",
-      });
-
-      pdf.setFontSize(11);
-      pdf.setFont("helvetica", "bold");
-      pdf.text(
-        `Sales Bookwise Partywise from ${fromdate.format(
-          "DD-MM-YYYY"
-        )} to ${todate.format("DD-MM-YYYY")}`,
-        pdfWidth / 2,
-        12,
-        { align: "center" }
-      );
-
-      pdf.setFontSize(10);
-      pdf.setFont("helvetica", "bold");
-      pdf.text(`Book: ${selectedBookLabel}`, pdfWidth / 2, 17, {
-        align: "center",
-      });
-
-      pdf.setFontSize(10);
-      pdf.setFont("helvetica", "normal");
-      pdf.text(`Page ${i + 1} of ${totalPages}`, pdfWidth - 10, 10, {
-        align: "right",
-      });
-
-      // Image content
-      pdf.addImage(
-        pageImgData,
-        "PNG",
-        0,
-        marginTop,
-        pdfWidth,
-        (pageCanvas.height * pdfWidth) / imgWidth
-      );
-    }
-
-    const blob = pdf.output("blob");
-    const blobURL = URL.createObjectURL(blob);
-    window.open(blobURL, "_blank");
-  };
-
   return (
-    <Box p={3}>
-      <Typography
-        variant="h5"
-        mb={3}
-        sx={{
-          textAlign: "center",
-          background: "linear-gradient(to right, #007cf0, #00dfd8)",
-          WebkitBackgroundClip: "text",
-          WebkitTextFillColor: "transparent",
-          textShadow: "2px 2px 4px rgba(0,0,0,0.2)",
-          fontWeight: "bold",
-        }}>
-        Sales Bookwise Partywise
-      </Typography>
+    <Box sx={{ p: 1, bgcolor: "#f4f6f8", minHeight: "90vh" }}>
+      {/* HEADER WITH FIXED BORDER */}
 
-      <LocalizationProvider dateAdapter={AdapterDayjs}>
-        <Box
-          // component={Paper}
-          elevation={2}
-          sx={{
-            p: 3,
-            mb: 3,
-            border: "1px solid #ccc",
-            borderRadius: 2,
-            backgroundColor: "#fdfdfd",
-          }}>
-          <Grid container spacing={2} alignItems="center">
-            <Grid item xs={12} sm={6} md={4}>
-              <Typography variant="subtitle2" gutterBottom>
-                From Date
-              </Typography>
-              <DatePicker
-                value={fromdate}
-                onChange={(newValue) => setFromDate(newValue)}
-                slotProps={{ textField: { size: "small", fullWidth: true } }}
-              />
-            </Grid>
-
-            <Grid item xs={12} sm={6} md={4}>
-              <Typography variant="subtitle2" gutterBottom>
-                To Date
-              </Typography>
-              <DatePicker
-                value={todate}
-                onChange={(newValue) => setToDate(newValue)}
-                slotProps={{ textField: { size: "small", fullWidth: true } }}
-              />
-            </Grid>
-
-            <Grid item xs={12} sm={12} md={4}>
-              <Typography variant="subtitle2" gutterBottom>
-                Select Book
-              </Typography>
-              <Autocomplete
-                options={bookOptions}
-                value={
-                  bookOptions.find((option) => option.value === bookName) ||
-                  null
-                }
-                onChange={(event, newValue) => {
-                  setBookName(newValue ? newValue.value : "");
-                  setSelectedBookLabel(newValue ? newValue.label : "");
-                }}
-                getOptionLabel={(option) => option.label || ""}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    size="small"
-                    fullWidth
-                    placeholder="Select Book"
-                  />
-                )}
-              />
-            </Grid>
-          </Grid>
-
-          <Box textAlign="center" mt={3}>
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={handleGeneratePDF}
-              sx={{ fontSize: "0.85rem", textTransform: "none" }}>
-              Generate PDF
-            </Button>
-          </Box>
-        </Box>
-      </LocalizationProvider>
-
-      {loading && (
-        <Typography variant="body2" color="textSecondary" mt={1}>
-          Generating report, please wait...
+     
+     <Box sx={{ mb: 1, pb: 1, borderBottom: "1px solid #e0e0e0" }}>
+        <Typography variant="h5" fontWeight={700} color="primary.main">
+          Sales Bookwise Partywise
         </Typography>
-      )}
-      {/* Hidden content for PDF rendering */}
-      <Box
-        ref={componentRef}
-        sx={{
-          position: "absolute",
-          top: "-9999px",
-          left: "-9999px",
-          width: "600px",
-          backgroundColor: "#fff",
-          fontSize: "13px",
-          textAlign: "center",
-        }}>
-        <Box mt={3}>
-          <table
-            style={{
-              width: "100%",
-              borderCollapse: "collapse",
-              fontSize: "11px", // Increased here
-            }}
-            border="1">
-            <thead>
-              <tr
-                style={{
-                  backgroundColor: "#2980b9",
-                  color: "white",
-                  fontSize: "11px",
-                }}>
-                <th style={{ textAlign: "center" }}>Sr.No</th>
-
-                <th style={{ textAlign: "center" }}>Particulars</th>
-                <th style={{ textAlign: "center" }}>Sales Invoice Copies</th>
-                <th style={{ textAlign: "center" }}>Sales Return</th>
-                <th style={{ textAlign: "center" }}>Net Sale</th>
-              </tr>
-            </thead>
-            <tbody>
-              {bookReportData.map((row, index) => (
-                <tr key={index}>
-                  <td>{index + 1}</td>
-
-                  <td style={{ textAlign: "left" }}>{row.AccountName}</td>
-                  <td style={{ textAlign: "right" }}>{row.salestotal}</td>
-                  <td style={{ textAlign: "right" }}>{row.salesreturntotal}</td>
-                  <td style={{ textAlign: "right" }}>{row.netsale}</td>
-                </tr>
-              ))}
-            </tbody>
-
-            <tfoot>
-              <tr style={{ backgroundColor: "#e0e0e0", fontWeight: "bold" }}>
-                <td></td>
-                <td style={{ border: "1px solid #ccc" }}>Total</td>
-                <td
-                  style={{
-                    border: "1px solid #ccc",
-                    textAlign: "right",
-                  }}>
-                  {totalInvoiceCopies}
-                </td>
-                <td
-                  style={{
-                    border: "1px solid #ccc",
-                    textAlign: "right",
-                  }}>
-                  {totalsalesreturnCopies}
-                </td>
-                <td
-                  style={{
-                    border: "1px solid #ccc",
-                    textAlign: "right",
-                  }}>
-                  {totalnetsale}
-                </td>
-              </tr>
-            </tfoot>
-          </table>
         </Box>
+
+      <Grid container spacing={2}>
+        {/* LEFT COLUMN: OPTIONS & PUBLICATIONS */}
+        <Grid item xs={12} md={4}>
+          <Paper sx={{ p: 1,  }}>
+            <Typography variant="subtitle2" color="primary" fontWeight="bold">Show Books?</Typography>
+            <RadioGroup row value={showBooks} onChange={(e) => setShowBooks(e.target.value)}>
+              <FormControlLabel value="yes" control={<Radio size="small" />} label="Yes" />
+              <FormControlLabel value="no" control={<Radio size="small" />} label="No" />
+            </RadioGroup>
+
+            <Divider sx={{ my: 1 }} />
+
+            <Typography variant="subtitle2" color="primary" fontWeight="bold">Period</Typography>
+            <Box mt={1}>
+              <TextField type="date" label="From" fullWidth size="small" value={startDate} onChange={(e) => setStartDate(e.target.value)} sx={{ mb: 1 }} InputLabelProps={{ shrink: true }} />
+              <TextField type="date" label="To" fullWidth size="small" value={endDate} onChange={(e) => setEndDate(e.target.value)} InputLabelProps={{ shrink: true }} />
+            </Box>
+          </Paper>
+
+          <Paper sx={{ p: 1 , mt:1}}>
+            <Typography variant="subtitle2" color="primary" fontWeight="bold">Publication</Typography>
+             <Box sx={{ maxHeight: 140, overflowY: "auto", display: 'flex', flexDirection: 'column' }}>
+              {publications.map(pub => (
+                <FormControlLabel
+                  key={pub}
+                  control={<Checkbox size="small" 
+                    checked={selectedPublications.includes(pub)} 
+                    onChange={() => togglePublication(pub)} />}
+                  label={<Typography variant="body2">{pub}</Typography>}
+                />
+              ))}
+            </Box>
+          </Paper>
+        </Grid>
+
+        {/* MIDDLE COLUMN: BOOK CODE SEARCH */}
+        <Grid item xs={12} md={4}>
+          <Paper sx={{ p: 1, height: '400px' }}>
+            <Typography variant="subtitle2" color="primary" fontWeight="bold">Book Search</Typography>
+            <Divider sx={{ my: 1 }} />
+            <TextField
+              fullWidth
+              size="small"
+              placeholder="Enter Book Code"
+              value={bookCode}
+              onChange={(e) => {
+                setBookCode(e.target.value);
+                loadBookInfo(e.target.value);
+              }}
+            />
+            {bookInfo && (
+              <Box mt={2} p={1} sx={{ bgcolor: '#e3f2fd', borderRadius: 1 }}>
+                <Typography variant="body2"><strong>Code:</strong> {bookInfo.BookCode}</Typography>
+                <Typography variant="body2"><strong>Name:</strong> {bookInfo.BookName}</Typography>
+              </Box>
+            )}
+          </Paper>
+        </Grid>
+
+        {/* RIGHT COLUMN: PARTY SELECTION */}
+        <Grid item xs={12} md={4}>
+          <Paper sx={{ p: 1, height: '380px', display: 'flex', flexDirection: 'column' }}>
+            <Typography variant="subtitle2" color="primary" fontWeight="bold">Party</Typography>
+            <Divider sx={{ my: 1 }} />
+            <Box sx={{ flexGrow: 1, maxHeight: 400, overflowY: "auto", display: 'flex', flexDirection: 'column' }}>
+              {parties.map(party => (
+                <FormControlLabel
+                  key={party}
+                  control={<Checkbox size="small" checked={selectedParties.includes(party)} onChange={() => toggleParty(party)} />}
+                  label={<Typography variant="body2" noWrap>{party}</Typography>}
+                />
+              ))}
+            </Box>
+            <Box mt={2} display="flex" gap={1}>
+              <Button variant="contained" fullWidth startIcon={<PrintIcon />} onClick={handlePrint} disabled={printing}>Print</Button>
+              <Button variant="outlined" fullWidth color="error" startIcon={<CloseIcon />}>Close</Button>
+            </Box>
+          </Paper>
+        </Grid>
+      </Grid>
+
+        {/* PRINT AREA */}
+   <Box
+        ref={reportRef}
+        sx={{
+          width: "210mm",
+          minHeight: "297mm",
+          background: "#fff",
+          padding: "20mm",
+          position: "absolute",
+          left: "-9999px"
+        }}
+      >
+
+        <Typography align="center" fontWeight="bold">
+          PHADKE BOOK HOUSE
+        </Typography>
+
+        <Typography align="center">
+          From {startDate} To {endDate}
+        </Typography>
+<table
+  width="100%"
+  style={{
+    borderCollapse: "collapse",
+    marginTop: "10px",
+    width: "100%"
+  }}
+>
+  <thead>
+    <tr style={{ borderBottom: "1px solid black" }}>
+      <th style={{ textAlign: "left", padding: "6px" }}>
+        Particulars
+      </th>
+
+      {showBooks === "yes" ? (
+        <>
+         
+          <th style={{ textAlign: "right", padding: "6px" }}>
+            Sale
+          </th>
+          <th style={{ textAlign: "right", padding: "6px" }}>
+            Sale Return
+          </th>
+          <th style={{ textAlign: "right", padding: "6px" }}>
+            Net Sale
+          </th>
+        </>
+      ) : (
+        <>
+          <th style={{ textAlign: "right", padding: "6px" }}>
+            Sale
+          </th>
+          <th style={{ textAlign: "right", padding: "6px" }}>
+            Sale Return
+          </th>
+          <th style={{ textAlign: "right", padding: "6px" }}>
+            Net Sale
+          </th>
+        </>
+      )}
+    </tr>
+  </thead>
+
+  <tbody>
+    <tr>
+      <td style={{ padding: "6px" }}>
+        Report Structure Only
+      </td>
+
+      {showBooks === "yes" ? (
+        <>
+          <td style={{ textAlign: "center", padding: "6px" }}>
+            {bookCode || ""}
+          </td>
+          <td style={{ padding: "6px" }}>
+            {bookInfo?.BookName || ""}
+          </td>
+          <td style={{ textAlign: "right", padding: "6px" }}>
+            43
+          </td>
+          <td style={{ textAlign: "right", padding: "6px" }}>
+            0
+          </td>
+          <td style={{ textAlign: "right", padding: "6px" }}>
+            43
+          </td>
+        </>
+      ) : (
+        <>
+          <td style={{ textAlign: "right", padding: "6px" }}>
+            43
+          </td>
+          <td style={{ textAlign: "right", padding: "6px" }}>
+            0
+          </td>
+          <td style={{ textAlign: "right", padding: "6px" }}>
+            43
+          </td>
+        </>
+      )}
+    </tr>
+
+    {/* TOTAL ROW */}
+    <tr style={{ borderTop: "1px solid black" }}>
+      <td style={{ padding: "6px" }}>
+        <strong>Total</strong>
+      </td>
+
+      {showBooks === "yes" ? (
+        <>
+          <td></td>
+          <td></td>
+          <td style={{ textAlign: "right", padding: "6px" }}>
+            <strong>43</strong>
+          </td>
+          <td style={{ textAlign: "right", padding: "6px" }}>
+            <strong>0</strong>
+          </td>
+          <td style={{ textAlign: "right", padding: "6px" }}>
+            <strong>43</strong>
+          </td>
+        </>
+      ) : (
+        <>
+          <td style={{ textAlign: "right", padding: "6px" }}>
+            <strong>43</strong>
+          </td>
+          <td style={{ textAlign: "right", padding: "6px" }}>
+            <strong>0</strong>
+          </td>
+          <td style={{ textAlign: "right", padding: "6px" }}>
+            <strong>43</strong>
+          </td>
+        </>
+      )}
+    </tr>
+  </tbody>
+</table>
       </Box>
-      <ToastContainer />
+
     </Box>
   );
-};
-
-export default Salesbookwisepartywise;
+}

@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import "./SalesChallan.css";
 import { useNavigate } from "react-router-dom";
 import Select from "react-select";
@@ -96,6 +96,8 @@ function SalesChallan() {
   const [TotalCopies, setTotalcopies] = useState("");
   const [TotalAmount, setTotalamount] = useState("");
   const [Transport, setTransport] = useState("");
+  const [Remarks, setRemarks] = useState("");
+  const [CurrentStock, setCurrentStock] = useState("");
 
   const [PrintDCNo, setPrintDCno] = useState("");
   const [PrintCopies, setPrintcopies] = useState("");
@@ -117,7 +119,7 @@ function SalesChallan() {
   //Dropdown for ID's
   const [bookOptions, setBookOptions] = useState([]);
   const [accountOptions, setAccountOptions] = useState([]);
-
+  const [dispatchmodeOptions, setDispatchmodeoptions] = useState([]);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [deleteIndex, setDeleteIndex] = useState(null);
   const [deleteId, setDeleteId] = useState(null);
@@ -128,6 +130,7 @@ function SalesChallan() {
       BookId: "",
       Copies: "",
       Rate: "",
+      Discount: "",
       Amount: "",
     },
   ]);
@@ -160,6 +163,7 @@ function SalesChallan() {
     fetchSellschallandetails();
     fetchBooks();
     fetchAccounts();
+    fetchParcel();
     fetchSellschallan();
   }, []);
 
@@ -176,7 +180,12 @@ function SalesChallan() {
       // setSellschallans(response.data);
       console.log(response.data, "response of sells challan header");
 
-      setSellschallans(response.data.data);
+      // 🔹 Filter challans where Active = 1
+      const activeChallans = response.data.data.filter(
+        (challan) => challan.Active === "1" || challan.Active === 1
+      );
+
+      setSellschallans(activeChallans);
       setTotalPages(response.data.total_pages);
     } catch (error) {
       // toast.error("Error fetching sells challans:", error);
@@ -206,52 +215,24 @@ function SalesChallan() {
       return;
     }
 
-    const today = dayjs();
-    const minDate = today.subtract(3, "day");
-    const maxDate = today.add(2, "day");
-
-    if (newValue.isBefore(minDate) || newValue.isAfter(maxDate)) {
-      setchallandateerror("You can select only 2 days before or after today");
-    } else {
-      setchallandateerror("");
-    }
+    setDateError("");
 
     setChallansafedate(newValue);
   };
 
   const handleInputChange = (index, field, value) => {
     const updatedRows = [...rows];
-
-    // Update the selected field
     updatedRows[index][field] = value;
-
-    // If BookId is selected, set the Rate from bookOptions
-    if (field === "BookId") {
-      const selectedBook = bookOptions.find((book) => book.value === value);
-      if (selectedBook) {
-        updatedRows[index].Rate = parseFloat(selectedBook.price) || 0;
-      }
-    }
-
-    // Set Copies and Rate default to 0 if undefined
     const copies = parseFloat(updatedRows[index].Copies) || 0;
     const rate = parseFloat(updatedRows[index].Rate) || 0;
+    const discount = parseFloat(updatedRows[index].Discount) || 0;
+    const baseAmount = copies * rate;
 
-    // Calculate base amount
-    updatedRows[index].Amount = copies * rate;
-
-    // Calculate discount if DiscountPercentage is available
-    const discountPercentage =
-      parseFloat(updatedRows[index].DiscountPercentage) || 0;
-
-    updatedRows[index].DiscountAmount =
-      (updatedRows[index].Amount * discountPercentage) / 100;
-
-    // Final Amount after discount
-    updatedRows[index].FinalAmount =
-      updatedRows[index].Amount - updatedRows[index].DiscountAmount;
-
-    // Update state
+    console.log(baseAmount, "baseamount after calculation ");
+    const discountAmount = (baseAmount * discount) / 100;
+    const finalAmount = baseAmount - discountAmount;
+    updatedRows[index].Rate = rate; // ← USE THIS IN TABLE
+    updatedRows[index].Amount = finalAmount;
     setRows(updatedRows);
   };
 
@@ -263,14 +244,51 @@ function SalesChallan() {
         BookId: "",
         Copies: "",
         Rate: "",
+        Discount: "",
+
         Amount: "",
       },
     ]);
   };
 
-  const handleDeleteRow = (index) => {
-    const updatedRows = rows.filter((_, i) => i !== index);
-    setRows(updatedRows);
+  // const handleDeleteRow = (index) => {
+  //   const updatedRows = rows.filter((_, i) => i !== index);
+  //   setRows(updatedRows);
+  // };
+
+  const handleDeleteRow = async (index) => {
+    const rowToDelete = rows[index];
+
+    // If row does not have ID, remove it directly (new unsaved row)
+    if (!rowToDelete.Id) {
+      const updatedRows = rows.filter((_, i) => i !== index);
+      setRows(updatedRows);
+      return;
+    }
+
+    try {
+      const apiUrl =
+        "https://publication.microtechsolutions.co.in/php/delete/delrecord.php";
+
+      const formData = new FormData();
+      formData.append("Id", rowToDelete.Id);
+      formData.append("Table", "SellsChallanDetail");
+
+      const response = await axios.post(apiUrl, formData);
+
+      // Convert response to string (API may return text)
+      const resText = JSON.stringify(response.data).toLowerCase();
+
+      if (resText.includes("deleted")) {
+        const updatedRows = rows.filter((_, i) => i !== index);
+        setRows(updatedRows);
+        toast.success("Row deleted successfully!");
+      } else {
+        toast.error("Failed to delete row!");
+      }
+    } catch (error) {
+      toast.error("Error deleting row!");
+    }
   };
 
   const fetchBooks = async () => {
@@ -358,8 +376,22 @@ function SalesChallan() {
     }
   };
 
+  const fetchParcel = async () => {
+    try {
+      const response = await axios.get(
+        "https://publication.microtechsolutions.net.in/php/Dispatchmodeget.php"
+      );
+      const dispatchmodeOptions = response.data.map((dispmode) => ({
+        value: dispmode.Id,
+        label: dispmode.DispatchModeName,
+      }));
+      setDispatchmodeoptions(dispatchmodeOptions);
+    } catch (error) {
+      // toast.error("Error fetching parcels:", error);
+    }
+  };
+
   const resetForm = () => {
-    // setChallanDate("");
     setChallansafedate(dayjs());
     setchallandateerror("");
     setChallanNo("");
@@ -367,6 +399,8 @@ function SalesChallan() {
     setTotalamount("");
     setTotalcopies("");
     setTransport("");
+    setRemarks("");
+    setCurrentStock("");
     setRowErrors([]);
     setRows([
       {
@@ -374,6 +408,7 @@ function SalesChallan() {
         BookId: "",
         Copies: "",
         Rate: "",
+        Discount: "",
         Amount: "",
       },
     ]);
@@ -390,82 +425,150 @@ function SalesChallan() {
 
   const [idwiseData, setIdwiseData] = useState("");
 
-  const handleEdit = () => {
+  // const handleEdit = () => {
+  //   if (currentRow) {
+  //     console.log("Editing item with ID:", currentRow.original.Id);
+  //     setIdwiseData(currentRow.original.Id);
+  //   }
+
+  //   setIsLoading(true); // Start loading
+
+  //   console.log(currentRow, "row");
+
+  //   const sellschallan = selleschallans[currentRow.index];
+
+  //   const sellschallandetail = sellschallanDetails.filter(
+  //     (detail) => detail.ChallanId === sellschallan.Id
+  //   );
+
+  //   // Map the details to rows
+
+  //   const mappedRows = sellschallandetail.map((detail) => ({
+  //     // PurchaseReturnId: detail.PurchaseReturnId,
+
+  //     ChallanId: detail.ChallanId,
+  //     // SerialNo:detail.SerialNo,
+  //     BookId: detail.BookId,
+  //     Copies: detail.Copies,
+  //     Rate: detail.Rate,
+  //     Amount: detail.Amount,
+  //     Id: detail.Id, // Include the detail Id in the mapped row for tracking
+  //   }));
+
+  //   // Convert date strings to DD-MM-YYYY format
+  //   const convertDateForInput = (dateStr) => {
+  //     if (typeof dateStr === "string" && dateStr.includes("-")) {
+  //       const [year, month, day] = dateStr.split(" ")[0].split("-");
+  //       return `${year}-${month}-${day}`;
+  //     } else {
+  //       console.error("Invalid date format:", dateStr);
+  //       return ""; // Return an empty string or handle it as needed
+  //     }
+  //   };
+
+  //   const challanDate = dayjs(sellschallan.ChallanDate?.date);
+
+  //   // Set the form fields
+  //   setChallanNo(sellschallan.ChallanNo);
+  //   // setChallanDate(challanDate);
+  //   setChallansafedate(challanDate);
+
+  //   setAccountId(sellschallan.AccountId);
+  //   setTotalcopies(sellschallan.TotalCopies);
+  //   setTotalamount(sellschallan.TotalAmount);
+  //   setTransport(sellschallan.Transport);
+
+  //   console.log(sellschallan, "sells challan");
+  //   console.log(sellschallandetail, "sells challan detail");
+  //   console.log(mappedRows, "mapped rows");
+  //   // Set the rows for the table with all the details
+  //   setRows(mappedRows);
+
+  //   // Set editing state
+  //   setEditingIndex(currentRow.index);
+  //   setIsDrawerOpen(true);
+  //   setIsEditing(true);
+  //   setId(sellschallan.Id);
+  //   handleMenuClose();
+  //   // Determine which specific detail to edit
+  //   const specificDetail = sellschallandetail.find(
+  //     (detail) => detail.Id === currentRow.original.Id
+  //   );
+  //   if (specificDetail) {
+  //     setSellschallandetailId(specificDetail.Id); // Set the specific detail Id
+  //   }
+
+  //   fetchSellschallandetails().then(() => {
+  //     setIsLoading(false); // Stop loading after data is fetched
+  //   });
+  // };
+
+  const handleEdit = async () => {
     if (currentRow) {
       console.log("Editing item with ID:", currentRow.original.Id);
       setIdwiseData(currentRow.original.Id);
     }
 
-    setIsLoading(true); // Start loading
+    setIsLoading(true);
 
-    console.log(currentRow, "row");
     const sellschallan = selleschallans[currentRow.index];
 
     const sellschallandetail = sellschallanDetails.filter(
       (detail) => detail.ChallanId === sellschallan.Id
     );
 
-    // Map the details to rows
-
-    const mappedRows = sellschallandetail.map((detail) => ({
-      // PurchaseReturnId: detail.PurchaseReturnId,
-
+    let mappedRows = sellschallandetail.map((detail) => ({
       ChallanId: detail.ChallanId,
-      // SerialNo:detail.SerialNo,
       BookId: detail.BookId,
       Copies: detail.Copies,
       Rate: detail.Rate,
+      Discount: detail.Discount,
       Amount: detail.Amount,
-      Id: detail.Id, // Include the detail Id in the mapped row for tracking
+      Id: detail.Id,
     }));
 
-    // Convert date strings to DD-MM-YYYY format
-    const convertDateForInput = (dateStr) => {
-      if (typeof dateStr === "string" && dateStr.includes("-")) {
-        const [year, month, day] = dateStr.split(" ")[0].split("-");
-        return `${year}-${month}-${day}`;
-      } else {
-        console.error("Invalid date format:", dateStr);
-        return ""; // Return an empty string or handle it as needed
-      }
-    };
+    // ⭐ No API call needed — match from local bookOptions
+    mappedRows = mappedRows.map((row) => {
+      const book = bookOptions.find((b) => b.value === row.BookId);
 
+      return {
+        ...row,
+        BookCode: book?.code || "",
+        BookName: book?.label || "",
+        Rate: row.Rate || book?.price || 0,
+      };
+    });
+
+    // Convert challan date
     const challanDate = dayjs(sellschallan.ChallanDate?.date);
 
-    // Set the form fields
+    // STEP 3: Set all form fields
     setChallanNo(sellschallan.ChallanNo);
-    // setChallanDate(challanDate);
     setChallansafedate(challanDate);
-
     setAccountId(sellschallan.AccountId);
     setTotalcopies(sellschallan.TotalCopies);
     setTotalamount(sellschallan.TotalAmount);
     setTransport(sellschallan.Transport);
-
-    console.log(sellschallan, "sells challan");
-    console.log(sellschallandetail, "sells challan detail");
-    console.log(mappedRows, "mapped rows");
-    // Set the rows for the table with all the details
+    setRemarks(sellschallan.Remarks || "");
+    setCurrentStock(sellschallan.CurrentStock || "");
+    // ⭐ STEP 4: Set fully loaded rows (with BookCode + BookName)
     setRows(mappedRows);
 
-    // Set editing state
+    // Editing flags
     setEditingIndex(currentRow.index);
     setIsDrawerOpen(true);
     setIsEditing(true);
     setId(sellschallan.Id);
     handleMenuClose();
 
-    // Determine which specific detail to edit
     const specificDetail = sellschallandetail.find(
       (detail) => detail.Id === currentRow.original.Id
     );
     if (specificDetail) {
-      setSellschallandetailId(specificDetail.Id); // Set the specific detail Id
+      setSellschallandetailId(specificDetail.Id);
     }
 
-    fetchSellschallandetails().then(() => {
-      setIsLoading(false); // Stop loading after data is fetched
-    });
+    setIsLoading(false);
   };
 
   const handleDelete = () => {
@@ -522,6 +625,72 @@ function SalesChallan() {
     setDeleteIndex(null);
   };
 
+  const bookCodeTimer = useRef(null);
+
+  const handleBookCodeChange = (rowIndex, value) => {
+    const updatedRows = [...rows];
+    updatedRows[rowIndex].BookCode = value;
+    setRows(updatedRows);
+
+    // 🔴 Clear previous timer
+    if (bookCodeTimer.current) {
+      clearTimeout(bookCodeTimer.current);
+    }
+
+    // if book code is blank → reset row fields
+    if (value.trim() === "") {
+      updatedRows[rowIndex].BookName = "";
+      updatedRows[rowIndex].BookNameMarathi = "";
+      updatedRows[rowIndex].Rate = "";
+      updatedRows[rowIndex].BookRate = "";
+      updatedRows[rowIndex].BookId = "";
+      updatedRows[rowIndex].Copies = "";
+      updatedRows[rowIndex].Amount = "";
+      updatedRows[rowIndex].DiscountPercentage = "";
+      updatedRows[rowIndex].FinalAmount = "";
+
+      setRows(updatedRows);
+      return; // stop here
+    }
+
+    // 🟡 Wait until user finishes typing (500ms)
+    bookCodeTimer.current = setTimeout(() => {
+      // 🔒 Minimum length check (VERY IMPORTANT)
+      if (value.length < 2) return;
+
+      // Fetch data
+      fetchBookDataForRow(rowIndex, value);
+    }, 400);
+  };
+
+  const fetchBookDataForRow = async (rowIndex, bookCode) => {
+    try {
+      const response = await fetch(
+        `https://publication.microtechsolutions.net.in/php/Bookcodeget.php?BookCode=${bookCode}`
+      );
+
+      const data = await response.json();
+
+      if (Array.isArray(data) && data.length > 0) {
+        const book = data[0];
+
+        const updatedRows = [...rows];
+        updatedRows[rowIndex].BookName =
+          book.BookName || book.BookNameMarathi || "";
+        updatedRows[rowIndex].Rate = book.BookRate || 0;
+
+        // **FIXED**
+        updatedRows[rowIndex].BookId = book.Id || "";
+
+        setRows(updatedRows);
+      } else {
+        toast.error("Invalid Book Code");
+      }
+    } catch (err) {
+      toast.error("Failed to fetch Book");
+    }
+  };
+
   const validateForm = () => {
     let formErrors = {};
     let isValid = true;
@@ -570,15 +739,6 @@ function SalesChallan() {
       return;
     }
 
-    // // ✅ Check for row-level ChequeDate errors
-    // const hasChequeDateErrors = Object.values(rowErrors).some(
-    //   (row) => row?.ChequeDate
-    // );
-    // if (hasChequeDateErrors) {
-    //   toast.error("Please fix all Date errors in the table before submitting.");
-    //   return;
-    // }
-
     const formattedChallandate = dayjs(challansafedate).format("YYYY-MM-DD");
 
     const sellschallandata = {
@@ -589,6 +749,8 @@ function SalesChallan() {
       TotalCopies: TotalCopies,
       TotalAmount: TotalAmount,
       Transport: Transport,
+      CurrentStock: CurrentStock,
+      Remarks: Remarks,
       CreatedBy: !isEditing ? userId : undefined,
       UpdatedBy: isEditing ? userId : undefined,
     };
@@ -619,6 +781,7 @@ function SalesChallan() {
           BookId: parseInt(row.BookId, 10),
           Copies: parseInt(row.Copies, 10),
           Rate: parseFloat(row.Rate),
+          Discount: parseFloat(row.Discount),
           Amount: parseFloat(row.Amount),
           Id: row.Id,
           CreatedBy: row.Id ? undefined : userId,
@@ -814,7 +977,7 @@ function SalesChallan() {
           PaperProps={{
             sx: {
               borderRadius: isSmallScreen ? "0" : "10px 0 0 10px",
-              width: isSmallScreen ? "100%" : "80%",
+              width: isSmallScreen ? "100%" : "95%",
               zIndex: 1000,
             },
           }}>
@@ -847,8 +1010,8 @@ borderWidth: 1,
               m: 1,
               mt: 2,
             }}>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-              <Box flex={3}>
+            <Box sx={{ display: "flex", alignItems: "left", gap: 1 }}>
+              <Box flex={1}>
                 <Typography variant="body2" fontWeight="bold">
                   Challan No
                 </Typography>
@@ -864,11 +1027,11 @@ borderWidth: 1,
                 />
               </Box>
 
-              <Box flex={3}>
+              <Box flex={1}>
                 <Typography variant="body2" fontWeight="bold">
-                  {" "}
                   Challan Date
                 </Typography>
+
                 <LocalizationProvider dateAdapter={AdapterDayjs}>
                   <DatePicker
                     value={challansafedate}
@@ -883,18 +1046,14 @@ borderWidth: 1,
                       },
                     }}
                     sx={{
-                      marginTop: "10px",
-                      marginBottom: "5px",
-                      width: "250px",
+                      // marginTop: "2px", // small top margin for spacing
+                      width: "300px", // keep consistent width
                     }}
                   />
                 </LocalizationProvider>
-                {/* {errors.ChallanDate && (
-                  <b className="error-text">{errors.ChallanDate}</b>
-                )} */}
               </Box>
 
-              <Box flex={3}>
+              <Box flex={2}>
                 <Typography fontWeight="bold" variant="body2">
                   Party Name
                 </Typography>
@@ -915,24 +1074,67 @@ borderWidth: 1,
                       placeholder="Select Party Name"
                       size="small"
                       margin="none"
-                      sx={{ width: "400px" }} // ✅ Set desired width here
+                      sx={{ width: "450px" }} // ✅ Set desired width here
                       fullWidth
                     />
                   )}
                 />
               </Box>
-
-              <Box flex={3}>
+            </Box>
+            <Box sx={{ display: "flex", alignItems: "left", gap: 1 }}>
+              <Box flex={2}>
                 <Typography variant="body2" fontWeight="bold">
                   Parcel
                 </Typography>
+                <Autocomplete
+                  options={dispatchmodeOptions}
+                  value={
+                    dispatchmodeOptions.find(
+                      (option) =>
+                        option.value?.toString().trim().toLowerCase() ===
+                        Transport?.toString().trim().toLowerCase()
+                    ) || null
+                  }
+                  onChange={(event, newValue) =>
+                    setTransport(newValue ? newValue.value : "")
+                  }
+                  getOptionLabel={(option) => option.label || ""}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      placeholder="Select Transport"
+                      size="small"
+                      sx={{ width: "450px" }}
+                      fullWidth
+                    />
+                  )}
+                />
+              </Box>
+              <Box flex={2}>
+                <Typography variant="body2" fontWeight="bold">
+                  Remarks
+                </Typography>
                 <TextField
-                  value={Transport}
-                  onChange={(e) => setTransport(e.target.value)}
+                  value={Remarks}
+                  onChange={(e) => setRemarks(e.target.value)}
                   size="small"
                   margin="none"
-                  placeholder="Parcel"
-                  sx={{ width: "200px" }}
+                  placeholder="Enter remarks"
+                  fullWidth
+                />
+              </Box>
+
+              <Box flex={1}>
+                <Typography variant="body2" fontWeight="bold">
+                  Current Stock
+                </Typography>
+                <TextField
+                  type="number"
+                  value={CurrentStock}
+                  onChange={(e) => setCurrentStock(e.target.value)}
+                  size="small"
+                  margin="none"
+                  placeholder="Current stock"
                   fullWidth
                 />
               </Box>
@@ -942,21 +1144,12 @@ borderWidth: 1,
                 <thead>
                   <tr>
                     <th>Serial No</th>
-                    <th>
-                      Book Code<b className="required">*</b>
-                    </th>
-                    <th>
-                      Book Name<b className="required">*</b>
-                    </th>
-                    <th>
-                      Copies<b className="required">*</b>
-                    </th>
-                    <th>
-                      Price<b className="required">*</b>
-                    </th>
-                    <th>
-                      Amount<b className="required">*</b>
-                    </th>
+                    <th>Book Code</th>
+                    <th>Book Name</th>
+                    <th>Copies</th>
+                    <th>Price</th>
+                    <th> Discount</th>
+                    <th>Amount</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
@@ -992,42 +1185,30 @@ borderWidth: 1,
                       <tr key={index}>
                         <td>{index + 1}</td>
                         <td>
-                          {bookOptions.find(
-                            (option) => option.value === row.BookId
-                          )?.code || ""}
+                          <input
+                            type="text"
+                            value={row.BookCode || ""}
+                            onChange={(e) =>
+                              handleBookCodeChange(index, e.target.value)
+                            }
+                            placeholder="Enter Book Code"
+                            style={{ width: "100px" }}
+                          />
                         </td>
 
                         <td>
-                          <Autocomplete
-                            options={bookOptions}
-                            value={
-                              bookOptions.find(
-                                (option) => option.value === row.BookId
-                              ) || null
-                            }
-                            onChange={(event, newValue) =>
-                              handleInputChange(
-                                index,
-                                "BookId",
-                                newValue ? newValue.value : ""
-                              )
-                            }
-                            sx={{ width: "500px" }} // Set width
-                            getOptionLabel={(option) => option.label} // Fix the typo
-                            renderInput={(params) => (
-                              <TextField
-                                {...params}
-                                placeholder="Select Book"
-                                size="small"
-                                fullWidth
-                              />
-                            )}
+                          <input
+                            type="text"
+                            value={row.BookName || row.BookNameMarathi || ""}
+                            readOnly
+                            placeholder="Book Name / Book Name Marathi"
+                            style={{ width: "400px" }}
                           />
                         </td>
                         <td>
                           <input
                             type="number"
-                            value={row.Copies}
+                            value={row.Copies || ""}
                             onChange={(e) =>
                               handleInputChange(index, "Copies", e.target.value)
                             }
@@ -1036,16 +1217,34 @@ borderWidth: 1,
                           />
                         </td>
                         <td>
-                          {bookOptions.find(
-                            (option) => option.value === row.BookId
-                          )?.price || ""}
+                          <input
+                            type="text"
+                            value={row.Rate || row.BookRate || ""}
+                            readOnly
+                            placeholder="Rate"
+                            style={{ width: "100px" }}
+                          />
                         </td>
-
                         <td>
                           <input
                             type="number"
-                            value={row.Amount}
-                            style={{ width: "100px" }} // Use style instead of sx
+                            value={row.Discount || ""}
+                            onChange={(e) =>
+                              handleInputChange(
+                                index,
+                                "Discount",
+                                e.target.value
+                              )
+                            }
+                            style={{ width: "80px" }} // Use style instead of sx
+                            placeholder="Discount Percentage"
+                          />
+                        </td>
+                        <td>
+                          <input
+                            type="number"
+                            value={row.FinalAmount ?? row.Amount ?? ""}
+                            style={{ width: "100px" }}
                             readOnly
                             placeholder="Amount"
                           />
@@ -1095,7 +1294,14 @@ borderWidth: 1,
                   size="small"
                   margin="none"
                   placeholder="Total copies"
-                  style={{ width: "210px" }} // Use style instead of sx
+                  InputProps={{
+                    sx: {
+                      fontSize: "1.2rem",
+                      fontWeight: "bold",
+                      color: "black",
+                      readOnly: true,
+                    },
+                  }}
                   fullWidth
                 />
               </Box>
@@ -1110,38 +1316,18 @@ borderWidth: 1,
                   size="small"
                   margin="none"
                   placeholder="Total Amount"
-                  style={{ width: "200px" }} // Use style instead of sx
+                  InputProps={{
+                    sx: {
+                      fontSize: "1.2rem",
+                      fontWeight: "bold",
+                      color: "green",
+                      readOnly: true,
+                    },
+                  }}
                   fullWidth
                 />
               </Box>
             </Box>
-
-            {/* <Box display="flex" justifyContent="flex-start" mt={2} gap={2}>
-              <Box >
-                <Typography variant="body2" fontWeight='bold'>Print DC No</Typography>
-                <TextField
-                  value={PrintDCNo} // Calculate total credit
-                  onChange={(e) => setPrintDCno(e.target.value)}
-                  placeholder="DC No"
-                  size="small"
-                    margin="none" fullWidth
-                />
-              </Box>
-
-
-              <Box >
-                <Typography variant="body2" fontWeight='bold'>Copies</Typography>
-                <TextField
-                  value={PrintCopies} // Calculate total credit
-                  onChange={(e) => setPrintcopies(e.target.value)}
-                  placeholder="Print Copies"
-                  size="small"
-                    margin="none"  fullWidth
-                />
-              </Box>
-
-
-            </Box> */}
           </Box>
 
           <Box

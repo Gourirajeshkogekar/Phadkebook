@@ -35,12 +35,24 @@ function PurchasemonthwiseReports() {
       return;
     }
 
+    const monthsDiff = dayjs(todate).diff(dayjs(fromdate), "month", true);
+    if (monthsDiff > 3) {
+      toast.warning("⚠️ Please select a date range within 1–3 months ");
+      return;
+    }
+
     try {
       const url = `https://publication.microtechsolutions.net.in/php/purchasemonthwise.php?fromdate=${dayjs(
         fromdate
       ).format("YYYY-MM-DD")}&todate=${dayjs(todate).format("YYYY-MM-DD")}`;
       const res = await axios.get(url);
       const data = res.data || [];
+
+      // 🟡 Handle empty data
+      if (data.length === 0) {
+        toast.info("No data available for the selected date range.");
+        return;
+      }
 
       const doc = new jsPDF();
       const pageWidth = doc.internal.pageSize.getWidth();
@@ -124,7 +136,11 @@ function PurchasemonthwiseReports() {
       window.open(doc.output("bloburl"), "_blank");
     } catch (err) {
       console.error(err);
-      toast.error("Error generating report");
+      console.error(
+        "Report generation error:",
+        err.response || err.message || err
+      );
+      toast.error(`Error generating report: ${err.message}`);
     }
   };
 
@@ -167,6 +183,7 @@ function PurchasemonthwiseReports() {
               <DatePicker
                 value={fromdate}
                 onChange={setFromDate}
+                format="DD-MM-YYYY"
                 slotProps={{
                   textField: {
                     fullWidth: true,
@@ -183,6 +200,7 @@ function PurchasemonthwiseReports() {
               <DatePicker
                 value={todate}
                 onChange={setToDate}
+                format="DD-MM-YYYY"
                 slotProps={{
                   textField: {
                     fullWidth: true,

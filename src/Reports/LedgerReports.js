@@ -168,7 +168,7 @@ function LedgerReports() {
           let totalDebit = 0;
           let totalCredit = 0;
 
-          doc.setFont("times", "italic");
+          doc.setFont("times", "normal");
 
           transactions.forEach((row) => {
             if (y > 280) {
@@ -200,7 +200,7 @@ function LedgerReports() {
             doc.text(credit ? credit.toFixed(2) : "", 185, y, {
               align: "right",
             });
-            doc.text(displayBalance, 210, y, { align: "right" });
+            doc.text(displayBalance, 208, y, { align: "right" });
 
             y += 6;
           });
@@ -216,7 +216,7 @@ function LedgerReports() {
           doc.text(totalCredit.toFixed(2), 185, y, { align: "right" });
           doc.text(
             `${Math.abs(balance).toFixed(2)} ${balance >= 0 ? "Cr" : "Dr"}`,
-            210,
+            208,
             y,
             {
               align: "right",
@@ -284,6 +284,7 @@ function LedgerReports() {
               <DatePicker
                 value={fromdate}
                 onChange={setFromDate}
+                format="DD-MM-YYYY"
                 slotProps={{
                   textField: {
                     fullWidth: true,
@@ -300,6 +301,7 @@ function LedgerReports() {
               <DatePicker
                 value={todate}
                 onChange={setToDate}
+                format="DD-MM-YYYY"
                 slotProps={{
                   textField: {
                     fullWidth: true,

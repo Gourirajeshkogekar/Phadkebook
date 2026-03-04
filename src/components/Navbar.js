@@ -1,115 +1,124 @@
 import React, { useState, useEffect } from "react";
 import "./Navbar.css";
-import { Menu, MenuItem, IconButton, Avatar, Typography } from "@mui/material";
+import { Menu, MenuItem, IconButton, Avatar, Typography, Box, Chip, Divider } from "@mui/material";
 import ExitToAppIcon from "@mui/icons-material/ExitToApp";
+import BusinessIcon from "@mui/icons-material/Business"; // New Icon
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import { useNavigate } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
-import axios from "axios";
 
-const Navbar = ({ onLogout }) => {
-  const Name = sessionStorage.getItem("Name") || "Guest";
+const Navbar = () => {
+  const userName = sessionStorage.getItem("Name") || "Guest";
   const [anchorEl, setAnchorEl] = useState(null);
-  const [companyName, setCompanyName] = useState("");
-  const getInitials = (name) => {
-    const splitName = name.split(" ");
-    return splitName.map((word) => word[0].toUpperCase()).join("");
-  };
-
-  const handleMenuOpen = (event) => {
-    setAnchorEl(event.currentTarget);
-  };
-
-  const handleMenuClose = () => {
-    setAnchorEl(null);
-  };
+  const [company, setCompany] = useState(null);
 
   const navigate = useNavigate();
-  const handleLogout = (e) => {
-    e.preventDefault();
+
+  const getInitials = (name) => {
+    if (!name) return "G";
+    const splitName = name.trim().split(" ");
+    return splitName.length > 1 
+      ? (splitName[0][0] + splitName[1][0]).toUpperCase() 
+      : splitName[0][0].toUpperCase();
+  };
+
+  useEffect(() => {
+    const selected = localStorage.getItem("SelectedCompany");
+    if (selected) {
+      try {
+        setCompany(JSON.parse(selected));
+      } catch (e) {
+        console.error("Data error", e);
+      }
+    }
+  }, []);
+
+  const handleMenuOpen = (event) => setAnchorEl(event.currentTarget);
+  const handleMenuClose = () => setAnchorEl(null);
+
+  const handleLogout = () => {
     sessionStorage.clear();
+    localStorage.removeItem("SelectedCompany");
     toast.success("User Logged Out");
     navigate("/login");
   };
 
-  useEffect(() => {
-    fetchCompanies();
-  }, []);
-
-  const fetchCompanies = async () => {
-    try {
-      const response = await axios.get(
-        "https://publication.microtechsolutions.net.in/php/CompanyMasterget.php"
-      );
-      if (response.data.length > 0) {
-        setCompanyName(response.data[0].CompanyName); // Assuming you want the first one
-      }
-    } catch (error) {
-      console.error("Error fetching companies:", error);
-    }
-  };
-
   return (
-    <nav className="navbar">
-      <div className="navbar-content">
-        <h3 className="navbar-title">Welcome To {companyName}</h3>
+    <nav className="navbar" style={{ background: '#156e94', padding: '10px 20px', boxShadow: '0 2px 10px rgba(0,0,0,0.1)' }}>
+      <div className="navbar-content" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        
+        {/* LEFT SIDE: Company Identity */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <BusinessIcon sx={{ color: '#f8a828' }} />
+          <Box>
+            <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.7)', display: 'block', lineHeight: 1 }}>
+              ACTIVE COMPANY
+            </Typography>
+            <Typography variant="h6" sx={{ color: 'white', fontWeight: 'bold', fontSize: '1.1rem' }}>
+              {company ? company.CompanyName : "Select Company"}
+            </Typography>
+          </Box>
+          {/* Optional: Add a Badge for the City if available in your API */}
+          {company?.Address1 && (
+            <Chip 
+              label={company.Address1} 
+              size="small" 
+              sx={{ bgcolor: 'rgba(255,255,255,0.2)', color: 'white', ml: 1, height: '20px', fontSize: '10px' }} 
+            />
+          )}
+        </Box>
 
-        <div className="user-info">
-          {/* Display Full Name Outside the Dropdown */}
-
-          <IconButton onClick={handleMenuOpen}>
+        {/* RIGHT SIDE: User Actions */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <Box sx={{ textAlign: 'right', display: { xs: 'none', sm: 'block' } }}>
+            <Typography sx={{ color: 'white', fontWeight: '600', fontSize: '0.9rem' }}>
+              {userName}
+            </Typography>
+            <Typography variant="caption" sx={{ color: '#f8a828', display: 'block' }}>
+              Administrator
+            </Typography>
+          </Box>
+          
+          <IconButton onClick={handleMenuOpen} sx={{ p: 0 }}>
             <Avatar
               sx={{
-                backgroundColor: "#f8a828",
-                color: "white",
-                fontWeight: "bold",
-                fontSize: "20px",
+                bgcolor: "#f8a828",
+                width: 40,
+                height: 40,
+                border: '2px solid rgba(255,255,255,0.3)'
               }}>
-              {getInitials(Name)}
+              {getInitials(userName)}
             </Avatar>
-
-            {/* <Typography
-              sx={{
-                marginRight: "10px",
-                fontWeight: "bold",
-                fontSize: "16px",
-                color: "white",
-              }}>
-              {Name}
-            </Typography> */}
-            <ArrowDropDownIcon sx={{ color: "#fff", fontSize: "30px" }} />
+            <ArrowDropDownIcon sx={{ color: "#fff" }} />
           </IconButton>
 
-          {/* Enlarged and Styled Dropdown Menu */}
           <Menu
             anchorEl={anchorEl}
             open={Boolean(anchorEl)}
             onClose={handleMenuClose}
-            sx={{
-              marginTop: "10px",
-              "& .MuiPaper-root": {
-                backgroundColor: "white", // White Background
-                minWidth: "200px", // Make Menu Bigger
-                padding: "10px", // Add Padding
-                borderRadius: "10px", // Rounded Corners
-                boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.2)", // Soft Shadow
-              },
-            }}>
-            <MenuItem disabled sx={{ fontSize: "16px", fontWeight: "bold" }}>
-              {Name} {/* Full Name Displayed */}
+            PaperProps={{ sx: { width: '200px', mt: 1 } }}
+          >
+            <Box sx={{ px: 2, py: 1 }}>
+              <Typography variant="subtitle2">User Profile</Typography>
+              <Typography variant="caption" color="textSecondary">{userName}</Typography>
+            </Box>
+            <Divider />
+            
+            <MenuItem onClick={() => navigate("/companylist")}>
+               🔄 Switch Company
             </MenuItem>
-            <MenuItem
-              onClick={handleLogout}
-              sx={{
-                fontSize: "14px",
-                color: "#d32f2f", // Red Logout Button
-              }}>
-              <ExitToAppIcon sx={{ marginRight: 1 }} />
-              Logout
+            
+            {/* <MenuItem onClick={() => navigate("/settings/companymaster")}>
+               👤 My Profile
+            </MenuItem> */}
+            
+            <Divider />
+            
+            <MenuItem onClick={handleLogout} sx={{ color: 'error.main' }}>
+              <ExitToAppIcon sx={{ mr: 1, fontSize: '20px' }} /> Logout
             </MenuItem>
           </Menu>
-        </div>
+        </Box>
       </div>
       <ToastContainer />
     </nav>

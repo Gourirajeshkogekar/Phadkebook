@@ -22,7 +22,7 @@
 .sidebar-items {
   overflow-y: scroll; 
   overflow-x: hidden;
-  max-height: calc(100vh - 10px);
+  max-height: calc(100vh - 5vh);
   max-width: calc(350px - 10px);
 
   &::-webkit-scrollbar {
@@ -246,7 +246,30 @@ background-color: hsl(0, 12%, 92%);
   background: #f9fbff;
 }
 
+/* Highlight the active menu item */
+.active-link {
+  background-color: #e6f0ff !important; /* Light blue background */
+  color: #0a60bd !important;            /* Primary blue text */
+  font-weight: bold;
+  border-right: 4px solid #0a60bd;    /* Indicator bar on the right */
+}
 
+/* Add a vertical line for submenus to show hierarchy */
+.submenu {
+  margin-left: 15px;
+  border-left: 1px solid #ddd; /* Thin gray line to show nesting */
+  padding-left: 5px;
+}
+
+/* Hover effect for better UX */
+.menu-link:hover, .submenu-link:hover {
+  background-color: #f0f0f0;
+}
+
+/* Ensure the icon also changes color when active */
+.active-link .menu-icon, .active-link span {
+  color: #0a60bd;
+}
 @media (max-width: 768px) {
   .grid-container {
     grid-template-columns: 1fr;

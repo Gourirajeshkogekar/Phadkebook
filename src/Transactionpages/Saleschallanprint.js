@@ -137,7 +137,7 @@ function Saleschallanprint() {
         // Add Total Amount only on the last page
         if (i === pages.length - 1) {
           pdf.setFontSize(10);
-          pdf.text(` ${totalRs}.${totalPs}`, pageWidth - 31, pageHeight - 170);
+          pdf.text(` ${totalRs}.${totalPs}`, pageWidth - 27, pageHeight - 170);
         }
 
         document.body.removeChild(pageDiv);
@@ -153,6 +153,8 @@ function Saleschallanprint() {
       alert("Failed to generate PDF. Please try again.");
     }
   };
+
+   
 
   const handleCancel = () => {
     navigate("/transaction/saleschallan");
@@ -180,7 +182,7 @@ function Saleschallanprint() {
           fontSize: "18px",
           color: "red",
         }}>
-        🚫 No data available for this ID.
+        🚫 No data available for this Challan No.
         <div style={{ marginTop: "20px" }}>
           <Button
             variant="contained"
@@ -199,8 +201,8 @@ function Saleschallanprint() {
 
   challanData.forEach((item) => {
     totalCopies += item.Copies;
-    totalRs += Math.floor(item.Amount);
-    totalPs += Math.round((item.Amount % 1) * 100);
+    totalRs += Math.floor(item.Rate);
+    totalPs += Math.round((item.Rate % 1) * 100);
   });
 
   if (totalPs >= 100) {
@@ -344,10 +346,15 @@ function Saleschallanprint() {
 
             <tbody>
               {challanData.map((item, index) => {
-                const rupees = Math.floor(item.Amount);
+                const actualRate = Number(item.Rate) || 0;
+                console.log(actualRate, "actualrate after calculation");
+                const rupees = Math.floor(actualRate);
                 const paisa = String(
-                  Math.round((item.Amount % 1) * 100)
+                  Math.round((actualRate % 1) * 100)
                 ).padStart(2, "0");
+
+                // Force PDF to NEVER see Amount
+                item.Amount = `${rupees}.${paisa}`;
 
                 const isLastRecord = index === challanData.length - 1;
                 const isPageBreak = index > 0 && (index + 1) % 10 === 0;

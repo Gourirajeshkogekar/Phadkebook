@@ -10,6 +10,7 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  TextField,
 } from "@mui/material";
 import axios from "axios";
 import "./college.css";
@@ -20,6 +21,7 @@ import { RiDeleteBin5Line } from "react-icons/ri";
 import { CiEdit } from "react-icons/ci";
 import { CircularProgress } from "@mui/material"; // Import CircularProgress for spinner
 import { Tooltip } from "@mui/material";
+import { Autocomplete } from "@mui/material";
 
 const College = () => {
   const [userId, setUserId] = useState("");
@@ -49,6 +51,7 @@ const College = () => {
 
   const [CollegeName, setCollegeName] = useState("");
   const [CollegeCode, setCollegeCode] = useState("");
+  const [CollegeGroupCode, setCollegeGroupcode] = useState("");
   const [CollegeGroupId, setCollegeGroupId] = useState("");
   const [EmailId, setEmailId] = useState("");
   const [Address1, setAddress1] = useState("");
@@ -132,7 +135,7 @@ const College = () => {
   const fetchColleges = async () => {
     try {
       const response = await axios.get(
-        `https://publication.microtechsolutions.net.in/php/get/gettblpage.php?Table=College&PageNo=${pageIndex}`
+        `https://publication.microtechsolutions.net.in/php/get/gettblpage.php?Table=College&PageNo=${pageIndex}`,
       );
       // setSellschallans(response.data);
       console.log(response.data, "response of College");
@@ -147,7 +150,7 @@ const College = () => {
   const fetchStates = async () => {
     try {
       const response = await axios.get(
-        "https://publication.microtechsolutions.net.in/php/State.php"
+        "https://publication.microtechsolutions.net.in/php/State.php",
       );
       const stateOptions = response.data.map((state) => ({
         value: state.Id,
@@ -162,10 +165,10 @@ const College = () => {
   const fetchCollegegroups = async () => {
     try {
       const response = await axios.get(
-        "https://publication.microtechsolutions.net.in/php/Collegegroupmasterget.php"
+        "https://publication.microtechsolutions.net.in/php/Collegegroupmasterget.php",
       );
       const collegegroupOptions = response.data.map((clggrp) => ({
-        value: clggrp.Id,
+        value: String(clggrp.Id),
         label: clggrp.CollegeGroupCode,
       }));
       setCollegegroupOptions(collegegroupOptions);
@@ -177,7 +180,7 @@ const College = () => {
   const fetchAllCities = async () => {
     try {
       const response = await axios.get(
-        "https://publication.microtechsolutions.net.in/php/Cityget.php"
+        "https://publication.microtechsolutions.net.in/php/Cityget.php",
       );
       const options = response.data.map((city) => ({
         value: city.Id,
@@ -191,7 +194,7 @@ const College = () => {
   const fetchAreas = async () => {
     try {
       const response = await axios.get(
-        "https://publication.microtechsolutions.net.in/php/Areaget.php"
+        "https://publication.microtechsolutions.net.in/php/Areaget.php",
       );
       const areaOptions = response.data.map((area) => ({
         value: area.Id,
@@ -251,7 +254,7 @@ const College = () => {
 
     fetch(
       "https://publication.microtechsolutions.net.in/php/Collegedelete.php",
-      requestOptions
+      requestOptions,
     )
       .then((response) => response.text())
       .then((result) => console.log(result))
@@ -268,6 +271,7 @@ const College = () => {
 
   const validateForm = () => {
     let formErrors = {};
+
     let isValid = true;
 
     if (!CollegeName) {
@@ -325,13 +329,13 @@ const College = () => {
     }
 
     // Mobile No
-    if (!MobileNo) {
-      formErrors.MobileNo = "Mobile No is required.";
-      isValid = false;
-    } else if (!/^\d{10}$/.test(MobileNo)) {
-      formErrors.MobileNo = "Mobile No must be 10 digits.";
-      isValid = false;
-    }
+    // if (!MobileNo) {
+    //   formErrors.MobileNo = "Mobile No is required.";
+    //   isValid = false;
+    // } else if (!/^\d{11}$/.test(MobileNo)) {
+    //   formErrors.MobileNo = "Mobile No must be 10 digits.";
+    //   isValid = false;
+    // }
 
     // if (!FaxNo) {
     //   formErrors.FaxNo = "Fax No is required.";
@@ -468,7 +472,7 @@ const College = () => {
         ),
       },
     ],
-    [colleges]
+    [colleges],
   );
 
   const table = useMaterialReactTable({
@@ -586,38 +590,9 @@ const College = () => {
               {isEditing ? "Edit College" : "Add College"}
             </h2>
             <form className="college-form">
-              <div className="firstcol-row">
+              <div className="othercol-rows">
                 <div>
-                  <label className="college-label">
-                    College Code <b className="required">*</b>
-                  </label>
-                  <div>
-                    <input
-                      type="text"
-                      id="CollegeCode"
-                      name="CollegeCode"
-                      value={CollegeCode}
-                      onChange={(e) => setCollegeCode(e.target.value)}
-                      maxLength={10}
-                      ref={collegecodeRef}
-                      onKeyDown={(e) => handleKeyDown(e, collgroupIdRef)}
-                      style={{ background: "	#D0D0D0", width: "100px" }}
-                      className="college-control"
-                      placeholder="Auto-Incremented"
-                      readOnly
-                    />
-                    <div>
-                      {errors.CollegeCode && (
-                        <b className="error-text">{errors.CollegeCode}</b>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="college-label">
-                    College Name <b className="required">*</b>
-                  </label>
+                  <label className="college-label">College Name</label>
                   <div>
                     <Tooltip
                       title={
@@ -640,24 +615,17 @@ const College = () => {
                         placeholder="Enter College Name"
                       />
                     </Tooltip>
-                    <div className="error-text">
-                      {errors.CollegeName && (
-                        <b className="error-text">{errors.CollegeName}</b>
-                      )}
-                    </div>
                   </div>
                 </div>
 
                 <div>
-                  <label className="college-label">
-                    College Group Code <b className="required">*</b>
-                  </label>
+                  <label className="college-label">Class Code</label>
                   <div>
                     <Select
                       id="CollegeGroupId"
                       name="CollegeGroupId"
                       value={collegegroupOptions.find(
-                        (option) => option.value === CollegeGroupId
+                        (option) => option.value === CollegeGroupId,
                       )}
                       onChange={(option) => setCollegeGroupId(option.value)}
                       ref={collgroupIdRef}
@@ -673,252 +641,105 @@ const College = () => {
                           marginBottom: "5px",
                         }),
                       }}
-                      placeholder="Select College Group"
+                      placeholder="Select Class code"
                     />
-                    <div>
-                      {errors.CollegeGroupId && (
-                        <b className="error-text">{errors.CollegeGroupId}</b>
-                      )}
-                    </div>
                   </div>
                 </div>
-              </div>
-              <br />
 
-              <div className="othercol-rows">
-                <div>
-                  <label className="college-label">
-                    Email Id <b className="required">*</b>
-                  </label>
+                <div className="address-box">
+                  <label className="college-label">Address</label>
                   <div>
                     <input
-                      id="EmailId"
-                      name="EmailId"
-                      value={EmailId}
-                      onChange={(e) => setEmailId(e.target.value)}
-                      maxLength={100}
-                      ref={emailidRef}
-                      onKeyDown={(e) => handleKeyDown(e, address1Ref)}
-                      placeholder="Enter Email"
                       className="college-control"
+                      value={Address1}
+                      onChange={(e) => setAddress1(e.target.value)}
+                      placeholder="Enter Address 1"
                     />
-                    <div>
-                      {errors.EmailId && (
-                        <b className="error-text">{errors.EmailId}</b>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="college-label">
-                    Address 1 <b className="required">*</b>
-                  </label>
-                  <div>
-                    <Tooltip
-                      title={
-                        <span style={{ fontSize: "14px", fontWeight: "bold" }}>
-                          {Address1}
-                        </span>
-                      }
-                      arrow>
-                      <input
-                        id="Address1"
-                        name="Address1"
-                        value={Address1}
-                        onChange={(e) => setAddress1(e.target.value)}
-                        maxLength={100}
-                        ref={address1Ref}
-                        onKeyDown={(e) => handleKeyDown(e, address2Ref)}
-                        placeholder="Enter Address"
-                        className="college-control"
-                      />
-                    </Tooltip>
-
-                    <div>
-                      {errors.Address1 && (
-                        <b className="error-text">{errors.Address1}</b>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="college-label">
-                    Address 2 <b className="required">*</b>
-                  </label>
-                  <div>
-                    <Tooltip
-                      title={
-                        <span style={{ fontSize: "14px", fontWeight: "bold" }}>
-                          {Address2}
-                        </span>
-                      }
-                      arrow>
-                      <input
-                        id="Address2"
-                        name="Address2"
-                        value={Address2}
-                        onChange={(e) => setAddress2(e.target.value)}
-                        maxLength={100}
-                        ref={address2Ref}
-                        onKeyDown={(e) => handleKeyDown(e, address3Ref)}
-                        placeholder="Enter Address"
-                        className="college-control"
-                      />
-                    </Tooltip>
-
-                    <div>
-                      {errors.Address2 && (
-                        <b className="error-text">{errors.Address2}</b>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="college-label">
-                    Address 3 <b className="required">*</b>
-                  </label>
-                  <div>
-                    <Tooltip
-                      title={
-                        <span style={{ fontSize: "14px", fontWeight: "bold" }}>
-                          {Address3}
-                        </span>
-                      }
-                      arrow>
-                      <input
-                        id="Address3"
-                        name="Address3"
-                        value={Address3}
-                        onChange={(e) => setAddress3(e.target.value)}
-                        maxLength={100}
-                        ref={address3Ref}
-                        onKeyDown={(e) => handleKeyDown(e, areaRef)}
-                        placeholder="Enter Address"
-                        className="college-control"
-                      />
-                    </Tooltip>
-
-                    <div>
-                      {errors.Address3 && (
-                        <b className="error-text">{errors.Address3}</b>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="othercol-rows">
-                <div>
-                  <label className="college-label">
-                    State <b className="required">*</b>
-                  </label>
-                  <div>
-                    <Select
-                      id="StateId"
-                      name="StateId"
-                      value={stateOptions.find(
-                        (option) => option.value === StateId
-                      )}
-                      onChange={(option) => setStateId(option.value)}
-                      ref={stateRef}
-                      onKeyDown={(e) => handleKeyDown(e, cityRef)}
-                      options={stateOptions}
-                      styles={{
-                        control: (base) => ({
-                          ...base,
-                          width: "200px",
-                          marginTop: "10px",
-                          borderRadius: "4px",
-                          border: "1px solid rgb(223, 222, 222)",
-                          marginBottom: "5px",
-                        }),
-                      }}
-                      placeholder="Select State"
+                    <input
+                      className="college-control"
+                      value={Address2}
+                      onChange={(e) => setAddress2(e.target.value)}
+                      placeholder="Enter Address 2"
                     />
-
-                    <div>
-                      {errors.StateId && (
-                        <b className="error-text">{errors.StateId}</b>
-                      )}
-                    </div>
+                    <input
+                      className="college-control"
+                      value={Address3}
+                      onChange={(e) => setAddress3(e.target.value)}
+                      placeholder="Enter Address 3"
+                    />
                   </div>
                 </div>
 
                 <div>
-                  <label className="college-label">
-                    City <b className="required">*</b>
-                  </label>
+                  <label className="college-label">City</label>
                   <div>
-                    <Select
-                      id="CityId"
-                      name="CityId"
-                      value={cityOptions.find(
-                        (option) => option.value === CityId
-                      )}
-                      onChange={(option) => setCityId(option.value)}
+                    <Autocomplete
                       options={cityOptions}
-                      styles={{
-                        control: (base) => ({
-                          ...base,
-                          width: "200px",
-                          marginTop: "10px",
-                          borderRadius: "4px",
-                          border: "1px solid rgb(223, 222, 222)",
-                          marginBottom: "5px",
-                        }),
-                      }}
-                      placeholder="Select City"
-                    />
-                    <div>
-                      {errors.CityId && (
-                        <b className="error-text">{errors.CityId}</b>
+                      value={
+                        cityOptions.find((option) => option.value === CityId) ||
+                        null
+                      }
+                      onChange={(event, newValue) =>
+                        setCityId(newValue ? newValue.value : "")
+                      }
+                      getOptionLabel={(option) => option.label}
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          placeholder="Select City"
+                          size="small"
+                          margin="none"
+                          fullWidth
+                        />
                       )}
-                    </div>
+                      sx={{
+                        width: 300,
+                        mt: 1.25, // same as marginTop 10px
+                        mb: 0.625, // marginBottom 5px
+                        "& .MuiOutlinedInput-root": {
+                          borderRadius: "4px",
+                        },
+                      }}
+                    />
                   </div>
                 </div>
 
                 <div>
-                  <label className="college-label">
-                    Area <b className="required">*</b>
-                  </label>
+                  <label className="college-label">Area</label>
                   <div>
-                    <Select
-                      id="AreaId"
-                      name="AreaId"
-                      value={areaOptions.find(
-                        (option) => option.value === AreaId
-                      )}
-                      onChange={(option) => setAreaId(option.value)}
-                      ref={areaRef}
-                      onKeyDown={(e) => handleKeyDown(e, stateRef)}
+                    <Autocomplete
                       options={areaOptions}
-                      styles={{
-                        control: (base) => ({
-                          ...base,
-                          width: "280px",
-                          marginTop: "10px",
-                          borderRadius: "4px",
-                          border: "1px solid rgb(223, 222, 222)",
-                          marginBottom: "5px",
-                        }),
-                      }}
-                      placeholder="Select Area"
-                    />
-                    <div>
-                      {errors.AreaId && (
-                        <b className="error-text">{errors.AreaId}</b>
+                      value={
+                        areaOptions.find((option) => option.value === AreaId) ||
+                        null
+                      }
+                      onChange={(event, newValue) =>
+                        setAreaId(newValue ? newValue.value : "")
+                      }
+                      getOptionLabel={(option) => option.label}
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          placeholder="Select Area"
+                          size="small"
+                          margin="none"
+                          fullWidth
+                        />
                       )}
-                    </div>
+                      sx={{
+                        width: 300,
+                        mt: 1.25, // same as marginTop 10px
+                        mb: 0.625, // marginBottom 5px
+                        "& .MuiOutlinedInput-root": {
+                          borderRadius: "4px",
+                        },
+                      }}
+                    />
                   </div>
                 </div>
 
                 <div>
-                  <label className="college-label">
-                    Pincode <b className="required">*</b>
-                  </label>
+                  <label className="college-label">Pincode</label>
                   <div>
                     <input
                       id="Pincode"
@@ -931,62 +752,42 @@ const College = () => {
                       className="college-control"
                       placeholder="Enter Pincode"
                     />
-
-                    <div>
-                      {errors.Pincode && (
-                        <b className="error-text">{errors.Pincode}</b>
-                      )}
-                    </div>
                   </div>
                 </div>
+
                 <div>
-                  <label className="college-label">
-                    Mobile No <b className="required">*</b>
-                  </label>
+                  <label className="college-label">Mobile No</label>
                   <div>
                     <input
                       id="MobileNo"
                       name="MobileNo"
                       value={MobileNo}
                       onChange={(e) => setMobileNo(e.target.value)}
-                      maxLength={10}
+                      // maxLength={10}
                       ref={mobileRef}
+                      s
                       onKeyDown={(e) => handleKeyDown(e, faxRef)}
                       className="college-control"
                       placeholder="Enter Tel No"
                     />
-
-                    <div>
-                      {errors.MobileNo && (
-                        <b className="error-text">{errors.MobileNo}</b>
-                      )}
-                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div style={{ display: "none" }}>
-                <label className="college-label">
-                  Fax No <b className="required">*</b>
-                </label>
                 <div>
-                  <input
-                    id="FaxNo"
-                    name="FaxNo"
-                    value={FaxNo}
-                    onChange={(e) => setFaxNo(e.target.value)}
-                    maxLength={25}
-                    ref={faxRef}
-                    onKeyDown={(e) => handleKeyDown(e, saveRef)}
-                    className="college-control"
-                    placeholder="Enter Fax No"
-                  />
-
-                  {/* <div>
-                    {errors.FaxNo && (
-                      <b className="error-text">{errors.FaxNo}</b>
-                    )}
-                  </div> */}
+                  <label className="college-label">Email Id</label>
+                  <div>
+                    <input
+                      id="EmailId"
+                      name="EmailId"
+                      value={EmailId}
+                      onChange={(e) => setEmailId(e.target.value)}
+                      maxLength={100}
+                      ref={emailidRef}
+                      onKeyDown={(e) => handleKeyDown(e, address1Ref)}
+                      placeholder="Enter Email"
+                      className="college-control"
+                    />
+                  </div>
                 </div>
               </div>
             </form>

@@ -2,13 +2,12 @@
    
 }
 
-/* Style for the loading container */
 .loadingcollege-container {
     display: flex;
     justify-content: center;
     align-items: center;
     flex-direction: column;
-    height: 100vh; /* Full viewport height */
+    height: 100vh; 
     text-align: center;
   }
   .loadingcollege-container p {
@@ -17,14 +16,14 @@
     font-weight: bold; 
 font-style: italic; 
 text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2); 
-text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2); /* Adds a soft shadow */
-text-transform: uppercase; /* Makes all text uppercase */
-text-transform: capitalize; /* Capitalizes the first letter of each word */
-line-height: 1.5; /* Increases line height */
+text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2); 
+text-transform: uppercase; 
+text-transform: capitalize;
+line-height: 1.5; 
 background: linear-gradient(90deg, #0a60bd, #006989);
--webkit-background-clip: text; /* Ensures the gradient is clipped to text */
-color: transparent; /* Make the text color transparent to show the background */
-padding: 5px 15px; /* Adds padding around the text */
+-webkit-background-clip: text; 
+color: transparent;
+padding: 5px 15px; 
   }
   
 
@@ -63,11 +62,7 @@ padding: 5px 15px; /* Adds padding around the text */
 
 
 .college-form{
-/* 
-    gap: 20px;
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr 1fr;
-    padding: 5px;  */
+
 
 
     display: flex;
@@ -85,7 +80,7 @@ padding: 5px 15px; /* Adds padding around the text */
 
 .othercol-rows{
     display: grid;
-        grid-template-columns: repeat(4, 1fr);
+        grid-template-columns: repeat(3, 1fr);
         gap: 10px;
 }
 
@@ -187,3 +182,9 @@ padding: 5px 15px; /* Adds padding around the text */
         gap: 5px;
     }
 }
+
+
+
+
+
+

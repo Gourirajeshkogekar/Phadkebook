@@ -78,6 +78,19 @@ import UndoIcon from "@mui/icons-material/Undo"; // Sales return
 import GavelIcon from "@mui/icons-material/Gavel"; // TDS register
 import ListAltIcon from "@mui/icons-material/ListAlt"; // Listing/Master
 import AccountBalanceIcon from "@mui/icons-material/AccountBalance"; // Ledger
+import {
+   
+  FaTruck,
+  
+  FaFileInvoiceDollar,FaPhoneAlt, FaCoins,
+  FaClipboardCheck,FaThLarge,FaMapMarkedAlt,
+  FaFileContract,FaListAlt, FaCity, FaMap,
+  FaArrowDown,FaMoneyBillWave,FaPercent,FaCertificate,
+  FaArrowUp,FaCashRegister,FaWallet,FaLayerGroup,
+  FaUndoAlt,FaShoppingBag, FaCalendarAlt
+} from "react-icons/fa";
+
+
 
 export const menuItems = [
   {
@@ -86,12 +99,12 @@ export const menuItems = [
 
     path: "/home",
   },
-  {
-    title: "Dashboard",
-    icon: <MdDashboard />,
+  // {
+  //   title: "Dashboard",
+  //   icon: <MdDashboard />,
 
-    path: "/dashboard",
-  },
+  //   path: "/dashboard",
+  // },
 
   {
     title: "Masters",
@@ -105,128 +118,151 @@ export const menuItems = [
         icon: <FaUsers />,
       },
       {
-        title: "Account Groups",
+        title: "Account Group",
         path: "/masters/accountgroup",
         icon: <FaUsers />,
       },
+
       {
-        title: "Books",
+        title: "Main Group",
+        path: "/masters/maingroup",
+        icon: <FaUsers />,
+      },
+
+      {
+        title: "Sub Account Group ",
+        path: "/masters/subaccountgroup",
+        icon: <FaUserFriends />,
+      },
+
+      {
+        title: "Book",
         path: "/masters/book",
-        icon: <FaBook />,
-      },
-      {
-        title: "Book Groups",
-        path: "/masters/bookgroup",
-        icon: <FaBook />,
-      },
-      {
-        title: "Book Mediums",
-        path: "/masters/bookmedium",
         icon: <FaBook />,
       },
 
       {
-        title: "Standards",
+        title: "Standard",
         path: "/masters/standard",
         icon: <FaStar />,
       },
       {
-        title: "Colleges",
+        title: "College",
         path: "/masters/college",
         icon: <FaUniversity />,
       },
+
       {
-        title: "College Groups  ",
-        path: "/masters/collegegroup",
-        icon: <FaUniversity />,
-      },
-      {
-        title: "Universities ",
+        title: "University ",
         path: "/masters/university",
         icon: <FaUniversity />,
       },
 
       {
-        title: "Commissions  ",
-        path: "/masters/commission",
+        title: "Discount",
+        path: "/masters/discount",
         icon: <FaPercentage />,
       },
 
       {
-        title: "Discounts   ",
-        path: "/masters/discount",
-        icon: <FaPercentage />,
+        title: "State..City..Area ",
+        path: "/masters/location",
+        icon: <FaFlag />,
       },
+
       {
-        title: "Assign Convassors  ",
+        title: "Canvassor Master",
+        path: "/masters/canvassor",
+        icon: <FaUserTie />,
+      },
+
+      {
+        title: "Assign Canvassor ",
         path: "/masters/assignconvassor",
         icon: <FaTasks />,
       },
       {
-        title: "Users  ",
+        title: "User ",
         path: "/masters/user",
         icon: <FaUser />,
       },
-      {
-        title: "Branches   ",
-        path: "/masters/branch",
-        icon: <FaUser />,
-      },
-      {
-        title: "Levels  ",
-        path: "/masters/level",
-        icon: <FaUser />,
-      },
-      // {
-      //   title: "Countries  ",
-      //   path: "/masters/country",
-      //   icon: <FaFlag />,
-      // },
-      // {
-      //   title: "States   ",
-      //   path: "/masters/state",
-      //   icon: <FaFlag />,
-      // },
 
       {
-        title: "Cities",
-        path: "/masters/city",
-        icon: <FaFlag />,
-      },
-
-      {
-        title: "Areas",
-        path: "/masters/area",
-        icon: <FaFlag />,
-      },
-      {
-        title: "TDS's",
+        title: "T.D.S.",
         path: "/masters/tds",
         icon: <FaMoneyCheckAlt />,
       },
+
       {
-        title: "Depositer Groups",
-        path: "/masters/depositorgroup",
-        icon: <FaUserFriends />,
-      },
-      {
-        title: "Prof Categories",
-        path: "/masters/profcategory",
-        icon: <FaFolderOpen />,
+        title: "Party Category",
+        path: "/masters/partycategory",
+        icon: <FaUsers />,
       },
       {
         title: "Professors",
         path: "/masters/professors",
         icon: <FaUserGraduate />,
       },
+
+      {
+        title: "Authors",
+        path: "/masters/authors",
+        icon: <FaPenNib />,
+      },
+
+      {
+        title: "Godown ",
+        path: "/masters/godown",
+        icon: <FaWarehouse />,
+      },
+
+      {
+        title: "Press ",
+        path: "/masters/press",
+        icon: <FaNewspaper />,
+      },
+      {
+        title: "Paper Size",
+        path: "/masters/papersize",
+        icon: <FaFilePdf />,
+      },
+
+      {
+        title: "Dispatch Mode Master",
+        path: "/masters/dispatchmode",
+        icon: <FaUserFriends />,
+      },
+
       // {
-      //   title: "Professors",
-      //   path: "/masters/professors/proflist",
-      //   icon: <FaUserGraduate />,
+      //   title: "Book Group",
+      //   path: "/masters/bookgroup",
+      //   icon: <FaBook />,
+      // },
+      // {
+      //   title: "Book Medium",
+      //   path: "/masters/bookmedium",
+      //   icon: <FaBook />,
+      // },
+
+      // {
+      //   title: "College Group",
+      //   path: "/masters/collegegroup",
+      //   icon: <FaUniversity />,
+      // },
+
+      // {
+      //   title: "Branches   ",
+      //   path: "/masters/branch",
+      //   icon: <FaUser />,
+      // },
+      // {
+      //   title: "Level Master",
+      //   path: "/masters/level",
+      //   icon: <FaUser />,
       // },
 
       {
-        title: "Employees",
+        title: "Employee Master",
         path: "/masters/employee",
         icon: <FaUser />,
       },
@@ -236,63 +272,21 @@ export const menuItems = [
         icon: <FaUsers />,
       },
       {
-        title: "Publications",
+        title: "Publication Master",
         path: "/masters/publication",
         icon: <FaBook />,
       },
-      {
-        title: "Authors",
-        path: "/masters/authors",
-        icon: <FaPenNib />,
-      },
-      {
-        title: "Godowns",
-        path: "/masters/godown",
-        icon: <FaWarehouse />,
-      },
 
-      {
-        title: "Title Presses",
-        path: "/masters/titlepress",
-        icon: <FaNewspaper />,
-      },
-      {
-        title: "Presses  ",
-        path: "/masters/press",
-        icon: <FaNewspaper />,
-      },
-      {
-        title: "Paper Sizes  ",
-        path: "/masters/papersize",
-        icon: <FaFilePdf />,
-      },
-      {
-        title: "Sub Account Groups  ",
-        path: "/masters/subaccountgroup",
-        icon: <FaUserFriends />,
-      },
-
-      {
-        title: "Dispatch Modes  ",
-        path: "/masters/dispatchmode",
-        icon: <FaUserFriends />,
-      },
-
-      {
-        title: "Cost Centers  ",
-        path: "/masters/costcenter",
-        icon: <FaUserFriends />,
-      },
-
-      {
-        title: "Plate Makers  ",
-        path: "/masters/platemaker",
-        icon: <FaUserFriends />,
-      },
       // {
-      //   title: "Cancel",
-      //   path: "/masters/cancel",
-      //   icon: <FaTimes  />,
+      //   title: "Title Press Master",
+      //   path: "/masters/titlepress",
+      //   icon: <FaNewspaper />,
+      // },
+
+      // {
+      //   title: "Plate Makers  ",
+      //   path: "/masters/platemaker",
+      //   icon: <FaUserFriends />,
       // },
     ],
   },
@@ -304,12 +298,12 @@ export const menuItems = [
 
     submenus: [
       {
-        title: "Receipts",
+        title: "Receipt Voucher",
         path: "/transaction/receiptvoucher",
         icon: <FaReceipt />,
       },
       {
-        title: "Payments",
+        title: "Payment Voucher",
         path: "/transaction/paymentvoucher",
         icon: <FaCreditCard />,
       },
@@ -370,13 +364,9 @@ export const menuItems = [
         path: "/transaction/invertchallan",
         icon: <FaBoxOpen />,
       },
-      // {
-      //   title: "TDS Entry",
-      //   path: "/transaction/tds",
-      //   icon: <FaMoneyCheckAlt />,
-      // },
+
       {
-        title: "Convassor Details",
+        title: "Canvassor Details",
         path: "/transaction/convassordetails",
         icon: <FaInfoCircle />,
       },
@@ -391,12 +381,12 @@ export const menuItems = [
         icon: <FaPrint />,
       },
       {
-        title: "MisPrint",
-        path: "/transaction/misprint",
+        title: "MissPrint",
+        path: "/transaction/missprint",
         icon: <FaPrint />,
       },
       {
-        title: "Sales For Convassors",
+        title: "Sales For Canvassor",
         path: "/transaction/salestoconvassor",
         icon: <FaArrowRight />,
       },
@@ -410,11 +400,11 @@ export const menuItems = [
         path: "/transaction/bookprintingordertopress",
         icon: <FaPrint />,
       },
-      {
-        title: "Convassor daily Report",
-        path: "/transaction/convassordailyreport",
-        icon: <FaFileAlt />,
-      },
+      // {
+      //   title: "Convassor daily Report",
+      //   path: "/transaction/convassordailyreport",
+      //   icon: <FaFileAlt />,
+      // },
 
       {
         title: "Raddi Sales",
@@ -424,165 +414,513 @@ export const menuItems = [
     ],
   },
 
-  // {
-  //   title: "Printing",
-  //   path: "/printing",
-  //   icon: <FaPrint />,
+  {
+    title: "Printing",
+    path: "/printing",
+    icon: <FaPrint />,
 
-  //   submenus: [
-  //     {
-  //       title: "Ledger",
-  //       path: "/printing/ledger",
-  //       icon: <FaBook />,
-  //     },
-  //     {
-  //       title: "All Documents",
-  //       path: "/printing/alldocuments",
-  //       icon: <FaFolder />,
-  //     },
-  //     {
-  //       title: "Books of Accounts",
-  //       path: "/printing/booksofaccounts",
-  //       icon: <FaBook />,
-  //     },
-  //     {
-  //       title: "Final Reports",
-  //       path: "/printing/finalreports",
-  //       icon: <FaFileAlt />,
-  //     },
-  //     {
-  //       title: "Stock",
-  //       path: "/printing/stock",
-  //       icon: <FaBoxes />,
+    submenus: [
+      {
+        title: "Ledger",
+        path: "/printing/ledger",
+        icon: <FaBook />,
+      },
+      {
+        title: "All Documents",
+        path: "/printing/alldocuments",
+        icon: <FaFolder />,
+          submenus: [
+          {
+            title: "Sales Challan",
+            path: "/printing/alldocuments/saleschallan",
+            icon: <FaTruck />,
+          },
+          {
+            title: "Sales Invoice",
+            path: "/printing/alldocuments/salesinvoice",
+            icon: <FaFileInvoice />,
+          },
+          {
+            title: "Receipt",
+            path: "/printing/alldocuments/receipt",
+            icon: <FaReceipt />,
+          },
+          {
+            title: "Bank Letter",
+            path: "/printing/alldocuments/bankletter",
+            icon: <FaUniversity />,
+          },
+          {
+            title: "Purchse Bill",
+            path: "/printing/alldocuments/purchsebill",
+            icon: <FaFileInvoiceDollar />,
+          },
+          {
+            title: "Delivery Challan other than PBH",
+            path: "/printing/alldocuments/deliverychallanotherthanPBH",
+            icon: <FaClipboardCheck />,
+          },
+          {
+            title: "Invoice other than PBH",
+            path: "/printing/alldocuments/invoiceotherthanPBH",
+            icon: <FaFileContract />,
+          },
 
-  //       submenus: [
-  //         {
-  //           title: "Stock Day Book",
-  //           path: "/printing/stock/stockdaybook",
-  //           icon: <FaCalendarDay />,
-  //         },
-  //         {
-  //           title: "Stock Book",
-  //           path: "/printing/stock/stockbook",
-  //           icon: <FaBook />,
-  //         },
-  //         {
-  //           title: "Stock Statement",
-  //           path: "/printing/stock/stockstatement",
-  //           icon: <FaFileAlt />,
-  //         },
-  //         {
-  //           title: "Stock Statement Details",
-  //           path: "/printing/stock/stockstmtdetails",
-  //           icon: <FaInfoCircle />,
-  //         },
-  //         {
-  //           title: "Net sale",
-  //           path: "/printing/stock/netsale",
-  //           icon: <FaDollarSign />,
-  //         },
-  //         {
-  //           title: "Net sale Summary",
-  //           path: "/printing/stock/netsalesummary",
-  //           icon: <FaClipboardList />,
-  //         },
-  //         {
-  //           title: "Book Purchase Repo",
-  //           path: "/printing/stock/bookpurchaserepo",
-  //           icon: <FaBook />,
-  //         },
-  //       ],
-  //     },
-  //     {
-  //       title: "MIS Reports",
-  //       path: "/printing/misreports",
-  //       icon: <FaChartBar />,
-  //     },
-  //     {
-  //       title: "MISC Reports",
-  //       path: "/printing/miscreports",
-  //       icon: <FaFileAlt />,
+           {
+            title: "Credit Advice",
+            path: "/printing/alldocuments/creditadvice",
+            icon: <FaArrowDown />,
+          },
+          {
+            title: "Debit Note",
+            path: "/printing/alldocuments/debitnote",
+            icon: <FaArrowUp />,
+          },
+          {
+            title: "Sales Return Credit Note",
+            path: "/printing/alldocuments/salesreturncreditnote",
+            icon: <FaUndoAlt />,
+          },
+          // {
+          //   title: "Voucher",
+          //   path: "/printing/alldocuments/voucher",
+          //   icon: <FaFileAlt />,
+          // },
+        ],
+      },
+      {
+        title: "Books of Accounts",
+        path: "/printing/booksofaccounts",
+        icon: <FaBook />,
 
-  //       submenus: [
-  //         {
-  //           title: "Account Groups",
-  //           path: "/printing/miscreports/accountgroups",
-  //           icon: <FaUsers />,
-  //         },
-  //         {
-  //           title: "Book Listing",
-  //           path: "/printing/miscreports/booklisting",
-  //           icon: <FaBook />,
-  //         },
-  //         {
-  //           title: "FBT Listing",
-  //           path: "/printing/miscreports/fbtlisting",
-  //           icon: <FaClipboardList />,
-  //         },
-  //       ],
-  //     },
+        submenus:  [
+         {
+            title: "Cash Book / Bank Book",
+            path: "/printing/booksofaccounts/cashbookbankbook",
+            icon: <FaMoneyBillWave  />,
+          },
+           {
+            title: "Journal Register",
+            path: "/printing/booksofaccounts/journalreg",
+            icon: <FaBook  />,
+          },
+               {
+            title: "Day Book",
+            path: "/printing/booksofaccounts/daybook",
+            icon: <FaCalendarDay  />,
+          },
+               {
+            title: "Debit Note Register",
+            path: "/printing/booksofaccounts/debitnotereg",
+            icon: <FaReceipt  />,
+          },
+               {
+            title: "Credit Note Register",
+            path: "/printing/booksofaccounts/creditnotereg",
+            icon: <FaUndoAlt  />,
+          },
+               {
+            title: "Sales",
+            path: "/printing/booksofaccounts/sales",
+            icon: <FaShoppingCart  />,
+            submenus: [
+                {
+            title: "Challan Register",
+            path: "/printing/booksofaccounts/challanreg",
+            icon: <FaTruck />,
+          },
+            {
+            title: "Sales Register",
+            path: "/printing/booksofaccounts/salesreg",
+            icon: <FaFileInvoice   />,
+          },
+            {
+            title: "Sales Summary Datewise",
+            path: "/printing/booksofaccounts/salessummarydatewise",
+            icon: <FaChartLine />,
+          },
 
-  //     {
-  //       title: "Listing",
-  //       path: "/printing/listing",
-  //       icon: <FaListUl />,
+            ]
+          },
+               {
+            title: "Purchase",
+            path: "/printing/booksofaccounts/purchase",
+            icon: <FaShoppingBag  />,
 
-  //       submenus: [
-  //         {
-  //           title: "Area",
-  //           path: "/printing/listing/area",
-  //           icon: <FaMapMarkerAlt />,
-  //         },
-  //         {
-  //           title: "Convassors party Listing",
-  //           path: "/printing/listing/convassorspartylisting",
-  //           icon: <FaIndustry />,
-  //         },
-  //         {
-  //           title: "Party listing",
-  //           path: "/printing/listing/partylisting",
-  //           icon: <FaUser />,
-  //         },
-  //         {
-  //           title: "Convassing College List",
-  //           path: "/printing/listing/convassingcollegelist",
-  //           icon: <FaUniversity />,
-  //         },
-  //       ],
-  //     },
+             submenus: [
+                {
+            title: "Purchase Register",
+            path: "/printing/booksofaccounts/purchase/purchasereg",
+            icon: <FaFileInvoiceDollar />,
+          },
+            {
+            title: "Purchse Register Summary",
+            path: "/printing/booksofaccounts/purchase/purchaseregsummary",
+            icon: <FaChartBar />,
+          },
+            {
+            title: "Purchse Register Monthly Summary",
+            path: "/printing/booksofaccounts/purchase/purchaseregmonthlysummary",
+            icon: <FaCalendarAlt />,
+          },
 
-  //     {
-  //       title: "Display Ledger",
-  //       path: "/printing/displayledger",
-  //       icon: <FaBook />,
-  //     },
-  //     {
-  //       title: "Ageing Analysis-convassor",
-  //       path: "/printing/ageinganalysis-convassor",
-  //       icon: <FaChartLine />,
-  //     },
-  //     {
-  //       title: "Ageing Analysis-Amount wise",
-  //       path: "/printing/ageinganalysis-amountwise",
-  //       icon: <FaMoneyBillAlt />,
-  //     },
-  //     {
-  //       title: "Convassing Reports",
-  //       path: "/printing/convassingreports",
-  //       icon: <FaChartBar />,
-  //     },
-  //     {
-  //       title: "Book Printing Order",
-  //       path: "/printing/bookprintingorder",
-  //       icon: <FaBookReader />,
-  //     },
-  //     // {
-  //     //   title: "Cancel",
-  //     //   path: "/printing/cancel",
-  //     //   icon: <FaTimes  />,
-  //     // },
-  //   ],
-  // },
+            ]
+          },
+               {
+            title: "TDS",
+            path: "/printing/booksofaccounts/tds",
+            icon: <FaPercent  />,
+
+             submenus: [
+                {
+            title: "TDS Register",
+            path: "/printing/booksofaccounts/tdsreg",
+            icon: <FaReceipt  />,
+          },
+            {
+            title: "TDS Master Listing",
+            path: "/printing/booksofaccounts/tdsmasterlisting",
+            icon: <FaUsers  />,
+          },
+            {
+            title: "Yearly TDS Register",
+            path: "/printing/booksofaccounts/yearlytdsreg",
+            icon: <FaCalendarDay  />,
+          },
+            {
+            title: "TDS Certificate",
+            path: "/printing/booksofaccounts/tdscertificate",
+            icon: <FaCertificate  />,
+          },
+
+            ]
+          },
+
+               {
+            title: "Cash Flow Daywise",
+            path: "/printing/booksofaccounts/cashflowdaywise",
+            icon: <FaCashRegister  />,
+          },
+               {
+            title: "Cash Flow Monthwise",
+            path: "/printing/booksofaccounts/cashflowmonthwise",
+            icon: <FaChartBar  />,
+          },
+               {
+            title: "Receipt Register",
+            path: "/printing/booksofaccounts/receiptreg",
+            icon: <FaReceipt  />,
+          },
+               {
+            title: "Sales Return Credit Note Register",
+            path: "/printing/booksofaccounts/salesreturncreditnotereg",
+            icon: <FaUndoAlt  />,
+          },
+               {
+            title: "Purchase Return Debit Note",
+            path: "/printing/booksofaccounts/purchasereturndebitnote",
+            icon: <FaExchangeAlt  />,
+          },
+               {
+            title: "Sales Register Summary",
+            path: "/printing/booksofaccounts/salesregsummary",
+            icon: <FaChartLine  />,
+          },
+               {
+            title: "Inward Register",
+            path: "/printing/booksofaccounts/inwardreg",
+            icon: <FaTruck  />,
+          },
+               {
+            title: "Transaction Summary",
+            path: "/printing/booksofaccounts/transactionsummary",
+            icon: <FaBalanceScale  />,
+          },
+               {
+            title: "TDS & Party",
+            path: "/printing/booksofaccounts/tdsandparty",
+            icon: <FaUsers  />,
+          },
+      ],
+      },
+     
+      {
+        title: "Final Reports",
+        path: "/printing/finalreports",
+        icon: <FaFileAlt />,
+        submenus:[
+           {
+            title: "Trial Bal-Simple",
+            path: "/printing/finalreports/trialbalsimple",
+            icon: <FaBalanceScale  />,
+          },
+             {
+            title: "Trial Bal-Periodical",
+            path: "/printing/finalreports/trialbalperiodical",
+            icon: <FaCalendarAlt />,
+          },
+           {
+            title: "P & L A/C",
+            path: "/printing/finalreports/pandlacc",
+            icon: <FaChartLine  />,
+          },
+           {
+            title: "Balance Sheet",
+            path: "/printing/finalreports/balancesheet",
+            icon: <FaBuilding  />,
+          }, {
+            title: "Fixed Asset Schedule",
+            path: "/printing/finalreports/fixedassetschedule",
+            icon: <FaLayerGroup  />,
+          }, {
+            title: "P & L Acc with Last Year Balance",
+            path: "/printing/finalreports/pandlaccwithlastyearbal",
+            icon: <FaChartBar  />,
+          }, {
+            title: "Schedule",
+            path: "/printing/finalreports/schedule",
+            icon: <FaFileAlt  />,
+          }, {
+            title: "Capital Accounts",
+            path: "/printing/finalreports/capitalaccounts",
+            icon: <FaWallet  />,
+          },
+        ]
+      },
+      {
+        title: "Stock",
+        path: "/printing/stock",
+        icon: <FaBoxes />,
+
+        submenus: [
+          {
+            title: "Stock Day Book",
+            path: "/printing/stock/stockdaybook",
+            icon: <FaCalendarDay />,
+          },
+          {
+            title: "Stock Book",
+            path: "/printing/stock/stockbook",
+            icon: <FaBook />,
+          },
+          {
+            title: "Stock Statement",
+            path: "/printing/stock/stockstatement",
+            icon: <FaFileAlt />,
+          },
+          {
+            title: "Stock Statement Details",
+            path: "/printing/stock/stockstmtdetails",
+            icon: <FaInfoCircle />,
+          },
+          {
+            title: "Net sale",
+            path: "/printing/stock/netsale",
+            icon: <FaDollarSign />,
+          },
+          {
+            title: "Net sale Summary",
+            path: "/printing/stock/netsalesummary",
+            icon: <FaClipboardList />,
+          },
+          {
+            title: "Book Purchase Repo",
+            path: "/printing/stock/bookpurchaserepo",
+            icon: <FaBook />,
+          },
+        ],
+      },
+      {
+        title: "MIS Reports",
+        path: "/printing/misreports",
+        icon: <FaChartBar />,
+      },
+      {
+        title: "MISC Reports",
+        path: "/printing/miscreports",
+        icon: <FaFileAlt />,
+
+        submenus: [
+          {
+            title: "Account Groups",
+            path: "/printing/miscreports/accountgroups",
+            icon: <FaUsers />,
+          },
+          {
+            title: "Book Listing",
+            path: "/printing/miscreports/booklisting",
+            icon: <FaBook />,
+          },
+          {
+            title: "FBT Listing",
+            path: "/printing/miscreports/fbtlisting",
+            icon: <FaClipboardList />,
+          },
+        ],
+      },
+
+      {
+        title: "Listing",
+        path: "/printing/listing",
+        icon: <FaListUl />,
+
+        submenus: [
+          {
+            title: "Area",
+            path: "/printing/listing/area",
+            icon: <FaMapMarkerAlt />,
+          },
+          {
+            title: "Canvassors party Listing",
+            path: "/printing/listing/convassorspartylisting",
+            icon: <FaIndustry />,
+          },
+          {
+            title: "Party listing",
+            path: "/printing/listing/partylisting",
+            icon: <FaUser />,
+          },
+          {
+            title: "Convassing College List",
+            path: "/printing/listing/convassingcollegelist",
+            icon: <FaUniversity />,
+          },
+        ],
+      },
+
+      {
+        title: "Display Ledger",
+        path: "/printing/displayledger",
+        icon: <FaBook />,
+      },
+      // {
+      //   title: "Ageing Analysis-convassor",
+      //   path: "/printing/ageinganalysis-convassor",
+      //   icon: <FaChartLine />,
+      // },
+      {
+        title: "Ageing Analysis-Amount wise",
+        path: "/printing/ageinganalysis-amountwise",
+        icon: <FaMoneyBillAlt />,
+      },
+
+
+      {
+        title: "Canvassing Reports",
+        path: "/printing/canvassingreports",
+        icon: <FaChartBar />,
+
+        submenus:[
+            {
+        title: "Canvassing Listing",
+        path: "/printing/canvassingreports/canvlisting",
+        icon: <FaListAlt  />,
+      },
+
+       {
+        title: "Canvassing Groupwise",
+        path: "/printing/canvassingreports/canvgroupwise",
+        icon: <FaLayerGroup  />,
+      },
+
+         {
+        title: "Canvassing Bookwise",
+        path: "/printing/canvassingreports/canvbookwise",
+        icon: <FaBook  />,
+      },
+         {
+        title: "Canvassing Book Summary",
+        path: "/printing/canvassingreports/canvbooksummary",
+        icon: <FaThLarge  />,
+      },
+
+         {
+        title: "Canvassing Collegewise",
+        path: "/printing/canvassingreports/canvcollegewise",
+        icon: <FaUniversity  />,
+      },
+
+         {
+        title: "Canvassing Areawise",
+        path: "/printing/canvassingreports/canvareawise",
+        icon: <FaMapMarkedAlt  />,
+      },
+         {
+        title: "Canvassing Areawise Summary",
+        path: "/printing/canvassingreports/canvareawisesummary",
+        icon: <FaMap  />,
+      },
+         {
+        title: "Inv. Citywise",
+        path: "/printing/canvassingreports/invcitywise",
+        icon: <FaCity  />,
+      },
+         {
+        title: "Inv. Citywise Cross",
+        path: "/printing/canvassingreports/invcitywisecross",
+        icon: <FaBoxes  />,
+      },
+         {
+        title: "Canvassing Specimen Total",
+        path: "/printing/canvassingreports/canvspecimentotal",
+        icon: <FaBalanceScale  />,
+      },
+
+         {
+        title: "Canvassing Summary Cross",
+        path: "/printing/canvassingreports/canvsummarycross",
+        icon: <FaBoxes  />,
+      },
+         {
+        title: "Canvassing Districtwise Summary",
+        path: "/printing/canvassingreports/canvdistsummary",
+        icon: <FaMap  />,
+      },
+
+         {
+        title: "Canvassing Collegewise Summary",
+        path: "/printing/canvassingreports/canvcollegewisesummary",
+        icon: <FaBuilding  />,
+      },
+            {
+        title: "Canvassing Collegewise Summary Cross",
+        path: "/printing/canvassingreports/canvcollegewisesummarycross",
+        icon: <FaBoxes  />,
+      },
+
+         {
+        title: "Account Master listing Mobile Nos",
+        path: "/printing/canvassingreports/accmasterlistingmobilenos",
+        icon: <FaPhoneAlt  />,
+      },
+
+
+         {
+        title: "Canvassor Expenses",
+        path: "/printing/canvassingreports/canvexpenses",
+        icon: <FaMoneyBillWave  />,
+      },
+         {
+        title: "Canvassor Expenses headwise Summary",
+        path: "/printing/canvassingreports/canvexpheadwisesummary",
+        icon: <FaCoins  />,
+      },
+         {
+        title: "Netsale Canvassing",
+        path: "/printing/canvassingreports/netsalecanvassing",
+        icon: <FaChartLine  />,
+      },
+
+        ]
+      },
+      {
+        title: "Book Printing Order",
+        path: "/printing/bookprintingorder",
+        icon: <FaBookReader />,
+      },
+     
+    ],
+  },
   {
     title: "Settings",
     path: "/settings",
@@ -599,16 +937,7 @@ export const menuItems = [
         path: "/settings/userrights",
         icon: <FaUserShield />,
       },
-      // {
-      //   title: "Split Data",
-      //   path: "/settings/splitdata",
-      //   icon: <FaCodeBranch />,
-      // },
-      // {
-      //   title: "Backup-Current Company",
-      //   path: "/settings/backup-currentcompany",
-      //   icon: <FaDatabase />,
-      // },
+
       {
         title: "Interest Calculation",
         path: "/settings/interestcalculation",
@@ -619,22 +948,13 @@ export const menuItems = [
         path: "/settings/lockdata",
         icon: <FaLock />,
       },
-      {
-        title: "Restore Data",
-        path: "/settings/restoredata",
-        icon: <FaHistory />,
-      },
-      // {
-      //   title: "Cancel",
-      //   path: "/settings/cancel",
-      //   icon: <FaTimes  />,
-      // },
     ],
   },
   {
     title: "Royalty",
     icon: <FaCrown />,
     path: "/royalty",
+    allowedCompanies: ["PP", "PBH"], // only these companies
   },
 
   {
@@ -691,11 +1011,6 @@ export const menuItems = [
         type: "single",
       },
 
-      // {
-      //   title: "TDS master listing",
-      //   path: "/reports/tdsmasterlistingreport",
-      //   icon: <ListAltIcon />,
-      // },
       {
         title: "Stock Reports",
         path: "/reports/stockreports",

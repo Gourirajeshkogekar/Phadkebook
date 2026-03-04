@@ -4,6 +4,9 @@ import React, {
   useEffect,
   useSyncExternalStore,
 } from "react";
+
+import { Suspense, lazy } from "react";
+
 import "./Convassordetails.css";
 import Select from "react-select";
 import axios from "axios";
@@ -58,6 +61,8 @@ import {
 import dayjs from "dayjs";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers";
+import { useRef } from "react";
+import { useNavigate } from "react-router-dom";
 
 function Convassordetails() {
   const [userId, setUserId] = useState("");
@@ -94,7 +99,6 @@ function Convassordetails() {
   const [deleteId, setDeleteId] = useState(null);
   const [RefNo, setrefno] = useState(null);
   const [Specimen_report_no, setSpecimenreportNo] = useState("");
-  const [selectedBranch, setSelectedbranch] = useState("");
 
   const [Date, setDate] = useState("");
   const [CanvassorId, setConvassorId] = useState("");
@@ -102,12 +106,21 @@ function Convassordetails() {
   const [TransactionDate, setTransactiondate] = useState("");
   const [CollegeId, setCollegeId] = useState("");
   const [colleges, setColleges] = useState([]);
+
+  const [collegeProfessors, setCollegeProfessors] = useState([]);
+
   const [cities, setCities] = useState([]);
+  const [areas, setareas] = useState([]);
   const [convassors, setConvassors] = useState([]);
+  const [filteredCities, setFilteredCities] = useState([]);
+
   const [bookOptions, setBookOptions] = useState([]);
   const [bookCodes, setBookcodes] = useState([]);
   const [professors, setProfessors] = useState([]);
   const [ProfessorId, setProfessorId] = useState("");
+
+  const [collegeAddress, setCollegeAddress] = useState("");
+
   // const [Proftext, setProftext] = useState("");
   const [editingIndex, setEditingIndex] = useState(-1);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -141,18 +154,15 @@ function Convassordetails() {
   const handleMenuClose = () => {
     setAnchorEl(null);
   };
+  const [selectedBranch, setSelectedBranch] = useState("Other");
 
-  const branchMapping = {
-    Arts: 1,
-    Commerce: 2,
-    Science: 3,
-    Other: 4,
+  const handleBranchChange = (value) => {
+    setSelectedBranch(value);
   };
 
-  const handleBranchChange = (branchName) => {
-    setSelectedbranch(branchName);
-    const branchValue = branchMapping[branchName]; // Get corresponding integer
-    console.log("Selected Branch Value:", branchValue); // Send this to backend
+  const handleSpecimenChange = (e) => {
+    const value = e.target.value.replace(/\D/g, ""); // allow only numbers
+    setSpecimenNumber(value);
   };
 
   const [rows, setRows] = useState([
@@ -164,12 +174,22 @@ function Convassordetails() {
     },
   ]);
 
+  const totalCopies = useMemo(() => {
+    return rows.reduce((sum, row) => sum + (Number(row.Copies) || 0), 0);
+  }, [rows]);
+
+  const navigate = useNavigate();
+  const handleProfessorDetailsopen = () => {
+    navigate("/masters/professors");
+  };
+
   useEffect(() => {
-    fetchConvassors();
+    fetchcanvassors();
     fetchConvassordetails();
     fetchCities();
-    fetchColleges();
+    fetchCollegesByCity();
     fetchBookNames();
+    fetchAreas()
   }, []);
 
   useEffect(() => {
@@ -177,10 +197,55 @@ function Convassordetails() {
     console.log("this function is called");
   }, [pageIndex]);
 
+  useEffect(() => {
+    if (!CollegeId) {
+      setCollegeProfessors([]);
+      return;
+    }
+
+    fetchProfessorsByCollege(CollegeId);
+  }, [CollegeId]);
+
+  const fetchProfessorsByCollege = async (collegeId) => {
+    try {
+      const res = await axios.get(
+        "https://publication.microtechsolutions.net.in/php/get/search.php",
+        {
+          params: {
+            Table: "Professor",
+            Colname: "CollegeId",
+            Text: collegeId,
+          },
+        },
+      );
+
+      const list = (res.data || []).map((p) => ({
+        value: Number(p.Id),
+        label: p.ProfessorName,
+      }));
+
+      setCollegeProfessors(list);
+
+      // 🔥 AUTO-SELECT if only ONE professor exists
+      if (list.length === 1) {
+        setRows((prev) =>
+          prev.map((row) => ({
+            ...row,
+            ProfessorId: list[0].value,
+            ProfessorName: list[0].label,
+          })),
+        );
+      }
+    } catch (err) {
+      console.error(err);
+      setCollegeProfessors([]);
+    }
+  };
+
   const fetchCanvassorheaders = async () => {
     try {
       const response = await axios.get(
-        `https://publication.microtechsolutions.net.in/php/get/gettblpage.php?Table=Canvassorheader&PageNo=${pageIndex}`
+        `https://publication.microtechsolutions.net.in/php/get/gettblpage.php?Table=Canvassorheader&PageNo=${pageIndex}`,
       );
       console.log(response.data, "response of canvassor header");
 
@@ -195,7 +260,7 @@ function Convassordetails() {
   const fetchConvassordetails = async () => {
     try {
       const response = await axios.get(
-        "https://publication.microtechsolutions.net.in/php/get/gettable.php?Table=Canvassordetail"
+        "https://publication.microtechsolutions.net.in/php/get/gettable.php?Table=Canvassordetail",
       );
       console.log(response.data, "response of convassor details");
       setConvassordetails(response.data);
@@ -205,48 +270,59 @@ function Convassordetails() {
     }
   };
 
-  const fetchConvassors = async () => {
+  const fetchcanvassors = async () => {
     try {
       const response = await axios.get(
-        "https://publication.microtechsolutions.net.in/php/AssignCanvassorget.php"
+        "https://publication.microtechsolutions.net.in/php/get/getCanvassorMaster.php",
       );
-      const convassorOptions = response.data.map((conv) => ({
-        value: conv.Id,
-        label: conv.CanvassorName,
+      const canvassorOptions = response.data.map((can) => ({
+        value: can.Id,
+        label: can.CanvassorName,
       }));
-      setConvassors(convassorOptions);
+      setConvassors(canvassorOptions);
     } catch (error) {
-      // toast.error("Error fetching convassors:", error);
+      // toast.error("Error fetching Canvassors:", error);
     }
   };
 
-  // useEffect(() => {
-  //   if (Proftext.trim() === "") return; // Avoid empty calls
-  //   const delayDebounce = setTimeout(() => {
-  //     fetchProfessors();
-  //   }, 500); // Debounce API call
+  const fetchCitiesByCanvassor = async (canvassorId) => {
+    try {
+      const res = await axios.get(
+        "https://publication.microtechsolutions.net.in/php/get/getAssignCanvassor.php",
+        { params: { CanvassorId: canvassorId } },
+      );
 
-  //   return () => clearTimeout(delayDebounce);
-  // }, [Proftext]); // Fetch when Proftext changes
+      if (res.data?.cityList) {
+        const apiCities = res.data.cityList
+          .split(",")
+          .map((name) => name.trim());
 
-  // const fetchProfessors = async () => {
-  //   if (Proftext.trim() === "") return; // Don't fetch if input is empty
+        const normalize = (str) => str.toLowerCase().replace(/[^a-z]/g, "");
 
-  //   try {
-  //     const response = await axios.get(
-  //       `https://publication.microtechsolutions.net.in/php/get/search.php?Table=Professor&Colname=ProfessorName&Text=${Proftext}`
-  //     );
-  //     const profData = response.data;
+        const mapped = apiCities.map((apiCity) => {
+          // find matching city from master list
+          const match = cities.find(
+            (c) => normalize(c.label) === normalize(apiCity),
+          );
 
-  //     const profOptions = profData.map((prof) => ({
-  //       value: prof.Id,
-  //       label: prof.ProfessorName,
-  //     }));
-  //     setProfessors(profOptions);
-  //   } catch (error) {
-  //     // toast.error("Error fetching profs:", error);
-  //   }
-  // };
+          return {
+            label: apiCity, // ✅ DISPLAY AS-IS
+            value: match ? match.value : apiCity, // fallback if not found
+          };
+        });
+
+        setFilteredCities(mapped);
+
+        console.log(filteredCities, "filtered cities");
+        setCityId(null);
+      } else {
+        setFilteredCities([]);
+      }
+    } catch (error) {
+      console.error("Error fetching canvassor cities", error);
+      setFilteredCities([]);
+    }
+  };
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -264,7 +340,7 @@ function Convassordetails() {
   const fetchProfessors = async (text, rowIndex) => {
     try {
       const response = await axios.get(
-        `https://publication.microtechsolutions.net.in/php/get/search.php?Table=Professor&Colname=ProfessorName&Text=${text}`
+        `https://publication.microtechsolutions.net.in/php/get/search.php?Table=Professor&Colname=ProfessorName&Text=${text}`,
       );
       const data = response.data || [];
 
@@ -280,31 +356,11 @@ function Convassordetails() {
     }
   };
 
-  // const fetchProfessors = async (text) => {
-  //   if (!text?.trim()) return;
-
-  //   try {
-  //     const response = await axios.get(
-  //       `https://publication.microtechsolutions.net.in/php/get/search.php?Table=Professor&Colname=ProfessorName&Text=${text}`
-  //     );
-  //     const profData = response.data;
-
-  //     const profOptions = profData.map((prof) => ({
-  //       value: prof.Id,
-  //       label: prof.ProfessorName,
-  //     }));
-
-  //     setProfessors(profOptions);
-  //     console.log(professors, "professors");
-  //   } catch (error) {
-  //     // toast.error("Error fetching profs:", error);
-  //   }
-  // };
-
+   
   const fetchCities = async () => {
     try {
       const response = await axios.get(
-        "https://publication.microtechsolutions.net.in/php/Cityget.php"
+        "https://publication.microtechsolutions.net.in/php/Cityget.php",
       );
       const cityOptions = response.data.map((city) => ({
         value: city.Id,
@@ -316,25 +372,62 @@ function Convassordetails() {
     }
   };
 
-  const fetchColleges = async () => {
+  const fetchAreas = async () => {
     try {
       const response = await axios.get(
-        "https://publication.microtechsolutions.net.in/php/Collegeget.php"
+        "https://publication.microtechsolutions.net.in/php/Areaget.php",
       );
-      const colOptions = response.data.map((col) => ({
-        value: col.Id,
-        label: col.CollegeName,
+      const areaOptions = response.data.map((area) => ({
+        value: area.Id,
+        label: area.AreaName,
       }));
-      setColleges(colOptions);
+      setareas(areaOptions);
     } catch (error) {
-      // toast.error("Error fetching colleges:", error);
+      // toast.error("Error fetching areas:", error);
     }
   };
+  const [selectedCollege, setSelectedCollege] = useState(null);
+
+  const fetchCollegesByCity = async (cityId) => {
+    if (!cityId) {
+      setColleges([]);
+      return;
+    }
+
+    try {
+      const response = await axios.get(
+        "https://publication.microtechsolutions.net.in/php/Collegeget.php",
+        {
+          params: { CityId: cityId },
+        },
+      );
+
+      // 🔥 FIX IS HERE
+      const colOptions = response.data.data.map((col) => ({
+        value: col.CollegeId,
+        label: col.CollegeName,
+        cityId: col.CityId,
+        code: col.CollegeCode,
+        active: col.Active,
+      }));
+
+      setColleges(colOptions);
+    } catch (error) {
+      console.error("Error fetching colleges", error);
+      setColleges([]);
+    }
+  };
+
+  const getAreaName = (areaId) =>
+    areas.find((a) => a.value === areaId)?.label || "";
+
+  const getCityName = (cityId) =>
+    cities.find((c) => c.value === cityId)?.label || "";
 
   const fetchBookNames = async () => {
     try {
       const response = await axios.get(
-        "https://publication.microtechsolutions.net.in/php/Bookget.php"
+        "https://publication.microtechsolutions.net.in/php/Bookget.php",
       );
       const books = response.data.map((book) => ({
         value: book.Id,
@@ -354,7 +447,7 @@ function Convassordetails() {
           if (row.ProfessorId) {
             try {
               const response = await axios.get(
-                `https://publication.microtechsolutions.net.in/php/get/search.php?Table=Professor&Colname=Id&Text=${row.ProfessorId}`
+                `https://publication.microtechsolutions.net.in/php/get/search.php?Table=Professor&Colname=Id&Text=${row.ProfessorId}`,
               );
               const data = response.data || [];
               return data.map((prof) => ({
@@ -367,7 +460,7 @@ function Convassordetails() {
             }
           }
           return [];
-        })
+        }),
       );
       setProfessorsList(updatedList);
     };
@@ -377,12 +470,12 @@ function Convassordetails() {
 
   const handleSearchChange = async (text, index) => {
     setRows((prevRows) =>
-      prevRows.map((r, i) => (i === index ? { ...r, Proftext: text } : r))
+      prevRows.map((r, i) => (i === index ? { ...r, Proftext: text } : r)),
     );
 
     try {
       const response = await axios.get(
-        `https://publication.microtechsolutions.net.in/php/get/search.php?Table=Professor&Colname=ProfessorName&Text=${text}`
+        `https://publication.microtechsolutions.net.in/php/get/search.php?Table=Professor&Colname=ProfessorName&Text=${text}`,
       );
       const data = response.data || [];
 
@@ -414,17 +507,17 @@ function Convassordetails() {
       return;
     }
 
-    const today = dayjs();
-    const minDate = today.subtract(3, "day");
-    const maxDate = today.add(2, "day");
+    // const today = dayjs();
+    // const minDate = today.subtract(3, "day");
+    // const maxDate = today.add(2, "day");
 
-    if (newValue.isBefore(minDate) || newValue.isAfter(maxDate)) {
-      setSafedateerror("You can select only 2 days before or after today");
-    } else {
-      setSafedateerror("");
-    }
-
-    setSafedate(newValue);
+    // if (newValue.isBefore(minDate) || newValue.isAfter(maxDate)) {
+    //   setSafedateerror("You can select only 2 days before or after today");
+    // } else {
+    //   setSafedateerror("");
+    // }
+    setSafedateerror("");
+    setSafedate(dayjs(newValue));
   };
 
   const handleDateChange2 = (newValue) => {
@@ -434,17 +527,17 @@ function Convassordetails() {
       return;
     }
 
-    const today = dayjs();
-    const minDate = today.subtract(3, "day");
-    const maxDate = today.add(2, "day");
+    // const today = dayjs();
+    // const minDate = today.subtract(3, "day");
+    // const maxDate = today.add(2, "day");
 
-    if (newValue.isBefore(minDate) || newValue.isAfter(maxDate)) {
-      setTranserror("You can select only 2 days before or after today");
-    } else {
-      setTranserror("");
-    }
-
-    setTransdate(newValue);
+    // if (newValue.isBefore(minDate) || newValue.isAfter(maxDate)) {
+    //   setTranserror("You can select only 2 days before or after today");
+    // } else {
+    //   setTranserror("");
+    // }
+    setTranserror("");
+    setTransdate(dayjs(newValue));
   };
 
   const handleInputChange = (index, field, value) => {
@@ -536,7 +629,7 @@ function Convassordetails() {
 
   const resetForm = () => {
     setrefno("");
-    setSelectedbranch(null);
+    setSelectedBranch(null);
     setSpecimenreportNo("");
     // setDate("");
     setSafedate(dayjs());
@@ -547,6 +640,7 @@ function Convassordetails() {
     setTransdate(dayjs());
     setTranserror("");
     setCollegeId(null);
+    setSelectedCollege(null);
 
     setRows([
       {
@@ -578,7 +672,7 @@ function Convassordetails() {
 
     try {
       const response = await fetch(
-        `https://publication.microtechsolutions.net.in/php/get/getbycolm.php?Table=Professor&Colname=Id&Colvalue=${professorId}`
+        `https://publication.microtechsolutions.net.in/php/get/getbycolm.php?Table=Professor&Colname=Id&Colvalue=${professorId}`,
       );
       const data = await response.json();
 
@@ -599,7 +693,7 @@ function Convassordetails() {
     } catch (error) {
       console.error(
         `Error fetching professor name for ID ${professorId}:`,
-        error
+        error,
       );
       return "Unknown";
     }
@@ -615,7 +709,7 @@ function Convassordetails() {
 
     const convassorheader = convassorheaders[currentRow.index];
     const convassordetail = convassordetails.filter(
-      (detail) => detail.CanvassorheaderId === convassorheader.Id
+      (detail) => detail.CanvassorheaderId === convassorheader.Id,
     );
 
     const convertDateForInput = (dateStr) => {
@@ -650,7 +744,7 @@ function Convassordetails() {
       initialRows.map(async (row) => {
         const professorName = await fetchProfessorName(row.ProfessorId);
         return { ...row, ProfessorName: professorName };
-      })
+      }),
     );
 
     setRows(updatedRows);
@@ -658,11 +752,7 @@ function Convassordetails() {
     // Update form fields
     const date = dayjs(convassorheader.Date?.date);
     const transdate = dayjs(convassorheader.TransactionDate?.date);
-    const selectedBranchName = Object.keys(branchMapping).find(
-      (key) => branchMapping[key] === convassorheader.Option
-    );
 
-    setSelectedbranch(selectedBranchName || "");
     setrefno(convassorheader.RefNo);
     setSpecimenreportNo(convassorheader.Specimen_report_no);
     // setDate(date);
@@ -677,6 +767,85 @@ function Convassordetails() {
     console.log(convassordetails, "convassor detail");
 
     setIsLoading(false);
+  };
+
+  const bookCodeTimer = useRef(null);
+
+  const handleBookCodeChange = (rowIndex, value) => {
+    const updatedRows = [...rows];
+    updatedRows[rowIndex].BookCode = value;
+    setRows(updatedRows);
+
+    // 🔴 Clear previous timer
+    if (bookCodeTimer.current) {
+      clearTimeout(bookCodeTimer.current);
+    }
+
+    // if book code is blank → reset row fields
+    if (value.trim() === "") {
+      updatedRows[rowIndex].BookName = "";
+      updatedRows[rowIndex].BookNameMarathi = "";
+      updatedRows[rowIndex].Price = "";
+      updatedRows[rowIndex].BookRate = "";
+      updatedRows[rowIndex].BookId = "";
+      updatedRows[rowIndex].Copies = "";
+      updatedRows[rowIndex].Amount = "";
+      updatedRows[rowIndex].Discount = "";
+      updatedRows[rowIndex].FinalAmount = "";
+
+      setRows(updatedRows);
+      return; // stop here
+    }
+
+    // 🟡 Wait until user finishes typing (500ms)
+    bookCodeTimer.current = setTimeout(() => {
+      // 🔒 Minimum length check (VERY IMPORTANT)
+      if (value.length < 2) return;
+
+      // Fetch data
+      fetchBookDataForRow(rowIndex, value);
+    }, 400);
+  };
+
+  const fetchBookDataForRow = async (rowIndex, bookCode) => {
+    if (!bookCode) return; // guard clause
+
+    try {
+      const response = await fetch(
+        `https://publication.microtechsolutions.net.in/php/Bookcodeget.php?BookCode=${bookCode}`,
+      );
+      const data = await response.json();
+
+      if (Array.isArray(data) && data.length > 0) {
+        const book = data[0];
+
+        setRows((prevRows) => {
+          const updatedRows = [...prevRows];
+          updatedRows[rowIndex] = {
+            ...updatedRows[rowIndex],
+            BookName: book.BookName || book.BookNameMarathi || "",
+            Price: book.BookRate || 0,
+            BookId: book.Id || "", // This is important
+          };
+          return updatedRows;
+        });
+      } else {
+        // ❌ Now this WILL fire correctly
+        toast.error("Invalid Book Code");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to fetch Book");
+    }
+  };
+  const [specimenType, setSpecimenType] = useState(""); // "Other" | "Normal"
+  const [specimenNumber, setSpecimenNumber] = useState(""); // only numeric part
+
+  const branchPrefixMap = {
+    Science: "S",
+    Commerce: "C",
+    Arts: "A",
+    Other: "O",
   };
 
   const validateForm = () => {
@@ -709,7 +878,7 @@ function Convassordetails() {
     const convassorHeaderdata = {
       Id: isEditing ? id : "", // Include the Id for updating, null for new records
       RefNo: RefNo,
-      Option: branchMapping[selectedBranch] || "", // Convert branch name to corresponding number
+      Option: selectedBranch || "", // Convert branch name to corresponding number
       Specimen_report_no: Specimen_report_no,
       Date: formattedDate,
       CanvassorId: CanvassorId,
@@ -731,7 +900,7 @@ function Convassordetails() {
         qs.stringify(convassorHeaderdata),
         {
           headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        }
+        },
       );
 
       // const purchasereturnId = isEditing ? id : parseInt(response.data.newId, 10);
@@ -767,8 +936,8 @@ function Convassordetails() {
       setIsDrawerOpen(false);
       toast.success(
         isEditing
-          ? "Convassor header & Convassor Details updated successfully!"
-          : "Convassor header & Convassor Details added successfully!"
+          ? "Canvassor header & Canvassor Details updated successfully!"
+          : "Canvassor header & Canvassor Details added successfully!",
       );
       resetForm(); // Reset the form fields after successful submission
     } catch (error) {
@@ -814,7 +983,7 @@ function Convassordetails() {
         ),
       },
     ],
-    [convassorheaders]
+    [convassorheaders],
   );
 
   const table = useMaterialReactTable({
@@ -832,7 +1001,7 @@ function Convassordetails() {
 
   return (
     <div className="convassordetails-container">
-      <h1>Convassor Details</h1>
+      <h1>Canvassor Details</h1>
 
       <div className="convassordetailstable-master">
         <div className="convassordetailstable1-master">
@@ -924,17 +1093,15 @@ function Convassordetails() {
             <Typography variant="h6">
               <b>
                 {isEditing
-                  ? "Edit Convassor Details"
-                  : "Create Convassor Details"}
+                  ? "Edit Canvassor Details"
+                  : "Create Canvassor Details"}
               </b>
             </Typography>{" "}
             <CloseIcon sx={{ cursor: "pointer" }} onClick={handleDrawerClose} />
           </Box>
           <form className="convassordetails-form">
             <div>
-              <label className="convassordetails-label">
-                Ref No <b className="required">*</b>
-              </label>
+              <label className="convassordetails-label">Our Ref No</label>
               <div>
                 <input
                   type="text"
@@ -942,39 +1109,65 @@ function Convassordetails() {
                   name="RefNo"
                   value={RefNo}
                   onChange={(e) => setrefno(e.target.value)}
-                  style={{ background: "#f5f5f5" }}
+                  style={{ background: "#f5f5f5", width: "100px" }}
                   className="convassordetails-control"
                   placeholder="Auto-Incremented"
                   readOnly
                 />
               </div>
             </div>
-
             <div>
-              <label className="convassordetails-label">
-                Specimen Report No<b className="required">*</b>:
-              </label>
+              <label className="convassordetails-label">Branch</label>
+
               <div>
                 <input
-                  type="text"
-                  id="Specimen_report_no"
-                  name="Specimen_report_no"
-                  value={Specimen_report_no}
-                  onChange={(e) => setSpecimenreportNo(e.target.value)}
-                  className="convassordetails-control"
-                  placeholder="Enter Speciment Report No"
+                  type="radio"
+                  name="branch"
+                  value="Other"
+                  style={{ paddingLeft: "20px", marginTop: "15px" }}
+                  checked
+                  readOnly
                 />
+                Other
               </div>
-
-              {/* <div>
-                          {errors.SpecimenReportno && <b className="error-text">{errors.SpecimenReportno}</b>}
-                        </div> */}
             </div>
 
             <div>
               <label className="convassordetails-label">
-                Date<b className="required">*</b>:
+                Specimen Report No :
               </label>
+
+              <div
+                style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                {/* Prefix box – always O */}
+                <input
+                  type="text"
+                  value="O"
+                  readOnly
+                  className="convassordetails-control"
+                  style={{
+                    width: "25px",
+                    textAlign: "center",
+                    background: "#f5f5f5",
+                    fontWeight: "bold",
+                    cursor: "not-allowed",
+                  }}
+                />
+
+                {/* Number box */}
+                <input
+                  type="text"
+                  value={specimenNumber}
+                  onChange={handleSpecimenChange}
+                  placeholder="Specimen Report No"
+                  style={{ width: "150px" }}
+                  className="convassordetails-control"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="convassordetails-label">Date :</label>
               <div>
                 <LocalizationProvider dateAdapter={AdapterDayjs}>
                   <DatePicker
@@ -992,21 +1185,15 @@ function Convassordetails() {
                     sx={{
                       marginTop: "10px",
                       marginBottom: "5px",
-                      width: "165px",
+                      width: "180px",
                     }}
                   />
                 </LocalizationProvider>
               </div>
-
-              {/* <div>
-                          {errors.Date && <b className="error-text">{errors.Date}</b>}
-                        </div> */}
             </div>
 
             <div>
-              <label className="convassordetails-label">
-                Canvassor Name<b className="required">*</b>:
-              </label>
+              <label className="convassordetails-label">Canvassor Name :</label>
               <div>
                 <Autocomplete
                   options={convassors}
@@ -1014,9 +1201,20 @@ function Convassordetails() {
                     convassors.find((option) => option.value === CanvassorId) ||
                     null
                   }
-                  onChange={(event, newValue) =>
-                    setConvassorId(newValue ? newValue.value : null)
-                  }
+                  // onChange={(event, newValue) =>
+                  //   setConvassorId(newValue ? newValue.value : null)
+                  // }
+
+                  onChange={(event, newValue) => {
+                    const canvassorId = newValue ? newValue.value : null;
+                    setConvassorId(canvassorId);
+
+                    if (canvassorId) {
+                      fetchCitiesByCanvassor(canvassorId);
+                    } else {
+                      setFilteredCities([]);
+                    }
+                  }}
                   getOptionLabel={(option) => option.label} // Display only label in dropdown
                   renderInput={(params) => (
                     <TextField
@@ -1027,49 +1225,83 @@ function Convassordetails() {
                       fullWidth
                     />
                   )}
-                  sx={{ mt: 1.25, mb: 0.625, width: 250 }} // Equivalent to 10px and 5px
+                  sx={{ mt: 1.25, mb: 0.625, width: 320 }}
                 />
               </div>
-              {/* <div>
-                          {errors.ConvassorId && <b className="error-text">{errors.ConvassorId}</b>}
-                        </div> */}
             </div>
 
             <div>
               <label className="convassordetails-label">
                 {" "}
-                City Of College<b className="required">*</b>:
+                City Of College :
               </label>
               <div>
                 <Autocomplete
-                  options={cities}
-                  value={
-                    cities.find((option) => option.value === CityId) || null
-                  }
-                  onChange={(event, newValue) =>
-                    setCityId(newValue ? newValue.value : null)
-                  }
-                  getOptionLabel={(option) => option.label} // Display only label in dropdown
+                  options={filteredCities}
+                  value={filteredCities.find((c) => c.value === CityId) || null}
+                  onChange={(event, newValue) => {
+                    const cityId = newValue ? newValue.value : null;
+                    setCityId(cityId);
+
+                    // 🔥 IMPORTANT
+                    setSelectedCollege(null);
+                    setCollegeId(null);
+                    setColleges([]);
+
+                    if (cityId) {
+                      fetchCollegesByCity(cityId);
+                    }
+                  }}
+                  getOptionLabel={(option) => option.label}
                   renderInput={(params) => (
                     <TextField
                       {...params}
-                      placeholder="Select City id"
+                      placeholder="Select City"
                       size="small"
-                      margin="none"
-                      fullWidth
                     />
                   )}
                   sx={{ mt: 1.25, mb: 0.625, width: 250 }} // Equivalent to 10px and 5px
+                  disabled={!CanvassorId}
                 />
               </div>
-              {/* <div>
-                          {errors.CityId && <b className="error-text">{errors.CityId}</b>}
-                        </div> */}
             </div>
 
             <div>
+              <label className="convassordetails-label">College Name :</label>
+              <div>
+                <Autocomplete
+                  options={colleges}
+                  value={selectedCollege}
+                  onChange={(e, newValue) => {
+                    setSelectedCollege(newValue || null);
+                    setCollegeId(newValue ? Number(newValue.value) : null);
+
+                    // reset professor on college change
+                    setRows((prev) =>
+                      prev.map((row) => ({
+                        ...row,
+                        ProfessorId: "",
+                        ProfessorName: "",
+                      })),
+                    );
+                  }}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      size="small"
+                      placeholder="Select College"
+                    />
+                  )}
+                  sx={{ mt: 1.25, mb: 0.625, width: 250 }} // Equivalent to 10px and 5px
+                  disabled={!CityId}
+                />
+              </div>
+            </div>
+          </form>
+          <form className="convassordetails-form">
+            <div>
               <label className="convassordetails-label">
-                Transaction Date<b className="required">*</b>:
+                Transaction Date :
               </label>
               <div>
                 <LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -1093,61 +1325,6 @@ function Convassordetails() {
                   />
                 </LocalizationProvider>
               </div>
-
-              {/* <div>
-                          {errors.TransactionDate && <b className="error-text">{errors.TransactionDate}</b>}
-                        </div> */}
-            </div>
-
-            <div>
-              <label className="convassordetails-label">
-                College Name<b className="required">*</b>:
-              </label>
-              <div>
-                <Autocomplete
-                  options={colleges}
-                  value={
-                    colleges.find((option) => option.value === CollegeId) ||
-                    null
-                  }
-                  onChange={(event, newValue) =>
-                    setCollegeId(newValue ? newValue.value : null)
-                  }
-                  getOptionLabel={(option) => option.label} // Display only label in dropdown
-                  renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      placeholder="Select Coll id"
-                      size="small"
-                      margin="none"
-                      fullWidth
-                    />
-                  )}
-                  sx={{ mt: 1.25, mb: 0.625, width: 320 }} // Equivalent to 10px and 5px
-                />
-              </div>
-              {/* <div>
-                          {errors.CollegeName && <b className="error-text">{errors.CollegeName}</b>}
-                        </div> */}
-            </div>
-
-            <div>
-              <label className="convassordetails-label">Branch</label>
-              {Object.keys(branchMapping).map((branch) => (
-                <div key={branch}>
-                  <label>
-                    <input
-                      type="radio"
-                      name="Branch"
-                      value={branch}
-                      checked={selectedBranch === branch} // ✅ This now works correctly
-                      onChange={() => handleBranchChange(branch)}
-                      style={{ marginBottom: "10px" }}
-                    />
-                    {branch}
-                  </label>
-                </div>
-              ))}
             </div>
           </form>
 
@@ -1155,19 +1332,11 @@ function Convassordetails() {
             <table>
               <thead>
                 <tr>
-                  <th>Serial No</th>
-                  <th>
-                    Book Code<b className="required">*</b>
-                  </th>
-                  <th>
-                    Book Name<b className="required">*</b>
-                  </th>
-                  <th>
-                    Name of Professor<b className="required">*</b>
-                  </th>
-                  <th>
-                    Copies<b className="required">*</b>
-                  </th>
+                  <th>Sr No</th>
+                  <th>Book Code</th>
+                  <th>Book Name</th>
+                  <th>Name of Professor</th>
+                  <th>Copies</th>
 
                   <th>Actions</th>
                 </tr>
@@ -1204,123 +1373,89 @@ function Convassordetails() {
                     <tr key={index}>
                       <td>{index + 1}</td>
                       <td>
-                        {bookOptions.find(
-                          (option) => option.value === row.BookId
-                        )?.code || ""}
-                      </td>
-                      <td>
-                        <Autocomplete
-                          options={bookOptions}
-                          value={
-                            bookOptions.find(
-                              (option) => option.value === row.BookId
-                            ) || null
+                        <input
+                          type="text"
+                          value={row.BookCode || ""}
+                          onChange={(e) =>
+                            handleBookCodeChange(index, e.target.value)
                           }
-                          onChange={(event, newValue) =>
-                            handleInputChange(
-                              index,
-                              "BookId",
-                              newValue ? newValue.value : ""
-                            )
-                          }
-                          sx={{ width: 350 }} // Set width
-                          getOptionLabel={(option) => option.label}
-                          renderInput={(params) => (
-                            <TextField
-                              {...params}
-                              placeholder="Select Book"
-                              size="big"
-                              fullWidth
-                              sx={{
-                                "& .MuiInputBase-root": {
-                                  height: "50px",
-                                  // width: "200px", // Adjust height here
-                                },
-                                "& .MuiInputBase-input": {
-                                  padding: "14px", // Adjust padding for better alignment
-                                },
-                              }}
-                            />
-                          )}
+                          placeholder="Enter Book Code"
+                          style={{ width: "80px" }}
+                          className="convassordetails-control"
                         />
                       </td>
-
                       <td>
-                        {/* <Select
-                          inputValue={row.Proftext || ""}
-                          onInputChange={(inputValue) =>
-                            handleInputChange(index, "Proftext", inputValue)
-                          }
-                          value={
-                            professorsList[index]?.find(
-                              (opt) => opt.value === row.ProfessorId
-                            ) || null
-                          }
-                          onChange={(selectedOption) => {
-                            handleInputChange(
-                              index,
-                              "ProfessorId",
-                              selectedOption?.value || ""
-                            );
-                            handleInputChange(
-                              index,
-                              "ProfessorName",
-                              selectedOption?.label || ""
-                            );
-                            handleInputChange(index, "Proftext", ""); // Clear after selection
-                          }}
-                          options={professorsList[index] || []}
-                          placeholder="Type to search professor..."
-                          isClearable
-                          styles={{
-                            width: "200px",
-                          }}
-                        /> */}
-                        <Select
-                          inputValue={row.Proftext || ""}
-                          options={professorsList[index] || []}
-                          value={
-                            professorsList[index]?.find(
-                              (option) => option.value === row.ProfessorId
-                            ) || null
-                          }
-                          onChange={(selectedOption) => {
-                            handleInputChange(
-                              index,
-                              "ProfessorId",
-                              selectedOption?.value || ""
-                            );
-                            handleInputChange(
-                              index,
-                              "ProfessorName",
-                              selectedOption?.label || ""
-                            );
-                            handleInputChange(index, "Proftext", "");
-                          }}
-                          onInputChange={(inputValue) =>
-                            handleSearchChange(inputValue, index)
-                          }
-                          placeholder="Type to search professor..."
-                          // sx={{ width: "500px" }} // Set width
-                          styles={{
-                            container: (base) => ({
-                              ...base,
-                              width: 350, // ✅ Set your desired width here
-                            }),
-                          }}
+                        <input
+                          type="text"
+                          value={row.BookName || row.BookNameMarathi || ""}
+                          readOnly
+                          placeholder="Book Name / Book Name Marathi"
+                          style={{ width: "380px" }}
+                          className="convassordetails-control"
                         />
+                      </td>
+                      <td style={{ minWidth: 320 }}>
+                        {collegeProfessors.length <= 1 ? (
+                          <TextField
+                            value={row.ProfessorName}
+                            size="large"
+                            fullWidth
+                            InputProps={{ readOnly: true }}
+                          />
+                        ) : (
+                          <Autocomplete
+                            options={collegeProfessors}
+                            sx={{ width: 320 }} // 👈 KEY LINE
+                            value={
+                              collegeProfessors.find(
+                                (p) =>
+                                  Number(p.value) === Number(row.ProfessorId),
+                              ) || null
+                            }
+                            isOptionEqualToValue={(o, v) =>
+                              Number(o.value) === Number(v.value)
+                            }
+                            onChange={(e, newValue) => {
+                              handleInputChange(
+                                index,
+                                "ProfessorId",
+                                newValue ? Number(newValue.value) : "",
+                              );
+                              handleInputChange(
+                                index,
+                                "ProfessorName",
+                                newValue?.label || "",
+                              );
+                            }}
+                            getOptionLabel={(option) => option.label || ""}
+                            renderInput={(params) => (
+                              <TextField
+                                {...params}
+                                placeholder="Select Professor"
+                                size="large"
+                                fullWidth
+                              />
+                            )}
+                            disabled={!CollegeId}
+                          />
+                        )}
                       </td>
 
                       <td>
                         <input
-                          type="text"
+                          type="number"
                           value={row.Copies}
                           onChange={(e) =>
                             handleInputChange(index, "Copies", e.target.value)
                           }
-                          style={{ width: "100px" }}
+                          style={{
+                            width: "65px",
+                          }}
+                          className="convassordetails-control"
+                          placeholder="Copies"
                         />
                       </td>
+
                       <td>
                         <div style={{ display: "flex" }}>
                           <Button
@@ -1345,6 +1480,60 @@ function Convassordetails() {
               </tbody>
             </table>
           </div>
+
+          <div style={{ display: "flex", justifyContent: "space-around" }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "flex-start",
+                marginTop: "12px",
+              }}>
+              <Button
+                variant="contained"
+                style={{
+                  background: "#113d6bff",
+                  color: "white",
+                  fontWeight: "600",
+                }}
+                onClick={handleProfessorDetailsopen}>
+                + New Professor Details
+              </Button>
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "flex-end",
+                marginTop: "10px",
+                fontWeight: "bold",
+                fontSize: "15px",
+              }}>
+              No of Copies :&nbsp;
+              <span style={{ color: "#0a60bd" }}>{totalCopies}</span>
+            </div>
+          </div>
+
+          {selectedCollege && (
+            <div
+              style={{
+                marginTop: "12px",
+                padding: "10px 14px",
+                backgroundColor: "#376ec0ff",
+                color: "#fff",
+                fontSize: "14px",
+                fontWeight: "500",
+                borderRadius: "4px",
+                maxWidth: "50%",
+                lineHeight: "1.6",
+              }}>
+              {selectedCollege.label},
+              <br />
+              Address: {selectedCollege.address1},{" "}
+              {getAreaName(selectedCollege.areaId)} – ,
+              {getCityName(selectedCollege.cityId)} ,– Pincode: :
+              {selectedCollege.pincode}, Telephone: {selectedCollege.MobileNo}
+            </div>
+          )}
 
           <div className="convassordetails-btn-container">
             <Button
@@ -1377,7 +1566,7 @@ function Convassordetails() {
           <DialogContent>
             Are you sure you want to delete this{" "}
             <b style={{ color: "red" }}>
-              <u>Convassor details</u>
+              <u>Canvassor details</u>
             </b>
             ?
           </DialogContent>

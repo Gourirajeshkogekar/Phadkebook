@@ -25,6 +25,16 @@ import { CiEdit } from "react-icons/ci";
 import qs from "qs";
 import { useRef } from "react";
 import { Checkbox, FormControlLabel, TextField } from "@mui/material";
+import {
+  TableContainer,
+  Table,
+  TableHead,
+  TableBody,
+  TableRow,
+  TableCell,
+  Paper,
+} from "@mui/material";
+import { MenuItem } from "@mui/material";
 
 function Accounts() {
   const [userId, setUserId] = useState("");
@@ -64,10 +74,11 @@ function Accounts() {
   const [GroupId, setGroupId] = useState("");
   const [SubGroupId, setSubGroupId] = useState("");
   const [OpeningBalance, setOpeningBalance] = useState("0.00");
-  const [DrORCr, setDrOrCr] = useState("");
+  const [PartyCategory, setPartyCategory] = useState("");
   const [TypeCode, setTypeCode] = useState("");
   const [IsSystem, setIsSystem] = useState(false);
   const [Depriciation, setDepriciation] = useState("");
+  const [Lastyearclrbal, setLastyearclrbal] = useState("");
   const [Canvassor, setCanvassor] = useState("");
   const [isAssigned, setIsAssigned] = useState(false);
 
@@ -94,8 +105,8 @@ function Accounts() {
   const [areaOptions, setareaOptions] = useState([]);
   const [countryOptions, setCountryOptions] = useState([]);
   const [tdsOptions, setTdsOptions] = useState([]);
+  const [partyCategories, setPartycategories] = useState([]);
   const [accountgroupOptions, setAccountgroupOptions] = useState([]);
-  const [subgroupOptions, setSubgroupOptions] = useState([]);
   const [isAddressVisible, setIsAddressVisible] = useState(false); // State for address visibility
 
   const [errors, setErrors] = useState("");
@@ -106,11 +117,49 @@ function Accounts() {
   const [isEditing, setIsEditing] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
 
+  const [openFooter, setOpenFooter] = useState(false);
+
+  const [footerRows, setFooterRows] = useState([]);
+  const [DrORCr, setDrORCr] = useState("D"); // default = D
+
+  const DorCOptions = [
+    { value: "D", label: "D" },
+    { value: "C", label: "C" },
+  ];
+
+  const handleSelectAll = () => {
+    const updated = footerRows.map((r) => ({ ...r, IsApplicable: true }));
+    setFooterRows(updated);
+  };
+
+  const handleDeselectAll = () => {
+    const updated = footerRows.map((r) => ({ ...r, IsApplicable: false }));
+    setFooterRows(updated);
+  };
+
+  const handleCheckboxChange = (index) => {
+    const updated = [...footerRows];
+    updated[index].IsApplicable = !updated[index].IsApplicable;
+    setFooterRows(updated);
+  };
+
+  const handleAmountChange = (index, value) => {
+    const updated = [...footerRows];
+    updated[index].Amount = value;
+    setFooterRows(updated);
+  };
+
+  const handlePercentageChange = (index, value) => {
+    const updated = [...footerRows];
+    updated[index].Percentage = value;
+    setFooterRows(updated);
+  };
+
   //Enter button hit go to next input value in Account side
   const accountCodeRef = useRef(null);
   const accountNameRef = useRef(null);
   const groupIdRef = useRef(null);
-  const subGroupIdRef = useRef(null);
+  const maingroupRef = useRef(null);
   const openingBalanceRef = useRef(null);
   const debitcreditRef = useRef(null);
   const typecodeRef = useRef(null);
@@ -155,13 +204,14 @@ function Accounts() {
 
   useEffect(() => {
     fetchGroupIds();
-    fetchSubGroupIds();
     fetchCountries();
     fetchAllCities();
     fetchStates();
     fetchAreas();
     fetchTDS();
     fetchAddresses();
+    fetchPartycategories();
+    fetchFooterForNew();
   }, []);
 
   useEffect(() => {
@@ -169,10 +219,50 @@ function Accounts() {
     console.log("this function is called");
   }, [pageIndex]); // Fetch data when page changes
 
+  // const fetchSalesFooterinfo = async () => {
+  //   try {
+  //     const response = await axios.get(
+  //       `https://publication.microtechsolutions.net.in/php/get/getAccountMasterSalesInfo.php`
+  //     );
+  //     setFooterRows(response.data);
+
+  //     console.log(response.data, "sales footer info");
+  //   } catch (error) {
+  //     // toast.error("Error fetching footer info:", error);
+  //   }
+  // };
+
+  const fetchFooterForNew = async () => {
+    try {
+      const res = await axios.get(
+        "https://publication.microtechsolutions.net.in/php/get/getAccountMasterSalesInfo.php",
+      );
+
+      const list = Array.isArray(res.data?.AllSalesInfo)
+        ? res.data.AllSalesInfo
+        : Array.isArray(res.data)
+          ? res.data
+          : [];
+
+      console.log("FINAL LIST 👉", list);
+
+      setFooterRows(
+        list.slice(0, 11).map((row) => ({
+          Particulars: row.Particulars,
+          Amount: 0,
+          Percentage: 0,
+          IsApplicable: false,
+        })),
+      );
+    } catch (error) {
+      console.error("Error fetching sales footer info", error);
+    }
+  };
+
   const fetchAccounts = async () => {
     try {
       const response = await axios.get(
-        `https://publication.microtechsolutions.net.in/php/get/gettblpage.php?Table=Account&PageNo=${pageIndex}`
+        `https://publication.microtechsolutions.net.in/php/get/gettblpage.php?Table=Account&PageNo=${pageIndex}`,
       );
       setAccounts(response.data.data);
       setTotalPages(response.data.total_pages);
@@ -186,7 +276,7 @@ function Accounts() {
   const fetchAddresses = async () => {
     try {
       const response = await axios.get(
-        "https://publication.microtechsolutions.net.in/php/Addressget.php"
+        "https://publication.microtechsolutions.net.in/php/Addressget.php",
       );
       console.log(response.data, "Fetched addresses"); // Log to ensure data is fetched
       setAddresses(response.data);
@@ -195,10 +285,16 @@ function Accounts() {
     }
   };
 
+  useEffect(() => {
+    if (!DrORCr) {
+      setDrORCr("D");
+    }
+  }, []);
+
   const fetchGroupIds = async () => {
     try {
       const response = await axios.get(
-        "https://publication.microtechsolutions.net.in/php/AccountGroupget.php"
+        "https://publication.microtechsolutions.net.in/php/AccountGroupget.php",
       );
       const accountgroupOptions = response.data.map((acc) => ({
         value: acc.Id,
@@ -211,40 +307,37 @@ function Accounts() {
     }
   };
 
-  const fetchSubGroupIds = async () => {
-    try {
-      const response = await axios.get(
-        "https://publication.microtechsolutions.net.in/php/SubAccountGroupget.php"
-      );
-      const subgroupOptions = response.data.map((sub) => ({
-        value: sub.Id,
-        label: sub.SubGroupName,
-      }));
-      setSubgroupOptions(subgroupOptions);
-    } catch (error) {
-      // toast.error("Error fetching subgroup ids:", error);
-    }
-  };
-
   const fetchCountries = async () => {
     try {
       const response = await axios.get(
-        "https://publication.microtechsolutions.net.in/php/Countryget.php"
+        "https://publication.microtechsolutions.net.in/php/Countryget.php",
       );
-      const countryOptions = response.data.map((con) => ({
+
+      // Filter only India
+      const filtered = response.data.filter(
+        (con) => con.CountryName === "India",
+      );
+
+      const countryOptions = filtered.map((con) => ({
         value: con.Id,
         label: con.CountryName,
       }));
+
       setCountryOptions(countryOptions);
+
+      // Optional: auto-select India
+      if (countryOptions.length > 0) {
+        setCountryId(countryOptions[0].value);
+      }
     } catch (error) {
-      // toast.error("Error fetching countries:", error);
+      console.error("Error fetching countries", error);
     }
   };
 
   const fetchStates = async () => {
     try {
       const response = await axios.get(
-        "https://publication.microtechsolutions.net.in/php/State.php"
+        "https://publication.microtechsolutions.net.in/php/State.php",
       );
       const stateOptions = response.data.map((state) => ({
         value: state.Id,
@@ -259,7 +352,7 @@ function Accounts() {
   const fetchAllCities = async () => {
     try {
       const response = await axios.get(
-        "https://publication.microtechsolutions.net.in/php/Cityget.php"
+        "https://publication.microtechsolutions.net.in/php/Cityget.php",
       );
       const cityOptions = response.data.map((city) => ({
         value: city.Id,
@@ -274,7 +367,7 @@ function Accounts() {
   const fetchAreas = async () => {
     try {
       const response = await axios.get(
-        "https://publication.microtechsolutions.net.in/php/Areaget.php"
+        "https://publication.microtechsolutions.net.in/php/Areaget.php",
       );
       const areaOptions = response.data.map((area) => ({
         value: area.Id,
@@ -289,7 +382,7 @@ function Accounts() {
   const fetchTDS = async () => {
     try {
       const response = await axios.get(
-        "https://publication.microtechsolutions.net.in/php/TDSMasterget.php"
+        "https://publication.microtechsolutions.net.in/php/TDSMasterget.php",
       );
       const tdsOptions = response.data.map((tds) => ({
         value: tds.Id,
@@ -301,18 +394,72 @@ function Accounts() {
     }
   };
 
+  const fetchPartycategories = async () => {
+    try {
+      const response = await axios.get(
+        "https://publication.microtechsolutions.net.in/php/PartyCategoryget.php",
+      );
+      const partyOptions = response.data.map((partycat) => ({
+        value: partycat.Id,
+        label: partycat.PartyCategory,
+      }));
+      setPartycategories(partyOptions);
+    } catch (error) {
+      // toast.error("Error fetching party ids:", error);
+    }
+  };
+
   const handleLabelClick = () => {
     setIsAddressVisible(!isAddressVisible); // Toggle visibility
   };
 
   const handleNewClick = () => {
     resetForm();
+    fetchFooterForNew();
     setIsEditing(false);
     setIsModalOpen(true);
     setEditingIndex(-1);
   };
 
-  // console.log(addresses, 'addresses')
+  const fetchSalesFooterinfobyaccId = async (accountId) => {
+    try {
+      const res = await axios.get(
+        `https://publication.microtechsolutions.net.in/php/get/getAccountMasterSalesInfo.php?AccountId=${accountId}`,
+      );
+
+      const allSales = res.data?.AllSalesInfo || [];
+      const accounts = res.data?.Accounts || [];
+
+      const accountData = accounts.find(
+        (acc) => Number(acc.AccountId) === Number(accountId),
+      );
+
+      const accountSales = accountData?.SalesInfo || [];
+
+      const mergedRows = allSales.map((masterRow) => {
+        const matched = accountSales.find(
+          (accRow) =>
+            accRow.Particulars?.trim() === masterRow.Particulars?.trim(),
+        );
+
+        return {
+          SalesInfoId: matched?.SalesInfoId ?? null,
+          AccountId: accountData?.AccountId,
+          Particulars: masterRow.Particulars,
+          Amount: matched?.Amount ?? 0,
+          Percentage: matched?.Percentage ?? 0,
+          IsApplicable: matched?.IsApplicable ?? false,
+          Active: masterRow.Active,
+        };
+      });
+
+      setFooterRows(mergedRows);
+      setOpenFooter(true);
+    } catch (error) {
+      console.error("Error fetching sales footer info:", error);
+      setFooterRows([]);
+    }
+  };
 
   const handleEdit = (row) => {
     const account = accounts[row.index];
@@ -321,9 +468,8 @@ function Accounts() {
     setAccountCode(account.AccountCode);
     setAccountName(account.AccountName);
     setGroupId(account.GroupId);
-    setSubGroupId(account.SubGroupId);
     setOpeningBalance(account.OpeningBalance);
-    setDrOrCr(account.DrORCr);
+    setDrORCr(account.DrORCr);
     setTypeCode(account.TypeCode);
     setIsSystem(account.IsSystem);
     setDepriciation(account.Depriciation);
@@ -378,63 +524,12 @@ function Accounts() {
       setAddressid(null);
       setAccountid(account.Id);
     }
+
+    fetchSalesFooterinfobyaccId(account.Id);
     setEditingIndex(row.index);
     setIsEditing(true);
     setIsModalOpen(true);
   };
-
-  //   const handleEdit = (row) => {
-  //     const account = accounts[row.index];
-  //     if (!account) {
-  //         toast.error("Invalid account data.");
-  //         return;
-  //     }
-  //     console.log("Selected Account:", account);
-
-  //     const address = addresses.find(addr => addr.AccountId === account.Id);
-
-  //     if (!address) {
-  //         toast.error("Address data is missing.");
-  //         return;
-  //     }
-
-  //     console.log("Selected Address:", address);
-  //     setAccountCode(account.AccountCode);
-  //     setAccountName(account.AccountName);
-  //     setGroupId(account.GroupId);
-  //     setSubGroupId(account.SubGroupId);
-  //     setOpeningBalance(account.OpeningBalance);
-  //     setDrOrCr(account.DrORCr);
-  //     setTypeCode(account.TypeCode);
-  //     setIsSystem(account.IsSystem);
-  //     setDepriciation(account.Depriciation);
-
-  //     setAddress1(address.Address1);
-  //     setAddress2(address.Address2);
-  //     setAddress3(address.Address3);
-  //     setAreaId(address.AreaId);
-  //     setCityId(address.CityId);
-  //     setStateId(address.StateId);
-  //     setPincode(address.Pincode);
-  //     setCountryId(address.CountryId);
-  //     setTelephoneNo(address.TelephoneNo);
-  //     setFaxNo(address.FaxNo);
-  //     setMobileNo(address.MobileNo);
-  //     setEmailId(address.EmailId);
-  //     setPANNo(address.PANNo);
-  //     setGSTNo(address.GSTNo);
-  //     setIsSubsidiary(address.IsSubsidiary);
-  //     setIsTDSApplicable(address.IsTDSApplicable);
-  //     setIsFBT(address.IsFBT);
-  //     setISFreeze(address.ISFreeze);
-  //     setTDSId(address.TDSId);
-  //     setAddressid(address.Id);
-  //     setAccountid(address.AccountId);
-
-  //  setEditingIndex(row.index);
-  // setIsEditing(true);
-  //  setIsModalOpen(true);
-  // };
 
   const validateForm = () => {
     let formErrors = {};
@@ -449,15 +544,6 @@ function Accounts() {
       formErrors.GroupId = "Group id is required.";
       isValid = false;
     }
-
-    if (!SubGroupId) {
-      formErrors.SubGroupId = "Sub Group id is required.";
-      isValid = false;
-    }
-    // if (!OpeningBalance) {
-    //   formErrors.OpeningBalance = "Opening Balance is required.";
-    //   isValid = false;
-    // }
 
     if (!DrORCr) {
       formErrors.DrORCr = "Debit or credit is required.";
@@ -580,9 +666,8 @@ function Accounts() {
     setAccountCode("");
     setAccountName("");
     setGroupId("");
-    setSubGroupId("");
     setOpeningBalance("");
-    setDrOrCr("");
+    setDrORCr("");
     setTypeCode("");
     setIsSystem("");
     setDepriciation("");
@@ -613,7 +698,7 @@ function Accounts() {
       console.log("Fetching data for AccountCode:", cleanedAccountCode);
 
       const response = await fetch(
-        `https://publication.microtechsolutions.net.in/php/Accountcodeget.php?AccountCode=${cleanedAccountCode}`
+        `https://publication.microtechsolutions.net.in/php/Accountcodeget.php?AccountCode=${cleanedAccountCode}`,
       );
 
       if (!response.ok) {
@@ -634,15 +719,14 @@ function Accounts() {
           console.log("Found data:", data); // Log the matching data
           setAccountName(data.AccountName || "");
           setGroupId(data.GroupId || "");
-          setSubGroupId(data.SubGroupId || "");
           setOpeningBalance(data.OpeningBalance || "");
-          setDrOrCr(data.DrORCr || "");
+          setDrORCr(data.DrORCr || "");
           setTypeCode(data.TypeCode || "");
           setDepriciation(data.Depriciation || "");
         } else {
           console.log(
             "No matching data found for AccountCode:",
-            cleanedAccountCode
+            cleanedAccountCode,
           );
           toast.error("No data found for the provided Account Code");
         }
@@ -675,25 +759,26 @@ function Accounts() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!validateForm()) return;
+    // if (!validateForm()) return;
 
     // Step 1: Prepare account data
-    const accountData = {
-      ...(isEditing && { Id: AccountId, UpdatedBy: userId }), // Use AccountId if editing
-      // AccountCode: AccountCode,
-      AccountName: AccountName,
-      GroupId: GroupId,
-      SubGroupId: SubGroupId,
-      OpeningBalance: 0,
-      DrORCr: DrORCr,
-      TypeCode: TypeCode,
-      IsSystem: true,
-      Depriciation: Depriciation,
-      CreatedBy: userId,
-    };
-
     try {
-      // Step 2: Post account data and get account ID
+      const accountData = {
+        ...(isEditing
+          ? { Id: AccountId, UpdatedBy: userId }
+          : { CreatedBy: userId }),
+        // AccountCode: AccountCode,
+        AccountName: AccountName,
+        GroupId: GroupId,
+        SubGroupId: 1,
+        OpeningBalance: OpeningBalance,
+        DrORCr: DrORCr,
+        TypeCode: TypeCode,
+        IsSystem: IsSystem ?? false,
+        Depriciation: Depriciation,
+        // CreatedBy: userId,
+      };
+
       const accounturl = isEditing
         ? "https://publication.microtechsolutions.net.in/php/Accountupdate.php"
         : "https://publication.microtechsolutions.net.in/php/Accountpost.php";
@@ -701,29 +786,21 @@ function Accounts() {
       const accresponse = await axios.post(
         accounturl,
         qs.stringify(accountData),
-        {
-          headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        }
+        { headers: { "Content-Type": "application/x-www-form-urlencoded" } },
       );
 
-      console.log(accresponse.data, "response of account");
+      const accoId = isEditing ? AccountId : parseInt(accresponse.data.Id, 10);
 
-      // Step 3: Capture the accountId from the response and update state
-      const accId = parseInt(accresponse.data.Id, 10); // Parse the account ID from the response
-      console.log(accId, "accountid");
-      setAccountid(accId); // Update the state `accountid`
+      if (!accoId) {
+        toast.error("AccountId missing");
+        return;
+      }
 
       // Step 4: Prepare address data (either from the state or empty for new records)
       const addressData = {
         ...(isEditing
-          ? {
-              Id: addressid,
-              AccountId: AccountId,
-              UpdatedBy: userId,
-            }
-          : {
-              AccountId: accId,
-            }),
+          ? { Id: addressid, AccountId: accoId, UpdatedBy: userId }
+          : { AccountId: accoId, CreatedBy: userId }),
 
         Address1: Address1,
         Address2: Address2,
@@ -740,11 +817,11 @@ function Accounts() {
         GSTNo: GSTNo,
         EmailId: EmailId,
         TDSId: TDSId,
-        IsSubsidiary: true,
-        IsTDSApplicable: IsTDSApplicable,
-        IsFBT: true,
-        IsFreeze: true,
-        CreatedBy: userId,
+        IsSubsidiary: IsSubsidiary ?? false,
+        IsTDSApplicable: IsTDSApplicable ?? false,
+        IsFBT: IsFBT ?? false,
+        IsFreeze: IsFreeze ?? false,
+        // CreatedBy: userId,
         // UpdatedBy: userId,
       };
 
@@ -756,14 +833,77 @@ function Accounts() {
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
       });
 
+      console.table(
+        footerRows.map((r) => ({
+          Id: r.Id,
+          Applicable: r.IsApplicable,
+          Type: typeof r.Id,
+        })),
+      );
+
+      for (const row of footerRows) {
+        const salesId = Number(row.SalesInfoId);
+
+        console.log(salesId, "salesId");
+
+        // ❌ Skip rows not applicable and not existing
+        if (!row.IsApplicable && (!salesId || salesId <= 0)) {
+          continue;
+        }
+
+        let url = "";
+        let salesData = {};
+
+        // 🔄 UPDATE existing SalesInfo
+        if (salesId && salesId > 0) {
+          url =
+            "https://publication.microtechsolutions.net.in/php/update/updateAccountMasterSalesInfo.php";
+
+          salesData = {
+            SalesInfoId: salesId,
+            AccountId: Number(accoId),
+            Particulars: row.Particulars,
+            Amount: Number(row.Amount),
+            Percentage: Number(row.Percentage),
+            IsApplicable: row.IsApplicable ? 1 : 0,
+            UpdatedBy: userId,
+          };
+        }
+
+        // ➕ INSERT new SalesInfo
+        else if (row.IsApplicable) {
+          url =
+            "https://publication.microtechsolutions.net.in/php/post/postAccountMasterSalesInfo.php";
+
+          salesData = {
+            AccountId: Number(accoId),
+            Particulars: row.Particulars,
+            Amount: Number(row.Amount),
+            Percentage: Number(row.Percentage),
+            IsApplicable: 1,
+            CreatedBy: userId,
+          };
+        } else {
+          continue;
+        }
+
+        console.log("➡️ SALES API:", url, salesData);
+
+        await axios.post(url, qs.stringify(salesData), {
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        });
+      }
+
+      // After both posts are successful
       fetchAccounts();
       fetchAddresses();
       setIsModalOpen(false);
       toast.success(
         isEditing
-          ? "Account & Address updated successfully!"
-          : "Account & Address added successfully!"
+          ? "Account, Address & Sales Info updated successfully!"
+          : "Account, Address & Sales Info added successfully!",
       );
+
       resetForm();
     } catch (error) {
       toast.error("Error saving record!");
@@ -796,7 +936,7 @@ function Accounts() {
 
     fetch(
       "https://publication.microtechsolutions.net.in/php/Accountdelete.php",
-      requestOptions
+      requestOptions,
     )
       .then((response) => response.text())
       .then((result) => console.log(result))
@@ -871,7 +1011,7 @@ function Accounts() {
         ),
       },
     ],
-    [accounts, addresses]
+    [accounts, addresses],
   );
 
   const table = useMaterialReactTable({
@@ -967,7 +1107,15 @@ function Accounts() {
 
             {/* {yearid} */}
 
-            <Box sx={{ padding: 5 }}>
+            <Box
+              sx={{
+                border: "1px solid #9bb3c6",
+                padding: 2,
+                borderRadius: "4px",
+                boxShadow: "2px 2px 4px #ccc",
+                background: "#f7fbff",
+                marginBottom: 3,
+              }}>
               <form>
                 <Grid container spacing={2}>
                   {/* Left Section */}
@@ -981,7 +1129,7 @@ function Accounts() {
                     <div className="account-form">
                       <div>
                         <label className="account-label">
-                          Account Code<b className="required">*</b>
+                          Account Code{/* <b className="required">*</b> */}
                         </label>
                         <div>
                           <input
@@ -997,17 +1145,11 @@ function Accounts() {
                             className="account-control"
                             style={{ background: "	#D0D0D0" }}
                           />
-
-                          <div>
-                            {errors.AccountCode && (
-                              <b className="error-text">{errors.AccountCode}</b>
-                            )}
-                          </div>
                         </div>
                       </div>
                       <div>
                         <label className="account-label">
-                          Account Name<b className="required">*</b>
+                          Account Name{/* <b className="required">*</b> */}
                         </label>
                         <div>
                           <Tooltip
@@ -1030,29 +1172,24 @@ function Accounts() {
                               maxLength={100}
                               ref={accountNameRef}
                               onKeyDown={(e) => handleKeyDown(e, groupIdRef)}
-                              style={{ width: "200px" }}
+                              style={{ width: "390px" }}
                               placeholder="Enter Account Name"
                               className="account-control"
                             />
                           </Tooltip>
-
-                          <div>
-                            {errors.AccountName && (
-                              <b className="error-text">{errors.AccountName}</b>
-                            )}
-                          </div>
                         </div>
                       </div>
-                      <br />
+                    </div>
+                    <div className="account-form">
                       <div>
                         <label className="account-label">
-                          Account Group<b className="required">*</b>
+                          Account Group{/* <b className="required">*</b> */}
                         </label>
                         <Select
                           id="GroupId"
                           name="GroupId"
                           value={accountgroupOptions.find(
-                            (option) => option.value === GroupId
+                            (option) => option.value === GroupId,
                           )}
                           onChange={(option) => {
                             setGroupId(option?.value); // set selected group id
@@ -1060,12 +1197,12 @@ function Accounts() {
                           }}
                           ref={groupIdRef}
                           tabIndex={0}
-                          onKeyDown={(e) => handleKeyDown(e, subGroupIdRef)}
+                          onKeyDown={(e) => handleKeyDown(e, groupIdRef)}
                           options={accountgroupOptions}
                           styles={{
                             control: (base) => ({
                               ...base,
-                              width: "170px",
+                              width: "250px",
                               marginTop: "10px",
                               borderRadius: "4px",
                               border: "1px solid rgb(223, 222, 222)",
@@ -1074,52 +1211,50 @@ function Accounts() {
                           }}
                           placeholder="Select Group id"
                         />
-
-                        <div>
-                          {errors.GroupId && (
-                            <b className="error-text">{errors.GroupId}</b>
-                          )}
-                        </div>
                       </div>
+
                       <div>
-                        <label className="account-label">
-                          Sub Group<b className="required">*</b>
-                        </label>
-                        <div>
-                          <Select
-                            id="SubGroupId"
-                            name="SubGroupId"
-                            value={subgroupOptions.find(
-                              (option) => option.value === SubGroupId
-                            )}
-                            onChange={(option) => setSubGroupId(option.value)}
-                            ref={subGroupIdRef}
-                            onKeyDown={(e) => handleKeyDown(e, debitcreditRef)}
-                            options={subgroupOptions}
-                            styles={{
-                              control: (base) => ({
-                                ...base,
-                                width: "200px",
-                                marginTop: "10px",
-                                borderRadius: "4px",
-                                border: "1px solid rgb(223, 222, 222)",
-                                marginBottom: "5px",
-                              }),
-                            }}
-                            placeholder="Select Id"
-                          />
+                        <label className="account-label">Party Category</label>
 
-                          <div>
-                            {errors.SubGroupId && (
-                              <b className="error-text">{errors.SubGroupId}</b>
-                            )}
+                        <Tooltip
+                          title={
+                            <span
+                              style={{ fontSize: "14px", fontWeight: "bold" }}>
+                              {PartyCategory}
+                            </span>
+                          }
+                          arrow>
+                          <div
+                            style={{ display: "inline-block", width: "200px" }}>
+                            <Select
+                              id="PartyCategory"
+                              name="PartyCategory"
+                              value={partyCategories.find(
+                                (option) => option.value === PartyCategory,
+                              )}
+                              onChange={(option) =>
+                                setPartyCategory(option.value)
+                              }
+                              options={partyCategories}
+                              styles={{
+                                control: (base) => ({
+                                  ...base,
+                                  width: "250px",
+                                  marginTop: "10px",
+                                  borderRadius: "4px",
+                                  border: "1px solid rgb(223, 222, 222)",
+                                  marginBottom: "5px",
+                                }),
+                              }}
+                              placeholder="Select Id"
+                            />
                           </div>
-                        </div>
+                        </Tooltip>
                       </div>
-                      <div style={{ display: "none" }}>
-                        <label className="account-label">
-                          Opening Balance<b className="required">*</b>
-                        </label>
+                    </div>
+                    <div className="account-form">
+                      <div>
+                        <label className="account-label">Opening Balance</label>
                         <div>
                           <input
                             type="text"
@@ -1129,58 +1264,76 @@ function Accounts() {
                             onChange={(e) => {
                               const value = e.target.value;
 
-                              // Regex to validate decimal numbers with at most 18 digits total and 2 decimal places
                               const regex = /^\d{0,18}(\.\d{0,2})?$/;
 
-                              // Check if the value matches the regex
                               if (value === "" || regex.test(value)) {
                                 setOpeningBalance(value);
                               }
                             }}
                             ref={openingBalanceRef}
                             onKeyDown={(e) => handleKeyDown(e, debitcreditRef)}
+                            style={{ width: "100px" }}
                             className="account-control"
                             placeholder="Enter Opening balance"
                           />
-
-                          {/* <div>
-                            {errors.OpeningBalance && (
-                              <b className="error-text">
-                                {errors.OpeningBalance}
-                              </b>
-                            )}
-                          </div> */}
                         </div>
                       </div>
                       <div>
-                        <label className="account-label">
-                          Debit / Credit<b className="required">*</b>
+                        <label
+                          className="account-label"
+                          style={{ marginLeft: "80px" }}>
+                          Dr / Cr
                         </label>
+
                         <div>
-                          <input
-                            type="text"
+                          <Select
                             id="DrORCr"
-                            name="DrORCr"
-                            value={DrORCr}
-                            onChange={(e) => setDrOrCr(e.target.value)}
-                            maxLength={1}
-                            ref={debitcreditRef}
-                            onKeyDown={(e) => handleKeyDown(e, typecodeRef)}
-                            className="account-control"
-                            placeholder="1 Digit Letter or Number"
-                          />
+                            options={DorCOptions}
+                            value={
+                              DorCOptions.find(
+                                (option) => option.value === DrORCr,
+                              ) || null
+                            }
+                            onChange={(opt) => setDrORCr(opt?.value || "")}
+                            styles={{
+                              control: (base) => ({
+                                ...base,
+                                width: "100px",
+                                minHeight: "36px",
+                                marginLeft: "80px",
+                                marginTop: "10px",
+                                marginBottom: "5px",
+                                borderRadius: "4px",
+                                border: "1px solid rgb(223, 222, 222)",
+                              }),
 
-                          <div>
-                            {errors.DrORCr && (
-                              <b className="error-text">{errors.DrORCr}</b>
-                            )}
-                          </div>
+                              menu: (base) => ({
+                                ...base,
+                                width: "100px",
+                                minWidth: "100px",
+                                marginLeft: "80px",
+                                marginTop: "10px",
+                                marginBottom: "5px",
+                              }),
+
+                              menuList: (base) => ({
+                                ...base,
+                                padding: 0,
+                              }),
+
+                              option: (base) => ({
+                                ...base,
+                                padding: "6px 10px",
+                                fontSize: "14px",
+                              }),
+                            }}
+                            placeholder="Select D/C"
+                          />
                         </div>
                       </div>
+
                       <div>
-                        <label className="account-label">
-                          Type Code<b className="required">*</b>
-                        </label>
+                        <label className="account-label">Type Code</label>
                         <div>
                           <input
                             type="text"
@@ -1190,20 +1343,14 @@ function Accounts() {
                             ref={typecodeRef}
                             onKeyDown={(e) => handleKeyDown(e, depreciationRef)}
                             readOnly
+                            style={{ width: "100px" }}
                             className="account-control"
                             placeholder="Auto-filled from Group"
                           />
-                          <div>
-                            {errors.TypeCode && (
-                              <b className="error-text">{errors.TypeCode}</b>
-                            )}
-                          </div>
                         </div>
                       </div>
                       <div>
-                        <label className="account-label">
-                          Depriciation<b className="required">*</b>
-                        </label>
+                        <label className="account-label">Depriciation</label>
                         <div>
                           <input
                             type="text"
@@ -1213,26 +1360,115 @@ function Accounts() {
                             onChange={(e) => {
                               const value = e.target.value;
 
-                              // Regex to validate decimal numbers with at most 18 digits total and 2 decimal places
                               const regex = /^\d{0,18}(\.\d{0,2})?$/;
 
-                              // Check if the value matches the regex
                               if (value === "" || regex.test(value)) {
                                 setDepriciation(value);
                               }
                             }}
                             ref={depreciationRef}
                             onKeyDown={(e) => handleKeyDown(e, canvassorRef)}
+                            style={{ width: "100px" }}
                             className="account-control"
                             placeholder="Enter Depreciation in %"
                           />
-                          <div>
-                            {errors.Depriciation && (
-                              <b className="error-text">
-                                {errors.Depriciation}
-                              </b>
-                            )}
-                          </div>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="account-label">
+                          Last Year Clr Bal
+                        </label>
+                        <div>
+                          <input
+                            type="text"
+                            id="Lastyearclrbal"
+                            name="Lastyearclrbal"
+                            value={Lastyearclrbal}
+                            readOnly
+                            // ref={depreciationRef}
+                            onKeyDown={(e) => handleKeyDown(e, canvassorRef)}
+                            style={{ width: "100px" }}
+                            className="account-control"
+                            placeholder="Enter Lastyearclrbal"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* <div className="account-form" style={{ marginTop: "30px" }}>
+                      <div>
+                        <label className="account-label">Is Subsidiary</label>
+                        <div>
+                          <input
+                            type="checkbox"
+                            id="IsSubsidiary"
+                            name="IsSubsidiary"
+                            checked={IsSubsidiary}
+                            onChange={(e) => setIsSubsidiary(e.target.checked)}
+                            ref={subsidiartRef}
+                            onKeyDown={(e) => handleKeyDown(e, tdsappRef)}
+                          />
+                        </div>
+                        <div>
+                          {errors.IsSubsidiary && (
+                            <b className="error-text">{errors.IsSubsidiary}</b>
+                          )}
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="account-label">Is FBT</label>
+                        <input
+                          type="checkbox"
+                          id="IsFBT"
+                          name="IsFBT"
+                          checked={IsFBT}
+                          onChange={(e) => setIsFBT(e.target.checked)}
+                          ref={fbtRef}
+                          onKeyDown={(e) => handleKeyDown(e, freezeRef)}
+                        />
+
+                        <div>
+                          {errors.IsFBT && (
+                            <b className="error-text">{errors.IsFBT}</b>
+                          )}
+                        </div>
+                      </div>
+                      <div style={{ marginTop: "10px" }}>
+                        <label className="account-label">Is Freeze</label>
+                        <input
+                          type="checkbox"
+                          id="ISFreeze"
+                          name="ISFreeze"
+                          checked={IsFreeze}
+                          onChange={(e) => setIsFreeze(e.target.checked)}
+                          ref={freezeRef}
+                          onKeyDown={(e) => handleKeyDown(e, systemRef)}
+                        />
+
+                        <div>
+                          {errors.ISFreeze && (
+                            <b className="error-text">{errors.ISFreeze}</b>
+                          )}
+                        </div>
+                      </div>
+                      <div style={{ marginTop: "10px" }}>
+                        <label className="account-label">Is System</label>
+                        <input
+                          type="checkbox"
+                          id="IsSystem"
+                          name="IsSystem"
+                          checked={IsSystem}
+                          onChange={(e) => setIsSystem(e.target.checked)}
+                          ref={systemRef}
+                          onKeyDown={(e) => handleKeyDown(e, address1Ref)}
+                        />
+
+                        <div>
+                          {errors.IsSystem && (
+                            <b className="error-text">{errors.IsSystem}</b>
+                          )}
                         </div>
                       </div>
 
@@ -1265,82 +1501,81 @@ function Accounts() {
                           )}
                         </div>
                       </div>
-                    </div>
+                    </div> */}
 
-                    <div className="account-form" style={{ marginTop: "30px" }}>
-                      <div style={{ display: "none" }}>
+                    <div
+                      className="acccheckbox-grid"
+                      style={{ marginTop: "30px" }}>
+                      <div className="acccheckbox-item">
                         <label className="account-label">Is Subsidiary</label>
-                        <div>
-                          <input
-                            type="checkbox"
-                            id="IsSubsidiary"
-                            name="IsSubsidiary"
-                            checked={IsSubsidiary}
-                            onChange={(e) => setIsSubsidiary(e.target.checked)}
-                            ref={subsidiartRef}
-                            onKeyDown={(e) => handleKeyDown(e, tdsappRef)}
-                          />
-                        </div>
-                        {/* <div>
-                          {errors.IsSubsidiary && (
-                            <b className="error-text">{errors.IsSubsidiary}</b>
-                          )}
-                        </div> */}
+                        <input
+                          type="checkbox"
+                          checked={IsSubsidiary}
+                          onChange={(e) => setIsSubsidiary(e.target.checked)}
+                          ref={subsidiartRef}
+                          onKeyDown={(e) => handleKeyDown(e, tdsappRef)}
+                        />
+                        {/* {errors.IsSubsidiary && (
+                          <b className="error-text">{errors.IsSubsidiary}</b>
+                        )} */}
                       </div>
 
-                      <div style={{ display: "none" }}>
+                      <div className="acccheckbox-item">
                         <label className="account-label">Is FBT</label>
                         <input
                           type="checkbox"
-                          id="IsFBT"
-                          name="IsFBT"
                           checked={IsFBT}
                           onChange={(e) => setIsFBT(e.target.checked)}
                           ref={fbtRef}
                           onKeyDown={(e) => handleKeyDown(e, freezeRef)}
                         />
-
-                        {/* <div>
-                          {errors.IsFBT && (
-                            <b className="error-text">{errors.IsFBT}</b>
-                          )}
-                        </div> */}
+                        {/* {errors.IsFBT && (
+                          <b className="error-text">{errors.IsFBT}</b>
+                        )} */}
                       </div>
-                      <div style={{ marginTop: "10px", display: "none" }}>
+
+                      <div className="acccheckbox-item">
                         <label className="account-label">Is Freeze</label>
                         <input
                           type="checkbox"
-                          id="ISFreeze"
-                          name="ISFreeze"
                           checked={IsFreeze}
                           onChange={(e) => setIsFreeze(e.target.checked)}
                           ref={freezeRef}
                           onKeyDown={(e) => handleKeyDown(e, systemRef)}
                         />
-
-                        {/* <div>
-                          {errors.ISFreeze && (
-                            <b className="error-text">{errors.ISFreeze}</b>
-                          )}
-                        </div> */}
+                        {/* {errors.ISFreeze && (
+                          <b className="error-text">{errors.ISFreeze}</b>
+                        )} */}
                       </div>
-                      <div style={{ marginTop: "10px", display: "none" }}>
+
+                      <div className="acccheckbox-item">
                         <label className="account-label">Is System</label>
                         <input
                           type="checkbox"
-                          id="IsSystem"
-                          name="IsSystem"
                           checked={IsSystem}
                           onChange={(e) => setIsSystem(e.target.checked)}
                           ref={systemRef}
                           onKeyDown={(e) => handleKeyDown(e, address1Ref)}
                         />
+                        {/* {errors.IsSystem && (
+                          <b className="error-text">{errors.IsSystem}</b>
+                        )} */}
+                      </div>
 
-                        {/* <div>
-                          {errors.IsSystem && (
-                            <b className="error-text">{errors.IsSystem}</b>
-                          )}
-                        </div> */}
+                      <div className="acccheckbox-item">
+                        <label className="account-label">
+                          Is TDS Applicable
+                        </label>
+                        <input
+                          type="checkbox"
+                          checked={IsTDSApplicable}
+                          onChange={(e) => setIsTDSApplicable(e.target.checked)}
+                          ref={tdsappRef}
+                          onKeyDown={(e) => handleKeyDown(e, fbtRef)}
+                        />
+                        {/* {errors.IsTDSApplicable && (
+                          <b className="error-text">{errors.IsTDSApplicable}</b>
+                        )} */}
                       </div>
                     </div>
 
@@ -1412,8 +1647,12 @@ function Accounts() {
                     <div style={{ marginTop: "15px" }}>
                       <label
                         onClick={handleLabelClick}
-                        style={{ cursor: "pointer", fontWeight: "500" }}>
-                        Address<b className="required">*</b>
+                        style={{
+                          cursor: "pointer",
+                          fontWeight: "500",
+                          marginLeft: "10px",
+                        }}>
+                        Address{/* <b className="required">*</b> */}
                       </label>{" "}
                       <br />
                       <div>
@@ -1438,17 +1677,17 @@ function Accounts() {
                             ref={address1Ref}
                             onKeyDown={(e) => handleKeyDown(e, address2Ref)}
                             style={{
-                              marginRight: "10px",
-                              width: "550px",
+                              marginLeft: "10px",
+                              width: "580px",
                               marginTop: "8px ",
                             }}
                             className="account-control"
                             placeholder="Enter Address Line 1"
                           />
                         </Tooltip>
-                        {errors.Address1 && (
+                        {/* {errors.Address1 && (
                           <b className="error-text">{errors.Address1}</b>
-                        )}
+                        )} */}
                       </div>
                     </div>
                     {/* <label
@@ -1560,19 +1799,20 @@ function Accounts() {
                     <div className="account-form" style={{ marginTop: "15px" }}>
                       <div>
                         <label className="account-label">
-                          Country<b className="required">*</b>
+                          Country{/* <b className="required">*</b> */}
                         </label>
                         <div>
                           <Select
                             id="CountryId"
                             name="CountryId"
                             value={countryOptions.find(
-                              (option) => option.value === 1
+                              (option) => option.value === CountryId,
                             )}
                             onChange={(option) => setCountryId(option.value)}
                             ref={countryRef}
                             onKeyDown={(e) => handleKeyDown(e, stateRef)}
                             options={countryOptions}
+                            placeholder="Select country"
                             styles={{
                               control: (base) => ({
                                 ...base,
@@ -1583,26 +1823,26 @@ function Accounts() {
                                 marginBottom: "5px",
                               }),
                             }}
-                            placeholder="Select country"
                           />
-                          <div>
+
+                          {/* <div>
                             {errors.CountryId && (
                               <b className="error-text">{errors.CountryId}</b>
                             )}
-                          </div>
+                          </div> */}
                         </div>
                       </div>
 
                       <div>
                         <label className="account-label">
-                          State<b className="required">*</b>
+                          State{/* <b className="required">*</b> */}
                         </label>
                         <div>
                           <Select
                             id="StateId"
                             name="StateId"
                             value={stateOptions.find(
-                              (option) => option.value === StateId
+                              (option) => option.value === StateId,
                             )}
                             onChange={(option) => setStateId(option.value)}
                             ref={stateRef}
@@ -1621,24 +1861,24 @@ function Accounts() {
                             placeholder="Select State"
                           />
 
-                          <div>
+                          {/* <div>
                             {errors.StateId && (
                               <b className="error-text">{errors.StateId}</b>
                             )}
-                          </div>
+                          </div> */}
                         </div>
                       </div>
 
                       <div>
                         <label className="account-label">
-                          City<b className="required">*</b>
+                          City{/* <b className="required">*</b> */}
                         </label>
                         <div>
                           <Select
                             id="CityId"
                             name="CityId"
                             value={cityOptions.find(
-                              (option) => option.value === CityId
+                              (option) => option.value === CityId,
                             )}
                             onChange={(option) => setCityId(option.value)}
                             ref={cityRef}
@@ -1657,24 +1897,24 @@ function Accounts() {
                             placeholder="Select City"
                           />
 
-                          <div>
+                          {/* <div>
                             {errors.CityId && (
                               <b className="error-text">{errors.CityId}</b>
                             )}
-                          </div>
+                          </div> */}
                         </div>
                       </div>
 
                       <div>
                         <label className="account-label">
-                          Area<b className="required">*</b>
+                          Area{/* <b className="required">*</b> */}
                         </label>
                         <div>
                           <Select
                             id="AreaId"
                             name="AreaId"
                             value={areaOptions.find(
-                              (option) => option.value === AreaId
+                              (option) => option.value === AreaId,
                             )}
                             onChange={(option) => setAreaId(option.value)}
                             ref={areaRef}
@@ -1692,16 +1932,16 @@ function Accounts() {
                             }}
                             placeholder="Select Area"
                           />
-                          <div>
+                          {/* <div>
                             {errors.AreaId && (
                               <b className="error-text">{errors.AreaId}</b>
                             )}
-                          </div>
+                          </div> */}
                         </div>
                       </div>
                       <div>
                         <label className="account-label">
-                          Pincode<b className="required">*</b>
+                          Pincode{/* <b className="required">*</b> */}
                         </label>
                         <div>
                           <input
@@ -1717,17 +1957,17 @@ function Accounts() {
                             placeholder="Enter Pincode"
                           />
 
-                          <div>
+                          {/* <div>
                             {errors.Pincode && (
                               <b className="error-text">{errors.Pincode}</b>
                             )}
-                          </div>
+                          </div> */}
                         </div>
                       </div>
 
                       <div>
                         <label className="account-label">
-                          Telephone No<b className="required">*</b>
+                          Telephone No{/* <b className="required">*</b> */}
                         </label>
                         <div>
                           <input
@@ -1745,16 +1985,16 @@ function Accounts() {
                             placeholder="Enter Tel No"
                           />
 
-                          <div>
+                          {/* <div>
                             {errors.TelephoneNo && (
                               <b className="error-text">{errors.TelephoneNo}</b>
                             )}
-                          </div>
+                          </div> */}
                         </div>
                       </div>
                       <div>
                         <label className="account-label">
-                          Mobile No<b className="required">*</b>
+                          Mobile No{/* <b className="required">*</b> */}
                         </label>
                         <div>
                           <input
@@ -1770,16 +2010,16 @@ function Accounts() {
                             placeholder="Enter Mob No"
                           />
 
-                          <div>
+                          {/* <div>
                             {errors.MobileNo && (
                               <b className="error-text">{errors.MobileNo}</b>
                             )}
-                          </div>
+                          </div> */}
                         </div>
                       </div>
                       <div style={{ display: "none" }}>
                         <label className="account-label">
-                          Fax No<b className="required">*</b>
+                          Fax No{/* <b className="required">*</b> */}
                         </label>
                         <div>
                           <input
@@ -1805,7 +2045,7 @@ function Accounts() {
 
                       <div>
                         <label className="account-label">
-                          PAN No<b className="required">*</b>
+                          PAN No{/* <b className="required">*</b> */}
                         </label>
                         <div>
                           <input
@@ -1826,17 +2066,17 @@ function Accounts() {
                             placeholder="Enter Pan No"
                           />
 
-                          <div>
+                          {/* <div>
                             {errors.PANNo && (
                               <b className="error-text">{errors.PANNo}</b>
                             )}
-                          </div>
+                          </div> */}
                         </div>
                       </div>
 
                       <div>
                         <label className="account-label">
-                          GST No<b className="required">*</b>
+                          GST No{/* <b className="required">*</b> */}
                         </label>
                         <div>
                           <input
@@ -1856,17 +2096,17 @@ function Accounts() {
                             placeholder="Enter GST No"
                           />
 
-                          <div>
+                          {/* <div>
                             {errors.GSTNo && (
                               <b className="error-text">{errors.GSTNo}</b>
                             )}
-                          </div>
+                          </div> */}
                         </div>
                       </div>
 
                       <div>
                         <label className="account-label">
-                          Email Id<b className="required">*</b>
+                          Email Id{/* <b className="required">*</b> */}
                         </label>
                         <div>
                           <input
@@ -1882,23 +2122,23 @@ function Accounts() {
                             placeholder="Enter EmailId"
                           />
 
-                          <div>
+                          {/* <div>
                             {errors.EmailId && (
                               <b className="error-text">{errors.EmailId}</b>
                             )}
-                          </div>
+                          </div> */}
                         </div>
                       </div>
-                      <div>
+                      <div style={{ display: "none" }}>
                         <label className="account-label">
-                          TDS<b className="required">*</b>:
+                          TDS{/* <b className="required">*</b> */}:
                         </label>
                         <div>
                           <Select
                             id="TDSId"
                             name="TDSId"
                             value={tdsOptions.find(
-                              (option) => option.value === TDSId
+                              (option) => option.value === TDSId,
                             )}
                             onChange={(option) => setTDSId(option.value)}
                             ref={tdsRef}
@@ -1924,13 +2164,21 @@ function Accounts() {
                             }}
                             placeholder="Select TDS id"
                           />
-                          <div>
+                          {/* <div>
                             {errors.TDSId && (
                               <b className="error-text">{errors.TDSId}</b>
                             )}
-                          </div>
+                          </div> */}
                         </div>
                       </div>
+
+                      <Button
+                        variant="contained"
+                        color="primary"
+                        onClick={() => setOpenFooter(true)}
+                        style={{ marginTop: "20px" }}>
+                        Sales Footer Info
+                      </Button>
                     </div>
                   </Grid>
                 </Grid>
@@ -1956,6 +2204,109 @@ function Accounts() {
                   </Button>
                 </div>
               </form>
+
+              <Dialog
+                open={openFooter}
+                onClose={() => setOpenFooter(false)}
+                maxWidth="md"
+                fullWidth>
+                <DialogTitle>Sales Footer Information</DialogTitle>
+
+                <DialogContent>
+                  {/* Select / Deselect Buttons */}
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: "5px",
+                      marginBottom: "5px",
+                    }}>
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      onClick={handleSelectAll}>
+                      Select All
+                    </Button>
+
+                    <Button
+                      variant="contained"
+                      color="warning"
+                      onClick={handleDeselectAll}>
+                      Deselect All
+                    </Button>
+                  </div>
+
+                  {/* Table */}
+                  <TableContainer>
+                    <Table>
+                      <TableHead>
+                        <TableRow>
+                          <TableCell>Sr No</TableCell>
+                          <TableCell>Particulars</TableCell>
+                          <TableCell>Amount</TableCell>
+                          <TableCell>Percentage</TableCell>
+                          <TableCell>Applicable</TableCell>
+                        </TableRow>
+                      </TableHead>
+
+                      <TableBody>
+                        {footerRows.map((row, index) => (
+                          <TableRow key={index}>
+                            <TableCell>{index + 1}</TableCell>
+                            <TableCell>{row.Particulars}</TableCell>
+                            <TableCell>
+                              <input
+                                type="number"
+                                value={row.Amount}
+                                onChange={(e) =>
+                                  handleAmountChange(index, e.target.value)
+                                }
+                                style={{ width: "80px", padding: "4px" }}
+                              />
+                            </TableCell>
+
+                            <TableCell>
+                              <input
+                                type="number"
+                                value={row.Percentage}
+                                onChange={(e) =>
+                                  handlePercentageChange(index, e.target.value)
+                                }
+                                style={{ width: "80px", padding: "4px" }}
+                              />
+                            </TableCell>
+
+                            {/* Checkbox */}
+                            <TableCell>
+                              <input
+                                type="checkbox"
+                                checked={row.IsApplicable}
+                                onChange={() => handleCheckboxChange(index)}
+                                style={{ transform: "scale(1.3)" }}
+                              />
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                </DialogContent>
+
+                <DialogActions>
+                  <Button
+                    variant="contained"
+                    color="success"
+                    onClick={() => setOpenFooter(false)}>
+                    OK
+                  </Button>
+
+                  <Button
+                    onClick={() => setOpenFooter(false)}
+                    variant="contained"
+                    color="secondary">
+                    Close
+                  </Button>
+                </DialogActions>
+              </Dialog>
             </Box>
           </div>
         </Modal>

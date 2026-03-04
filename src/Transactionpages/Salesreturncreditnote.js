@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import "./Salesreturncreditnote.css";
+import { useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import Select from "react-select";
 import axios from "axios";
@@ -116,7 +117,7 @@ function Salesreturncreditnote() {
   const [Weight, setWeight] = useState("");
   const [Bundles, setBundles] = useState("");
   const [Freight, setFreight] = useState("");
-  const [ChallanNo, setChallanNo] = useState("");
+  const [ChallanNo, setChallanno] = useState("");
   const [DispatchId, setDispatchId] = useState("");
   const [OrderNo, setOrderNo] = useState("");
   const [OrderDate, setOrderdate] = useState("");
@@ -131,7 +132,6 @@ function Salesreturncreditnote() {
   const [Ttl_amount, setTtl_amount] = useState("");
 
   const [editingIndex, setEditingIndex] = useState(-1);
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [id, setId] = useState("");
 
   const [salescreditdetailId, setSalescreditdetailId] = useState("");
@@ -149,6 +149,94 @@ function Salesreturncreditnote() {
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm"));
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+
+  const [bookHistory, setBookHistory] = useState({});
+
+  const [adjustments, setAdjustments] = useState([
+    {
+      type: "ADD",
+      particular: "",
+      percentage: "",
+      amount: "",
+      isManual: false,
+    },
+  ]);
+
+  const firstAdj = adjustments[0] || {};
+  const secondAdj = adjustments[1] || {};
+
+  const handlePercentageChange = (index, value) => {
+    const updated = [...adjustments];
+    updated[index].percentage = value;
+    updated[index].isManual = false; // auto mode
+    setAdjustments(updated);
+  };
+
+  const handleAmountChange = (index, value) => {
+    const updated = [...adjustments];
+    updated[index].amount = value;
+    updated[index].isManual = true; // manual mode
+    setAdjustments(updated);
+  };
+
+  useEffect(() => {
+    const base = parseFloat(Ttl_subtotal || 0);
+
+    if (!base) return;
+
+    const updated = adjustments.map((row) => {
+      if (row.percentage && !row.isManual && !isNaN(row.percentage)) {
+        const amt = (base * parseFloat(row.percentage)) / 100;
+        return { ...row, amount: amt.toFixed(2) };
+      }
+      return row;
+    });
+
+    setAdjustments(updated);
+  }, [Ttl_subtotal, adjustments.map((a) => a.percentage).join(",")]);
+
+  const handleTypeChange = (index, value) => {
+    const updated = [...adjustments];
+    updated[index].type = value;
+
+    if (!updated[index].isManual && updated[index].percentage) {
+      const base = parseFloat(Ttl_subtotal || 0);
+      const percent = parseFloat(updated[index].percentage || 0);
+      updated[index].amount = ((base * percent) / 100).toFixed(2);
+    }
+
+    setAdjustments(updated);
+  };
+
+  const handleAdjustmentChange = (index, field, value) => {
+    const updated = [...adjustments];
+    updated[index][field] = value;
+    setAdjustments(updated);
+  };
+
+  const addAdjustmentRow = () => {
+    if (adjustments.length >= 2) {
+      toast.error("Only 2 Add / Less rows allowed");
+      return;
+    }
+
+    setAdjustments([
+      ...adjustments,
+      { type: "ADD", particular: "", percentage: "", amount: "" },
+    ]);
+  };
+
+  const removeAdjustmentRow = (index) => {
+    const updated = adjustments.filter((_, i) => i !== index);
+    setAdjustments(updated);
+  };
+
+  const adjustmentTotal = adjustments.reduce((sum, row) => {
+    const amt = parseFloat(row.amount || 0);
+    return row.type === "ADD" ? sum + amt : sum - amt;
+  }, 0);
+
+  const totalAmount = parseFloat(Ttl_subtotal || 0) + adjustmentTotal;
 
   const handleDrawerOpen = () => {
     setIsDrawerOpen(true);
@@ -218,7 +306,7 @@ function Salesreturncreditnote() {
   const fetchSalereturncreditdetails = async () => {
     try {
       const response = await axios.get(
-        "https://publication.microtechsolutions.net.in/php/get/gettable.php?Table=SalesReturnCreditNoteDetail"
+        "https://publication.microtechsolutions.net.in/php/get/gettable.php?Table=SalesReturnCreditnoteDetail"
       );
       console.log(
         response.data,
@@ -266,10 +354,13 @@ function Salesreturncreditnote() {
       const response = await axios.get(
         "https://publication.microtechsolutions.net.in/php/Dispatchmodeget.php"
       );
-      const dispmodeOptions = response.data.map((dsp) => ({
-        value: dsp.Id,
-        label: dsp.DispatchModeName,
-      }));
+      const dispmodeOptions = response.data
+        .filter((dsp) => dsp.Active === "1" || dsp.Active === 1) // ✅ show only Active=1
+
+        .map((dsp) => ({
+          value: dsp.Id,
+          label: dsp.DispatchModeName,
+        }));
       setDespmodeoptions(dispmodeOptions);
     } catch (error) {
       // toast.error("Error fetching desp modes:", error);
@@ -281,46 +372,15 @@ function Salesreturncreditnote() {
       const response = await axios.get(
         "https://publication.microtechsolutions.net.in/php/gettable.php?Table=Invoiceheader"
       );
-      const invoicedetails = response.data.map((inv) => ({
-        value: inv.Id,
-        label: inv.InvoiceNo,
-      }));
+      const invoicedetails = response.data
+        .filter((inv) => String(inv.Active === "1"))
+        .map((inv) => ({
+          value: inv.Id,
+          label: inv.InvoiceNo,
+        }));
       setInvoicedetails(invoicedetails);
     } catch (error) {
       // toast.error("Error fetching challans:", error);
-    }
-  };
-
-  const fetchInvoiceDetails = async (selectedInvoiceId) => {
-    console.log(selectedInvoiceId, "sele invoice id");
-    try {
-      const response = await axios.get(
-        `https://publication.microtechsolutions.net.in/php/get/getbycolm.php?Table=Invoicedetail&Colname=InvoiceId&Colvalue=${selectedInvoiceId}`
-      );
-      setRows(response.data); // Set fetched data to table rows
-    } catch (error) {
-      toast.error("Error fetching Invoice details");
-    }
-  };
-
-  // Fetch invoices for selected account
-  const fetchInvoicesByAccount = async (accountId) => {
-    try {
-      const response = await axios.get(
-        `https://publication.microtechsolutions.net.in/php/get/getbycolm.php?Table=Invoiceheader&Colname=AccountId&Colvalue=${accountId}`
-      );
-      const data = response.data;
-
-      // Map to format: { value: ..., label: ... }
-      const formattedInvoices = data.map((invoice) => ({
-        value: invoice.Id,
-        label: invoice.InvoiceNo,
-      }));
-
-      setInvoicedetails(formattedInvoices);
-    } catch (error) {
-      console.error("Error fetching invoices:", error);
-      setInvoicedetails([]);
     }
   };
 
@@ -339,16 +399,8 @@ function Salesreturncreditnote() {
       return;
     }
 
-    const today = dayjs();
-    const minDate = today.subtract(3, "day");
-    const maxDate = today.add(2, "day");
-
-    if (newValue.isBefore(minDate) || newValue.isAfter(maxDate)) {
-      setDateError("You can select only 2 days before or after today");
-    } else {
-      setDateError("");
-    }
-
+    // ✅ No min / max validation
+    setDateError("");
     setSafedate(newValue);
   };
 
@@ -359,15 +411,7 @@ function Salesreturncreditnote() {
       return;
     }
 
-    const today = dayjs();
-    const minDate = today.subtract(3, "day");
-    const maxDate = today.add(2, "day");
-
-    if (newValue.isBefore(minDate) || newValue.isAfter(maxDate)) {
-      setReceiptdateerror("You can select only 2 days before or after today");
-    } else {
-      setReceiptdateerror("");
-    }
+    setDateError("");
 
     setReceiptsafedate(newValue);
   };
@@ -379,16 +423,7 @@ function Salesreturncreditnote() {
       return;
     }
 
-    const today = dayjs();
-    const minDate = today.subtract(3, "day");
-    const maxDate = today.add(2, "day");
-
-    if (newValue.isBefore(minDate) || newValue.isAfter(maxDate)) {
-      setOrderdateerror("You can select only 2 days before or after today");
-    } else {
-      setOrderdateerror("");
-    }
-
+    setDateError("");
     setOrdersafedate(newValue);
   };
 
@@ -399,16 +434,7 @@ function Salesreturncreditnote() {
       return;
     }
 
-    const today = dayjs();
-    const minDate = today.subtract(3, "day");
-    const maxDate = today.add(2, "day");
-
-    if (newValue.isBefore(minDate) || newValue.isAfter(maxDate)) {
-      setReceiveddateerror("You can select only 2 days before or after today");
-    } else {
-      setReceiveddateerror("");
-    }
-
+    setDateError("");
     setReceivedsafedate(newValue);
   };
 
@@ -416,17 +442,17 @@ function Salesreturncreditnote() {
     const updatedRows = [...rows];
     updatedRows[index][field] = value;
 
-    if (["Copies", "Price", "Discount"].includes(field)) {
-      const copies = parseFloat(updatedRows[index].Copies) || 0;
-      const price = parseFloat(updatedRows[index].Price) || 0;
-      const discount = parseFloat(updatedRows[index].Discount) || 0;
+    const copies = Number(updatedRows[index].Copies) || 0;
+    const rate = Number(updatedRows[index].Price) || 0;
+    const discount = Number(updatedRows[index].Discount) || 0;
 
-      const amount = copies * price * (1 - discount / 100);
-      updatedRows[index].Amount = amount.toFixed(2);
-    }
+    const baseAmount = copies * rate;
+    const discountAmount = (baseAmount * discount) / 100;
+    const finalAmount = baseAmount - discountAmount;
+
+    updatedRows[index].Amount = finalAmount.toFixed(2);
 
     setRows(updatedRows);
-    calculateTotals(updatedRows); // Pass updated rows
   };
 
   const calculateTotals = (updatedRows = rows) => {
@@ -435,33 +461,20 @@ function Salesreturncreditnote() {
 
     updatedRows.forEach((row) => {
       totalCopies += Number(row.Copies) || 0;
-      const discountedAmount =
-        (Number(row.Price) || 0) *
-        (Number(row.Copies) || 0) *
-        (1 - (Number(row.Discount) || 0) / 100);
-      subtotal += discountedAmount;
+      subtotal += Number(row.Amount) || 0;
     });
 
-    const calculatedOtherCharge1 =
-      (subtotal * (parseFloat(Other_Charge1_percentage) || 0)) / 100;
-    const finalTotal =
-      subtotal + (parseFloat(Other_Charge1) || 0) + calculatedOtherCharge1;
+    // Add / Less total
+    const adjustmentTotal = adjustments.reduce((sum, row) => {
+      const amt = parseFloat(row.amount || 0);
+      return row.type === "ADD" ? sum + amt : sum - amt;
+    }, 0);
+
+    const finalTotal = subtotal + adjustmentTotal;
 
     setTtl_copies(totalCopies);
     setTtl_subtotal(subtotal.toFixed(2));
-    setOther_Charge1_amt(calculatedOtherCharge1.toFixed(2));
-    setTtl_amount(finalTotal.toFixed(2));
-  };
-
-  const handleOtherChargePercentageChange = (value) => {
-    setOther_Charge1_percentage(value);
-    const calculatedOtherCharge1 =
-      (parseFloat(Ttl_subtotal) * (parseFloat(value) || 0)) / 100;
-    setOther_Charge1_amt(calculatedOtherCharge1);
-
-    // Update final total
-    const finalTotal = parseFloat(Ttl_subtotal) + calculatedOtherCharge1;
-    setTtl_amount(finalTotal);
+    setTtl_amount(finalTotal.toFixed(2)); // 🔥 IMPORTANT
   };
 
   const handleAddRow = () => {
@@ -479,10 +492,36 @@ function Salesreturncreditnote() {
     calculateTotals();
   };
 
-  const handleDeleteRow = (index) => {
-    const updatedRows = rows.filter((_, i) => i !== index);
-    setRows(updatedRows);
-    calculateTotals();
+  const handleDeleteRow = async (index) => {
+    const rowToDelete = rows[index];
+    // If row does not have ID, remove it directly (new unsaved row)
+    if (!rowToDelete.Id) {
+      const updatedRows = rows.filter((_, i) => i !== index);
+      setRows(updatedRows);
+      return;
+    }
+    try {
+      const apiUrl =
+        "https://publication.microtechsolutions.co.in/php/delete/delrecord.php";
+      const formData = new FormData();
+      formData.append("Id", rowToDelete.Id);
+      formData.append("Table", "SalesReturnCreditNoteDetail");
+
+      const response = await axios.post(apiUrl, formData);
+
+      // Convert response to string (API may return text)
+      const resText = JSON.stringify(response.data).toLowerCase();
+
+      if (resText.includes("deleted")) {
+        const updatedRows = rows.filter((_, i) => i !== index);
+        setRows(updatedRows);
+        toast.success("Row deleted successfully!");
+      } else {
+        toast.error("Failed to delete row!");
+      }
+    } catch (error) {
+      toast.error("Error deleting row!");
+    }
   };
 
   const handleDelete = () => {
@@ -548,7 +587,7 @@ function Salesreturncreditnote() {
     setWeight("");
     setBundles("");
     setFreight("");
-    setChallanNo("");
+    setChallanno("");
     setDispatchId("");
     setOrderNo("");
     // setOrderdate("");
@@ -561,11 +600,19 @@ function Salesreturncreditnote() {
     setPaymentOption("");
     setTtl_copies("");
     setTtl_subtotal("");
-    setOther_Charge1("");
-    setOther_Charge1_percentage("");
-    setOther_Charge1_amt("");
+    // setOther_Charge1("");
+    // setOther_Charge1_percentage("");
+    // setOther_Charge1_amt("");
     setTtl_amount("");
-
+    setAdjustments([
+      {
+        type: "ADD",
+        particular: "",
+        percentage: "",
+        amount: "",
+        isManual: false,
+      },
+    ]);
     setRows([
       {
         SerialNo: "",
@@ -579,17 +626,64 @@ function Salesreturncreditnote() {
   };
 
   useEffect(() => {
-    calculateTotals();
-  }, [rows]);
+    calculateTotals(rows);
+  }, [rows, adjustments]);
 
   const handleNewClick = () => {
     resetForm();
     setIsDrawerOpen(true);
     setIsEditing(false);
     setEditingIndex(-1);
+    setAdjustments([]);
   };
 
   const [isLoading, setIsLoading] = useState(false);
+
+  const buildAdjustmentsForEdit = (data) => {
+    const list = [];
+
+    // ----- Other Charge 1 -----
+    if (
+      data.Other_Charge1 ||
+      Number(data.Other_Charge1_amt) ||
+      Number(data.Other_Charge1_percentage)
+    ) {
+      list.push({
+        type: Number(data.Other_Charge1_amt) < 0 ? "LESS" : "ADD",
+        particular: data.Other_Charge1 || "",
+        percentage: data.Other_Charge1_percentage || "",
+        amount: Math.abs(Number(data.Other_Charge1_amt || 0)),
+        isManual: true,
+      });
+    }
+
+    // ----- Other Charge 2 -----
+    if (
+      data.Other_Charge2 ||
+      Number(data.Other_Charge2_amt) ||
+      Number(data.Other_Charge2_percentage)
+    ) {
+      list.push({
+        type: Number(data.Other_Charge2_amt) < 0 ? "LESS" : "ADD",
+        particular: data.Other_Charge2 || "",
+        percentage: data.Other_Charge2_percentage || "",
+        amount: Math.abs(Number(data.Other_Charge2_amt || 0)),
+        isManual: true,
+      });
+    }
+
+    return list.length
+      ? list
+      : [
+          {
+            type: "ADD",
+            particular: "",
+            percentage: "",
+            amount: "",
+            isManual: false,
+          },
+        ];
+  };
 
   const handleEdit = () => {
     if (currentRow) {
@@ -608,7 +702,7 @@ function Salesreturncreditnote() {
       (detail) => detail.SalesReturnCreditNoteId === salesreturncredit.Id
     );
 
-    console.log(salesreturncreditdetail, "details");
+    console.log(salesreturncreditdetail, "details of salesreturn credit ");
 
     // Convert date strings to DD-MM-YYYY format
     const convertDateForInput = (dateStr) => {
@@ -621,18 +715,35 @@ function Salesreturncreditnote() {
       }
     };
 
-    const mappedRows = salesreturncreditdetail.map((detail) => ({
+    let mappedRows = salesreturncreditdetail.map((detail) => ({
       // PurchaseReturnId: detail.PurchaseReturnId,
 
       SalesReturnCreditNoteId: detail.SalesReturnCreditNoteId,
-      // SerialNo:detail.SerialNo,
       BookId: detail.BookId,
+
+      // BookCode: detail.BookCode,
+      // BookName: detail.BookName,
+      // BookNameMarathi: detail.BookNameMarathi,
       Copies: detail.Copies,
       Price: detail.Price,
       Discount: detail.Discount,
       Amount: detail.Amount,
-      Id: detail.Id, // Include the detail Id in the mapped row for tracking
+      Id: detail.Id,
     }));
+
+    // ⭐ No API call needed — match from local bookOptions
+    mappedRows = mappedRows.map((row) => {
+      const book = bookOptions.find((b) => b.value === row.BookId);
+
+      return {
+        ...row,
+        BookCode: book?.code || "",
+        BookName: book?.label || "",
+        Rate: row.Rate || book?.price || 0,
+      };
+    });
+
+    setRows(mappedRows); // ✅ THIS WAS MISSING
 
     const creditdate = dayjs(salesreturncredit.Date?.date);
     const receiptdate = dayjs(salesreturncredit.ReceiptDate?.date);
@@ -642,43 +753,35 @@ function Salesreturncreditnote() {
     // Set the form fields
     setNoteNo(salesreturncredit.NoteNo);
     setPartyrefno(salesreturncredit.Party_RefNo);
-    // setDate(creditdate);
     setSafedate(creditdate);
     setAccountId(salesreturncredit.AccountId);
     setDebitAccountId(salesreturncredit.DebitAccountId);
-    setInvoiceId(salesreturncredit.InvoiceId);
-    if (salesreturncredit.InvoiceId) {
-      fetchInvoiceDetails(salesreturncredit.InvoiceId);
-    }
+
     setReceiptno(salesreturncredit.ReceiptNo);
-    // setReceiptDate(receiptdate);
     setReceiptsafedate(receiptdate);
     setWeight(salesreturncredit.Weight);
     setBundles(salesreturncredit.Bundles);
     setFreight(salesreturncredit.Freight);
-    setChallanNo(salesreturncredit.ChallanNo);
+    setChallanno(salesreturncredit.ChallanNo);
     setDispatchId(salesreturncredit.DispatchId);
     setOrderNo(salesreturncredit.OrderNo);
-    // setOrderdate(orderdate);
     setOrdersafedate(orderdate);
-    // setReceivedDate(receiveddate);
     setReceivedsafedate(receiveddate);
     setReceivedThrough(salesreturncredit.ReceivedThrough);
     setPaymentOption(salesreturncredit.PaymentOption);
     setTtl_copies(salesreturncredit.setTtl_copies);
     setTtl_subtotal(salesreturncredit.Ttl_subtotal);
-    setOther_Charge1(salesreturncredit.Other_Charge1);
-    setOther_Charge1_percentage(salesreturncredit.Other_Charge1_percentage);
-    setOther_Charge1_amt(salesreturncredit.Other_Charge1_amt);
+    // setOther_Charge1(salesreturncredit.Other_Charge1);
+    // setOther_Charge1_percentage(salesreturncredit.Other_Charge1_percentage);
+    // setOther_Charge1_amt(salesreturncredit.Other_Charge1_amt);
+
+    setAdjustments(buildAdjustmentsForEdit(salesreturncredit));
+
     setTtl_amount(salesreturncredit.Ttl_amount);
 
     console.log(salesreturncredit, "salesreturncredit");
     console.log(salesreturncreditdetail, "salesreturncredit detail");
     console.log(mappedRows, "mapped rows");
-    // Set the rows for the table with all the details
-    // setRows(mappedRows);
-    setRows([]); // Clear stale rows before fetching new ones
-    fetchInvoiceDetails(salesreturncredit.InvoiceId);
 
     // Set editing state
     setEditingIndex(currentRow.index);
@@ -698,6 +801,103 @@ function Salesreturncreditnote() {
       setIsLoading(false); // Stop loading after data is fetched
     });
   };
+
+  const bookCodeTimer = useRef(null);
+
+  const handleBookCodeChange = (rowIndex, value) => {
+    const updatedRows = [...rows];
+    updatedRows[rowIndex].BookCode = value;
+    setRows(updatedRows);
+
+    // 🔴 Clear previous timer
+    if (bookCodeTimer.current) {
+      clearTimeout(bookCodeTimer.current);
+    }
+
+    // if book code is blank → reset row fields
+    if (value.trim() === "") {
+      updatedRows[rowIndex].BookName = "";
+      updatedRows[rowIndex].BookNameMarathi = "";
+      updatedRows[rowIndex].Price = "";
+      updatedRows[rowIndex].BookRate = "";
+      updatedRows[rowIndex].BookId = "";
+      updatedRows[rowIndex].Copies = "";
+      updatedRows[rowIndex].Amount = "";
+      updatedRows[rowIndex].Discount = "";
+      updatedRows[rowIndex].FinalAmount = "";
+
+      setRows(updatedRows);
+      return; // stop here
+    }
+
+    // 🟡 Wait until user finishes typing (500ms)
+    bookCodeTimer.current = setTimeout(() => {
+      // 🔒 Minimum length check (VERY IMPORTANT)
+      if (value.length < 2) return;
+
+      // Fetch data
+      fetchBookDataForRow(rowIndex, value);
+    }, 400);
+  };
+
+  const fetchBookDataForRow = async (rowIndex, bookCode) => {
+    if (!bookCode) return; // guard clause
+
+    try {
+      const response = await fetch(
+        `https://publication.microtechsolutions.net.in/php/Bookcodeget.php?BookCode=${bookCode}`
+      );
+      const data = await response.json();
+
+      if (Array.isArray(data) && data.length > 0) {
+        const book = data[0];
+
+        setRows((prevRows) => {
+          const updatedRows = [...prevRows];
+          updatedRows[rowIndex] = {
+            ...updatedRows[rowIndex],
+            BookName: book.BookName || book.BookNameMarathi || "",
+            Price: book.BookRate || 0,
+            BookId: book.Id || "", // This is important
+          };
+          return updatedRows;
+        });
+
+        // Now call the last API with the fetched BookId
+        if (AccountId && book.Id) {
+          fetchBookHistory(rowIndex, book.Id, AccountId);
+        }
+      } else {
+        // ❌ Now this WILL fire correctly
+        toast.error("Invalid Book Code");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to fetch Book");
+    }
+  };
+
+  const fetchBookHistory = async (rowIndex, bookId, accountId) => {
+    try {
+      const res = await axios.get(
+        `https://publication.microtechsolutions.net.in/php/get/getBookDetailsbyAccountId.php?BookId=${bookId}&AccountId=${accountId}`
+      );
+
+      const historyData = Array.isArray(res.data.data) ? res.data.data : []; // 🔹 take res.data.data
+
+      setBookHistory((prev) => ({
+        ...prev,
+        [rowIndex]: historyData,
+      }));
+    } catch (err) {
+      console.error("Error fetching book history", err);
+      setBookHistory((prev) => ({
+        ...prev,
+        [rowIndex]: [],
+      }));
+    }
+  };
+
   const validateForm = () => {
     let formErrors = {};
     let isValid = true;
@@ -757,7 +957,7 @@ function Salesreturncreditnote() {
       Date: formattedDate, // Convert branch name to corresponding number
       AccountId: AccountId,
       DebitAccountId: DebitAccountId,
-      InvoiceId: InvoiceId,
+      InvoiceId: 0,
       ReceiptNo: ReceiptNo,
       ReceiptDate: formattedReceiptDate,
       Weight: Weight,
@@ -772,9 +972,14 @@ function Salesreturncreditnote() {
       PaymentOption: PaymentOption,
       Ttl_copies: Ttl_copies,
       Ttl_subtotal: Ttl_subtotal,
-      Other_Charge1: Other_Charge1,
-      Other_Charge1_percentage: Other_Charge1_percentage,
-      Other_Charge1_amt: Other_Charge1_amt,
+      // ✅ FIXED
+      Other_Charge1: firstAdj.particular || "",
+      Other_Charge1_percentage: Number(firstAdj.percentage) || 0,
+      Other_Charge1_amt: Number(firstAdj.amount) || 0,
+      // ✅ FIXED
+      Other_Charge2: secondAdj.particular || "",
+      Other_Charge2_percentage: Number(secondAdj.percentage) || 0,
+      Other_Charge2_amt: Number(secondAdj.amount) || 0,
       Ttl_amount: Ttl_amount,
       CreatedBy: !isEditing ? userId : undefined,
       UpdatedBy: isEditing ? userId : undefined,
@@ -1003,7 +1208,7 @@ function Salesreturncreditnote() {
           PaperProps={{
             sx: {
               borderRadius: isSmallScreen ? "0" : "10px 0 0 10px",
-              width: isSmallScreen ? "100%" : "85%",
+              width: isSmallScreen ? "100%" : "88%",
               zIndex: 1000,
               paddingLeft: "5px",
             },
@@ -1083,6 +1288,34 @@ function Salesreturncreditnote() {
                 </LocalizationProvider>
               </Box>
 
+              <Box sx={{ width: "415px" }}>
+                <Typography fontWeight="bold" variant="body2">
+                  Party Name
+                </Typography>
+                <Autocomplete
+                  options={accountOptions}
+                  value={
+                    accountOptions.find(
+                      (option) => option.value === AccountId
+                    ) || null
+                  }
+                  onChange={(event, newValue) =>
+                    setAccountId(newValue ? newValue.value : null)
+                  }
+                  getOptionLabel={(option) => option.label} // Display only label in dropdown
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      placeholder="Select Party Name"
+                      size="small"
+                      fullWidth
+                    />
+                  )}
+                />
+              </Box>
+            </Box>
+
+            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
               <Box sx={{ width: "450px" }}>
                 <Typography fontWeight="bold" variant="body2">
                   Debit Account
@@ -1109,179 +1342,111 @@ function Salesreturncreditnote() {
                 />
               </Box>
 
-              <Box sx={{ width: "450px" }}>
-                <Typography fontWeight="bold" variant="body2">
-                  Party Name
-                </Typography>
-                <Autocomplete
-                  options={accountOptions}
-                  value={
-                    accountOptions.find(
-                      (option) => option.value === AccountId
-                    ) || null
-                  }
-                  onChange={(event, newValue) => {
-                    const selectedAccountId = newValue ? newValue.value : null;
-                    setAccountId(selectedAccountId);
-                    setInvoiceId(null); // Reset invoice selection
-                    if (selectedAccountId) {
-                      fetchInvoicesByAccount(selectedAccountId); // Fetch invoices
-                    }
-                  }}
-                  getOptionLabel={(option) => option.label} // Display only label in dropdown
-                  renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      placeholder="Select Party Name"
-                      size="small"
-                      fullWidth
-                    />
-                  )}
-                />
-              </Box>
-
-              <Box sx={{ width: "100px" }}>
-                <Typography fontWeight="bold" variant="body2">
-                  Invoice No
-                </Typography>
-                <Autocomplete
-                  options={invoicedetails}
-                  value={
-                    invoicedetails.find(
-                      (option) => option.value === InvoiceId
-                    ) || null
-                  }
-                  onChange={(event, newValue) => {
-                    const selectedId = newValue ? newValue.value : null;
-                    setInvoiceId(selectedId);
-                    if (selectedId) {
-                      fetchInvoiceDetails(selectedId); // ← Call API on select
-                    }
-                  }}
-                  getOptionLabel={(option) => option.label} // Display only label in dropdown
-                  renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      placeholder="Select Invoice id"
-                      size="small"
-                      margin="none"
-                      fullWidth
-                    />
-                  )}
-                  sx={{ mb: 0.625, width: 170 }}
-                />
-              </Box>
-            </Box>
-
-            <Box
-              sx={{
-                display: "flex",
-                flexWrap: "nowrap", // Prevent wrapping
-                gap: 1,
-                overflowX: "auto", // Allow horizontal scrolling if needed
-              }}>
-              <Box>
-                <Typography variant="body2" fontWeight="bold">
-                  Receipt No
-                </Typography>
-                <TextField
-                  value={ReceiptNo}
-                  onChange={(e) => setReceiptno(e.target.value)}
-                  size="small"
-                  margin="none"
-                  placeholder="Receipt No"
-                  fullWidth
-                />
-              </Box>
-
-              <Box sx={{ width: "220px" }}>
-                <Typography variant="body2" fontWeight="bold">
-                  Receipt Date
-                </Typography>
-                <LocalizationProvider dateAdapter={AdapterDayjs}>
-                  <DatePicker
-                    value={receiptsafedate}
-                    onChange={handleDateChange2}
-                    format="DD-MM-YYYY"
-                    slotProps={{
-                      textField: {
-                        size: "small",
-                        fullWidth: true,
-                        error: !!receiptdateerror,
-                        helperText: receiptdateerror,
-                      },
-                    }}
+              <Box
+                sx={{
+                  display: "flex",
+                  flexWrap: "nowrap", // Prevent wrapping
+                  gap: 1,
+                  overflowX: "auto",
+                }}>
+                <Box>
+                  <Typography variant="body2" fontWeight="bold">
+                    Receipt No
+                  </Typography>
+                  <TextField
+                    type="number"
+                    value={ReceiptNo}
+                    onChange={(e) => setReceiptno(e.target.value)}
+                    size="small"
+                    margin="none"
+                    placeholder="Enter Receipt no"
+                    fullWidth
                   />
-                </LocalizationProvider>
+                </Box>
+
+                <Box sx={{ width: "220px" }}>
+                  <Typography variant="body2" fontWeight="bold">
+                    Receipt Date
+                  </Typography>
+                  <LocalizationProvider dateAdapter={AdapterDayjs}>
+                    <DatePicker
+                      value={receiptsafedate}
+                      onChange={handleDateChange2}
+                      format="DD-MM-YYYY"
+                      slotProps={{
+                        textField: {
+                          size: "small",
+                          fullWidth: true,
+                          error: !!receiptdateerror,
+                          helperText: receiptdateerror,
+                        },
+                      }}
+                    />
+                  </LocalizationProvider>
+                </Box>
+
+                <Box sx={{ minWidth: "260px" }}>
+                  <Typography variant="body2" fontWeight="bold">
+                    Weight
+                  </Typography>
+                  <TextField
+                    type="number"
+                    value={Weight}
+                    onChange={(e) => setWeight(e.target.value)}
+                    size="small"
+                    margin="none"
+                    placeholder="Weight"
+                    fullWidth
+                  />
+                </Box>
+                <Box>
+                  <Typography variant="body2" fontWeight="bold">
+                    Bundles
+                  </Typography>
+                  <TextField
+                    type="number"
+                    value={Bundles}
+                    onChange={(e) => setBundles(e.target.value)}
+                    size="small"
+                    margin="none"
+                    placeholder="Bundles"
+                    fullWidth
+                  />
+                </Box>
+
+                <Box>
+                  <Typography variant="body2" fontWeight="bold">
+                    Freight
+                  </Typography>
+                  <TextField
+                    type="number"
+                    value={Freight}
+                    onChange={(e) => setFreight(e.target.value)}
+                    size="small"
+                    margin="none"
+                    placeholder="Freight"
+                    fullWidth
+                  />
+                </Box>
               </Box>
 
-              <Box sx={{ minWidth: "260px" }}>
-                <Typography variant="body2" fontWeight="bold">
-                  Weight
-                </Typography>
-                <TextField
-                  value={Weight}
-                  onChange={(e) => setWeight(e.target.value)}
-                  size="small"
-                  margin="none"
-                  placeholder="Weight"
-                  fullWidth
-                />
-              </Box>
-              <Box>
-                <Typography variant="body2" fontWeight="bold">
-                  Bundles
-                </Typography>
-                <TextField
-                  type="number"
-                  value={Bundles}
-                  onChange={(e) => setBundles(e.target.value)}
-                  size="small"
-                  margin="none"
-                  placeholder="Bundles"
-                  fullWidth
-                />
-              </Box>
-
-              <Box>
-                <Typography variant="body2" fontWeight="bold">
-                  Freight
-                </Typography>
-                <TextField
-                  value={Freight}
-                  onChange={(e) => setFreight(e.target.value)}
-                  size="small"
-                  margin="none"
-                  placeholder="Freight"
-                  fullWidth
-                />
-              </Box>
-            </Box>
-
-            <Box
-              sx={{
-                display: "flex",
-                flexWrap: "nowrap", // Prevents wrapping
-                overflowX: "auto", // Allows horizontal scrolling if needed
-                gap: 1,
-              }}>
               <Box sx={{ width: "220px" }}>
                 <Typography variant="body2" fontWeight="bold">
                   Challan No
                 </Typography>
                 <TextField
+                  type="text"
                   value={ChallanNo}
-                  onChange={(e) => setChallanNo(e.target.value)}
+                  onChange={(e) => setChallanno(e.target.value)}
                   size="small"
                   margin="none"
-                  placeholder="Challan No"
-                  fullWidth
+                  placeholder="ChallanNo"
                 />
               </Box>
 
-              <Box sx={{ width: "220px" }}>
+              <Box sx={{ width: "300px" }}>
                 <Typography fontWeight="bold" variant="body2">
-                  Dispatch Mode
+                  Desp Mode
                 </Typography>
                 <Autocomplete
                   options={despmodeOptions}
@@ -1297,82 +1462,11 @@ function Salesreturncreditnote() {
                   renderInput={(params) => (
                     <TextField
                       {...params}
-                      placeholder="Select Disp Mode"
+                      placeholder="Select Desp Mode"
                       size="small"
                       margin="none"
-                      fullWidth
                     />
                   )}
-                />
-              </Box>
-
-              <Box sx={{ width: "260px" }}>
-                <Typography variant="body2" fontWeight="bold">
-                  Order No
-                </Typography>
-                <TextField
-                  value={OrderNo}
-                  onChange={(e) => setOrderNo(e.target.value)}
-                  size="small"
-                  margin="none"
-                  placeholder="Order No"
-                />
-              </Box>
-
-              <Box sx={{ width: "220px" }}>
-                <Typography variant="body2" fontWeight="bold">
-                  Order Date
-                </Typography>
-                <LocalizationProvider dateAdapter={AdapterDayjs}>
-                  <DatePicker
-                    value={ordersafedate}
-                    onChange={handleDateChange3}
-                    format="DD-MM-YYYY"
-                    slotProps={{
-                      textField: {
-                        size: "small",
-                        fullWidth: true,
-                        error: !!orderdateerror,
-                        helperText: orderdateerror,
-                      },
-                    }}
-                  />
-                </LocalizationProvider>
-              </Box>
-
-              <Box sx={{ width: "220px" }}>
-                <Typography variant="body2" fontWeight="bold">
-                  Received Date
-                </Typography>
-                <LocalizationProvider dateAdapter={AdapterDayjs}>
-                  <DatePicker
-                    value={receivedsafedate}
-                    onChange={handleDateChange4}
-                    format="DD-MM-YYYY"
-                    slotProps={{
-                      textField: {
-                        size: "small",
-                        fullWidth: true,
-                        error: !!receiveddateerror,
-                        helperText: receiveddateerror,
-                      },
-                    }}
-                  />
-                </LocalizationProvider>
-              </Box>
-            </Box>
-
-            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-              <Box>
-                <Typography variant="body2" fontWeight="bold">
-                  Received Through
-                </Typography>
-                <TextField
-                  value={ReceivedThrough}
-                  onChange={(e) => setReceivedThrough(e.target.value)}
-                  size="small"
-                  margin="none"
-                  placeholder="Received Through"
                 />
               </Box>
 
@@ -1401,245 +1495,375 @@ function Salesreturncreditnote() {
               </Box>
             </Box>
 
+            <Box
+              sx={{
+                display: "flex",
+                flexWrap: "nowrap", // Prevents wrapping
+                overflowX: "auto", // Allows horizontal scrolling if needed
+                gap: 1,
+              }}>
+              <Box sx={{ width: "260px" }}>
+                <Typography variant="body2" fontWeight="bold">
+                  Order No
+                </Typography>
+
+                <TextField
+                  type="number"
+                  value={OrderNo}
+                  onChange={(e) => setOrderNo(e.target.value)}
+                  size="small"
+                  margin="none"
+                  placeholder="Order no"
+                />
+              </Box>
+
+              <Box sx={{ width: "220px" }}>
+                <Typography variant="body2" fontWeight="bold">
+                  Order Date
+                </Typography>
+                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                  <DatePicker
+                    value={ordersafedate}
+                    onChange={handleDateChange3}
+                    format="DD-MM-YYYY"
+                    slotProps={{
+                      textField: {
+                        size: "small",
+                        fullWidth: true,
+                        error: !!orderdateerror,
+                        helperText: orderdateerror,
+                      },
+                    }}
+                  />
+                </LocalizationProvider>
+              </Box>
+
+              <Box sx={{ width: "220px" }}>
+                <Typography variant="body2" fontWeight="bold">
+                  Received Here on
+                </Typography>
+                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                  <DatePicker
+                    value={receivedsafedate}
+                    onChange={handleDateChange4}
+                    format="DD-MM-YYYY"
+                    slotProps={{
+                      textField: {
+                        size: "small",
+                        fullWidth: true,
+                        error: !!receiveddateerror,
+                        helperText: receiveddateerror,
+                      },
+                    }}
+                  />
+                </LocalizationProvider>
+              </Box>
+
+              <Box>
+                <Typography variant="body2" fontWeight="bold">
+                  Received Through
+                </Typography>
+                <TextField
+                  type="text"
+                  value={ReceivedThrough}
+                  onChange={(e) => setReceivedThrough(e.target.value)}
+                  size="small"
+                  margin="none"
+                  placeholder="Received Through"
+                  fullWidth
+                />
+              </Box>
+            </Box>
+
             <div className="salesreturn-table">
               <table>
                 <thead>
                   <tr>
-                    <th>Serial No</th>
-                    <th>
-                      Book Code<b className="required">*</b>
-                    </th>
-                    <th>
-                      Book Name<b className="required">*</b>
-                    </th>
-                    <th>
-                      Copies<b className="required">*</b>
-                    </th>
-                    <th>
-                      Price<b className="required">*</b>
-                    </th>
-                    <th>
-                      Disc(%)<b className="required">*</b>
-                    </th>
-                    <th>
-                      Amount<b className="required">*</b>
-                    </th>
+                    <th>Sr No</th>
+                    <th>Book Code</th>
+                    <th>Book Name</th>
+                    <th>Copies</th>
+                    <th>Price</th>
+                    <th>Discount</th>
+                    <th>Amount</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
+
                 <tbody>
                   {isLoading ? (
                     <tr>
                       <td
                         colSpan="10"
-                        style={{
-                          textAlign: "center",
-                          fontWeight: "bold",
-                          padding: "10px",
-                          color: "blue",
-                        }}>
+                        style={{ textAlign: "center", color: "blue" }}>
                         Loading data...
                       </td>
                     </tr>
-                  ) : rows.length === 0 ? ( // Check if rows is empty
+                  ) : rows.length === 0 ? (
                     <tr>
                       <td
                         colSpan="10"
-                        style={{
-                          textAlign: "center",
-                          fontWeight: "bold",
-                          padding: "10px",
-                          color: "red",
-                        }}>
+                        style={{ textAlign: "center", color: "red" }}>
                         No data available
                       </td>
                     </tr>
                   ) : (
                     rows.map((row, index) => (
-                      <tr key={index}>
-                        <td>{index + 1}</td>
-                        <td>
-                          {bookOptions.find(
-                            (option) => option.value === row.BookId
-                          )?.code || ""}
-                        </td>
-                        <td>
-                          <Autocomplete
-                            options={bookOptions}
-                            value={
-                              bookOptions.find(
-                                (option) => option.value === row.BookId
-                              ) || null
-                            }
-                            onChange={(event, newValue) =>
-                              handleInputChange(
-                                index,
-                                "BookId",
-                                newValue ? newValue.value : ""
-                              )
-                            }
-                            sx={{ width: 500 }} // Set width
-                            getOptionLabel={(option) => option.label}
-                            renderInput={(params) => (
-                              <TextField
-                                {...params}
-                                placeholder="Select Book"
-                                size="big"
-                                fullWidth
-                                sx={{
-                                  "& .MuiInputBase-root": {
-                                    height: "50px",
-                                    // width: "200px", // Adjust height here
-                                  },
-                                  "& .MuiInputBase-input": {
-                                    padding: "14px", // Adjust padding for better alignment
-                                  },
-                                }}
-                              />
-                            )}
-                          />
-                        </td>
-                        <td>
-                          <input
-                            type="number"
-                            value={row.Copies}
-                            onChange={(e) =>
-                              handleInputChange(index, "Copies", e.target.value)
-                            }
-                            style={{
-                              width: "70px",
-                            }}
-                            placeholder="Copies"
-                          />
-                        </td>
-                        <td>
-                          <input
-                            type="number"
-                            value={row.Price}
-                            onChange={(e) =>
-                              handleInputChange(index, "Price", e.target.value)
-                            }
-                            style={{
-                              width: "100px",
-                            }}
-                            placeholder="Price"
-                          />
-                        </td>
-                        <td>
-                          <input
-                            type="number"
-                            value={row.Discount}
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              const regex = /^\d{0,18}(\.\d{0,2})?$/;
-                              if (value === "" || regex.test(value)) {
-                                handleInputChange(index, "Discount", value);
-                              }
-                            }}
-                            style={{
-                              width: "80px",
-                            }}
-                            placeholder="Discount %"
-                            className="salesreturn-control"
-                          />
-                        </td>
+                      <React.Fragment key={index}>
+                        {/* 🔹 Main Book Row */}
+                        <tr>
+                          <td>{index + 1}</td>
 
-                        <td>
-                          <input
-                            type="number"
-                            value={row.Amount}
-                            readOnly
-                            style={{
-                              width: "100px",
-                            }}
-                            placeholder="Amount"
-                          />
-                        </td>
-                        <td>
-                          <div
-                            style={{
-                              display: "flex",
-                              justifyContent: "space-between",
-                            }}>
-                            <Button
-                              onClick={handleAddRow}
+                          <td>
+                            <input
+                              type="text"
+                              value={row.BookCode || ""}
+                              onChange={(e) =>
+                                handleBookCodeChange(index, e.target.value)
+                              }
+                              placeholder="Enter Book Code"
+                              style={{ width: "100px" }}
+                              className="salesreturn-control"
+                            />
+                          </td>
+                          <td>
+                            <input
+                              type="text"
+                              value={row.BookName || row.BookNameMarathi || ""}
+                              readOnly
+                              placeholder="Book Name / Book Name Marathi"
+                              style={{ width: "400px" }}
+                              className="salesinvoice-control"
+                            />
+                          </td>
+                          <td>
+                            <input
+                              type="number"
+                              value={row.Copies}
+                              onChange={(e) =>
+                                handleInputChange(
+                                  index,
+                                  "Copies",
+                                  e.target.value
+                                )
+                              }
                               style={{
-                                background: "#0a60bd",
-                                color: "white",
-                                marginRight: "5px",
+                                width: "65px",
+                              }}
+                              className="salesreturn-control"
+                              placeholder="Copies"
+                            />
+                          </td>
+                          <td>
+                            <input
+                              type="text"
+                              value={row.Price || ""}
+                              readOnly
+                              placeholder="Price"
+                              style={{ width: "100px" }}
+                              className="salesreturn-control"
+                            />
+                          </td>
+                          <td>
+                            <input
+                              type="number"
+                              value={row.Discount || ""}
+                              onChange={(e) =>
+                                handleInputChange(
+                                  index,
+                                  "Discount",
+                                  e.target.value
+                                )
+                              }
+                              style={{ width: "80px" }}
+                              className="salesreturn-control"
+                              placeholder="Discount"
+                            />
+                          </td>
+
+                          <td>
+                            <input
+                              type="number"
+                              value={row.Amount || ""}
+                              readOnly
+                              style={{ width: "100px" }}
+                              placeholder="Amount"
+                              className="salesreturn-control"
+                            />
+                          </td>
+
+                          <td>
+                            <div
+                              style={{
+                                display: "flex",
+                                justifyContent: "space-between",
                               }}>
-                              Add
-                            </Button>
-                            <Button
-                              onClick={() => handleDeleteRow(index)}
-                              style={{ background: "red", color: "white" }}>
-                              <RiDeleteBin5Line />
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
+                              <Button
+                                onClick={handleAddRow}
+                                style={{
+                                  background: "#0a60bd",
+                                  color: "white",
+                                  marginRight: "5px",
+                                }}>
+                                Add
+                              </Button>
+                              <Button
+                                onClick={() => handleDeleteRow(index)}
+                                style={{ background: "red", color: "white" }}>
+                                <RiDeleteBin5Line />
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      </React.Fragment>
                     ))
                   )}
 
-                  {/* Totals Row */}
+                  {/* 🔹 Totals Row (NO index here) */}
                   <tr>
                     <td
                       colSpan="3"
                       style={{ textAlign: "right", fontWeight: "bold" }}>
-                      Total:
+                      Total Copies:
                     </td>
-                    <td>{Ttl_copies}</td>
+                    <td style={{ fontWeight: "bold" }}>{Ttl_copies}</td>
                     <td colSpan="2"></td>
-                    <td>{Ttl_subtotal}</td>
+                    <td style={{ fontWeight: "bold" }}>{Ttl_subtotal}</td>
                     <td></td>
                   </tr>
                 </tbody>
               </table>
             </div>
 
-            {/* Other Charges Section */}
-            <Box
-              display="flex"
-              justifyContent="flex-end"
-              gap={2}
-              mt={1}
-              mr={12}>
-              <Box>
-                <Typography variant="body2" fontWeight="bold">
-                  Other charge 1
+            {/* 🔽 Book History Table */}
+            {Object.keys(bookHistory).length > 0 && (
+              <div
+                className="book-history"
+                style={{ marginTop: "5px" }}
+                onClick={() => setBookHistory(false)}>
+                <h4>Book History</h4>
+                <div
+                  style={{
+                    fontSize: "14px",
+                    color: "#0628ebff",
+                    marginBottom: "6px",
+                  }}>
+                  ℹ Click anywhere inside this box to close the history
+                </div>
+
+                <table
+                  style={{
+                    width: "100%",
+                    borderCollapse: "collapse",
+                    border: "1px solid #ccc",
+                  }}>
+                  <thead>
+                    <tr>
+                      <th>Book Code</th>
+                      <th>Trans Type</th>
+                      <th>Date</th>
+                      <th>Ref No</th>
+                      <th>Copies</th>
+                      <th>Disc %</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rows.map((row, rowIndex) => {
+                      const history = bookHistory[rowIndex] || [];
+                      return history.map((h, i) => (
+                        <tr key={`${rowIndex}-${i}`}>
+                          <td>{row.BookCode}</td>
+                          <td>{h.TransType}</td>
+                          <td>{h.Date}</td>
+                          <td>{h.RefNo}</td>
+                          <td>{h.Copies}</td>
+                          <td>{h.DiscountPercent}</td>
+                        </tr>
+                      ));
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {/* Add / Less Section */}
+            {/* Add / Less Section */}
+            {/* Add / Less Section */}
+            <Box mr={8} display="flex" justifyContent="flex-end">
+              <Box width="500px">
+                <Typography fontWeight="bold" mb={1}>
+                  Add / Less
                 </Typography>
 
-                <TextField
-                  type="text"
-                  value={Other_Charge1}
-                  onChange={(e) => setOther_Charge1(e.target.value)}
-                  variant="outlined"
-                />
-              </Box>
-              <Box>
-                <Typography variant="body2" fontWeight="bold">
-                  Other charge 1 %
-                </Typography>
-                <TextField
-                  type="number"
-                  value={Other_Charge1_percentage}
-                  onChange={(e) =>
-                    handleOtherChargePercentageChange(e.target.value)
-                  }
-                  variant="outlined"
-                />
-              </Box>
+                {adjustments.map((row, index) => (
+                  <Box
+                    key={index}
+                    display="flex"
+                    gap={1}
+                    alignItems="center"
+                    mb={1}>
+                    <TextField
+                      select
+                      SelectProps={{ native: true }}
+                      value={row.type}
+                      onChange={(e) => handleTypeChange(index, e.target.value)}
+                      size="small"
+                      sx={{ width: 90 }}>
+                      <option value="ADD">Add</option>
+                      <option value="LESS">Less</option>
+                    </TextField>
 
-              <Box>
-                <Typography variant="body2" fontWeight="bold">
-                  Other charge1 Amount
-                </Typography>
-                <TextField
-                  type="number"
-                  value={Other_Charge1_amt}
-                  onChange={(e) => setOther_Charge1_amt(e.target.value)}
+                    <TextField
+                      placeholder="Particulars"
+                      value={row.particular}
+                      onChange={(e) =>
+                        handleAdjustmentChange(
+                          index,
+                          "particular",
+                          e.target.value
+                        )
+                      }
+                      size="small"
+                      sx={{ flex: 1 }}
+                    />
+
+                    <TextField
+                      type="number"
+                      placeholder="Percentage"
+                      value={row.percentage}
+                      onChange={(e) =>
+                        handlePercentageChange(index, e.target.value)
+                      }
+                      size="small"
+                      sx={{ width: 120 }}
+                    />
+
+                    <TextField
+                      type="number"
+                      placeholder="Amount"
+                      value={row.amount}
+                      onChange={(e) =>
+                        handleAmountChange(index, e.target.value)
+                      }
+                      size="small"
+                      sx={{ width: 120 }}
+                    />
+
+                    <Button
+                      color="error"
+                      variant="contained"
+                      onClick={() => removeAdjustmentRow(index)}>
+                      ×
+                    </Button>
+                  </Box>
+                ))}
+
+                <Button
                   variant="outlined"
-                />
+                  onClick={addAdjustmentRow}
+                  sx={{ mt: 1 }}>
+                  + Add Row
+                </Button>
               </Box>
             </Box>
 
@@ -1653,7 +1877,17 @@ function Salesreturncreditnote() {
                   type="number"
                   value={Ttl_amount}
                   variant="outlined"
-                />{" "}
+                  InputProps={{
+                    sx: {
+                      fontSize: "1.2rem",
+                      fontWeight: "bold",
+                      height: "50px",
+                      width: "205px",
+                      color: "green",
+                    },
+                    readOnly: true,
+                  }}
+                />
               </Box>
             </Box>
           </Box>
@@ -1663,7 +1897,8 @@ function Salesreturncreditnote() {
             alignItems={"center"}
             justifyContent={"center"}
             gap={1}
-            m={1}>
+            m={2}
+            mt={10}>
             <Button
               variant="contained"
               onClick={handleSubmit}
@@ -1671,7 +1906,8 @@ function Salesreturncreditnote() {
                 backgroundColor: "#0a60bd",
                 color: "white",
                 "&:hover": {
-                  backgroundColor: "navy", // Darker shade on hover (optional)
+                  backgroundColor: "navy",
+                  // Darker shade on hover (optional)
                 },
               }}>
               {isEditing ? "Update" : "Save"}

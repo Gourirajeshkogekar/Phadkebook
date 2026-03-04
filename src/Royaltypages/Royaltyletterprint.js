@@ -113,24 +113,91 @@ function RoyaltyLetterPrint() {
   };
 
   return (
+    // <div
+    //   style={{
+    //     width: "195mm",
+    //     minHeight: "285mm",
+    //     // border: "1px solid red",
+    //   }}>
+    //   <div
+    //     ref={printRef}
+    //     style={{
+    //       marginLeft: "20mm",
+    //       marginRight: "18mm",
+    //       marginTop: "45mm",
+    //       marginBottom: "19mm",
+    //       height: "210mm",
+    //       width: "160mm",
+    //       // border: "1px solid black",
+    //     }}>
+    //     {/* <p>Dear Author,</p>
+    //     <p>
+    //       We are pleased to inform you that your royalty has been calculated
+    //       based on the recent sales of your publication.
+    //     </p>
+    //     <p>
+    //       Thank you for your continued contributions to our publishing house.
+    //     </p>
+    //     <p>Sincerely,</p>
+    //     <p>
+    //       <strong>Your Company Name</strong>
+    //     </p> */}
+    //   </div>
+    //   <div
+    //     style={{
+    //       position: "fixed",
+    //       bottom: "20px",
+    //       left: "85%",
+    //       transform: "translateX(-50%)",
+    //       display: "flex",
+    //       justifyContent: "center",
+    //       zIndex: 999,
+    //     }}>
+    //     <Button
+    //       variant="contained"
+    //       onClick={handlePrint}
+    //       sx={{
+    //         backgroundColor: "green",
+    //         marginRight: "5px",
+    //         color: "white",
+    //         "&:hover": {
+    //           backgroundColor: "darkgreen",
+    //         },
+    //       }}>
+    //       Print
+    //     </Button>
+
+    //     <Button
+    //       onClick={handleCancel}
+    //       variant="contained"
+    //       style={{ background: "red", color: "white" }}>
+    //       {" "}
+    //       Cancel
+    //     </Button>
+    //   </div>
+    // </div>
+
     <div
       style={{
-        width: "195mm",
-        minHeight: "285mm",
-        // border: "1px solid red",
+        width: "210mm",
+        height: "297mm",
+        backgroundColor: "white",
+        position: "relative",
+        border: "1px solid black",
       }}>
       <div
         ref={printRef}
         style={{
-          marginLeft: "20mm",
-          marginRight: "18mm",
-          marginTop: "45mm",
-          marginBottom: "19mm",
-          height: "210mm",
-          width: "160mm",
-          // border: "1px solid black",
+          position: "absolute",
+          top: "45mm",
+          left: "22mm",
+          width: "170mm",
+          height: "232mm",
+          border: "1px solid black", // just for preview alignment
+          padding: "10mm",
+          boxSizing: "border-box",
         }}>
-        {/* <p>Dear Author,</p>
+        <p>Dear Author,</p>
         <p>
           We are pleased to inform you that your royalty has been calculated
           based on the recent sales of your publication.
@@ -141,8 +208,9 @@ function RoyaltyLetterPrint() {
         <p>Sincerely,</p>
         <p>
           <strong>Your Company Name</strong>
-        </p> */}
+        </p>
       </div>
+
       <div
         style={{
           position: "fixed",
@@ -171,7 +239,6 @@ function RoyaltyLetterPrint() {
           onClick={handleCancel}
           variant="contained"
           style={{ background: "red", color: "white" }}>
-          {" "}
           Cancel
         </Button>
       </div>

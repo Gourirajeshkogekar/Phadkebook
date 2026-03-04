@@ -126,7 +126,7 @@ function RoyaltyStatementprint() {
       style={{
         width: "210mm",
         minHeight: "285mm",
-        border: "1px solid teal",
+        border: "1px solid black",
       }}>
       <div
         ref={printRef}
@@ -196,7 +196,7 @@ function RoyaltyStatementprint() {
 
         <table
           style={{
-            border: "1px solid red",
+            border: "1px solid black",
             width: "184mm",
             height: "112mm",
             // marginTop: "15mm",

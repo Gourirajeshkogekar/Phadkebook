@@ -180,7 +180,7 @@ function Salesinvoiceprint() {
           fontSize: "18px",
           color: "red",
         }}>
-        🚫 No data available for this ID.
+        🚫 No data available for this Invoice No.
         <div style={{ marginTop: "20px" }}>
           <Button
             variant="contained"
@@ -207,8 +207,6 @@ function Salesinvoiceprint() {
 
   totalFreight = invoiceData[0].Freight || 0;
   packing = invoiceData[0].Packing || 0;
-
-  console.log(totalDiscAmount, "total disc amount");
 
   return (
     <>
@@ -501,7 +499,8 @@ function Salesinvoiceprint() {
                         width: "20mm",
                         //  border: "1px solid black"
                       }}>
-                      {item.DiscountAmount || 0}
+                      {/* {item.DiscountAmount || 0} */}
+                      {(item.Amount - (item.DiscountAmount || 0)).toFixed(2)}
                     </td>
                   </tr>
                 ))
@@ -555,7 +554,6 @@ function Salesinvoiceprint() {
                 }}>
                 {totalCopies}
               </div>{" "}
-              {/* Discount Amount */}
               <div
                 style={{
                   // border: "1px solid red",
@@ -565,7 +563,7 @@ function Salesinvoiceprint() {
                   marginTop: "2mm",
                   marginRight: "10mm",
                 }}>
-                {totalDiscAmount.toFixed(2)}
+                {totalAmount.toFixed(2)}
               </div>{" "}
             </div>
 
@@ -626,7 +624,7 @@ function Salesinvoiceprint() {
                 }}></div> */}
               <div style={{ textAlign: "right" }}>
                 {(
-                  Number(totalDiscAmount) +
+                  Number(totalAmount) +
                   Number(totalFreight) +
                   Number(packing)
                 ).toFixed(2)}

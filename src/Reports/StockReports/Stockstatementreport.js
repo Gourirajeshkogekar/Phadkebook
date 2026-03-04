@@ -125,6 +125,7 @@ const StockStatement = () => {
               <DatePicker
                 value={fromdate}
                 onChange={(newValue) => setFromDate(newValue)}
+                format="DD-MM-YYYY"
                 slotProps={{ textField: { size: "small", fullWidth: true } }}
               />
             </Grid>
@@ -136,6 +137,7 @@ const StockStatement = () => {
               <DatePicker
                 value={todate}
                 onChange={(newValue) => setToDate(newValue)}
+                format="DD-MM-YYYY"
                 slotProps={{ textField: { size: "small", fullWidth: true } }}
               />
             </Grid>

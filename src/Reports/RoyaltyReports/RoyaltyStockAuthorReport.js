@@ -78,13 +78,33 @@ function RoyaltyStockAuthorReport() {
       });
 
       // --- TABLE HEADER ---
-      let startX = 20;
+      let startX = 2;
       let startY = 80;
       let rowHeight = 30;
 
       // Original widths
+      // const colWidths = [
+      //   32, 60, 60, 100, 37, 45, 50, 80, 110, 90, 60, 50, 40, 40, 60, 60, 60,
+      // ];
+
       const colWidths = [
-        32, 60, 60, 100, 37, 45, 80, 80, 110, 90, 60, 50, 40, 40, 60, 60, 60,
+        32,
+        60,
+        60,
+        100,
+        37,
+        45,
+        50, // till Op. Stock
+        50,
+        50,
+        50, // Printed in current Year (3 cols)
+        60, // Net Saleable (single col)
+        60,
+        60,
+        60, // Copy-wise Cons (3 cols)
+        60,
+        60,
+        60, // Closing Stock (3 cols)
       ];
 
       // Scale to fit within page
@@ -100,10 +120,10 @@ function RoyaltyStockAuthorReport() {
         { label: "Book Name", span: 1 },
         { label: "Edition", span: 1 },
         { label: "Price", span: 1 },
-        { label: "Opening Stock", span: 1 },
+        { label: "Op. Stock", span: 1 },
         { label: "Printed in current Year", span: 3 }, // covers next 3
-        { label: "Net Copies", span: 1 / 2 },
-        { label: "Copy-wise Cons", span: 2 }, // covers next 3
+        { label: "Net Copies", span: 1 },
+        { label: "Copy-wise Cons", span: 3 }, // covers next 3
         { label: "Closing Stock", span: 3 }, // covers next 3
       ];
 
@@ -134,17 +154,17 @@ function RoyaltyStockAuthorReport() {
         "Name of the Book",
         "Edition",
         "Price",
-        "Opening Stock",
-        "Print Order",
-        "Recd From Binder",
-        "Defective/Raddi",
-        "Net Saleable",
+        "Op. Stock",
+        "Pr Order",
+        "Received",
+        "Def/Raddi",
+        "Net Saleable", // ✅ only one under Net Copies
         "Net Sales",
         "Specimen",
-        "Total",
+        "Total", // ✅ under Copies-wise Consumption
         "Bound",
         "Unbound",
-        "Total",
+        "Total", // ✅ under Closing Stock
       ];
 
       // Add this once, load font (Mangal.ttf must be in public folder)
@@ -152,67 +172,108 @@ function RoyaltyStockAuthorReport() {
       doc.setFont("Mangal"); // for Marathi text
       doc.setFontSize(9);
 
+      // const drawHeader = (yPos) => {
+      //   let x = startX;
+      //   let headerHeight = rowHeight * 2; // make space for 2 rows
+
+      //   // First row
+      //   // firstRow.forEach((label, i) => {
+      //   //   let span = 1;
+      //   //   if (label === "Printed in current Year") span = 3;
+      //   //   if (label === "Copies-wise Consumption") span = 3;
+      //   //   if (label === "Closing Stock") span = 3;
+      //   //   if (label) {
+      //   //     let width = 0;
+      //   //     for (let j = 0; j < span; j++) width += adjustedWidths[i + j];
+
+      //   //     // Draw merged parent
+      //   //     doc.rect(x, yPos, width, rowHeight);
+      //   //     doc.text(label, x + width / 2, yPos + 13, { align: "center" });
+
+      //   //     x += width;
+      //   //   }
+      //   // });
+
+      //   columnGroups.forEach((group, i) => {
+      //     let groupWidth = 0;
+      //     for (let j = 0; j < group.span; j++) {
+      //       groupWidth += adjustedWidths[i + j];
+      //     }
+
+      //     doc.rect(x, yPos, groupWidth, rowHeight);
+      //     doc.text(group.label, x + groupWidth / 2, yPos + 13, {
+      //       align: "center",
+      //     });
+
+      //     x += groupWidth;
+      //     i += group.span;
+      //   });
+
+      //   // Second row
+      //   // x = startX;
+      //   // let y = yPos + rowHeight;
+      //   // secondRow.forEach((label, i) => {
+      //   //   if (!firstRow[i]) {
+      //   //     doc.rect(x, y, adjustedWidths[i], rowHeight);
+      //   //     doc.text(label, x + adjustedWidths[i] / 2, y + 13, {
+      //   //       align: "center",
+      //   //     });
+      //   //   } else {
+      //   //     doc.rect(x, y, adjustedWidths[i], rowHeight);
+      //   //   }
+      //   //   x += adjustedWidths[i];
+      //   // });
+
+      //   x = startX;
+      //   let y = yPos + rowHeight;
+
+      //   secondRow.forEach((label, i) => {
+      //     doc.rect(x, y, adjustedWidths[i], rowHeight);
+      //     doc.text(label, x + adjustedWidths[i] / 2, y + 13, {
+      //       align: "center",
+      //     });
+      //     x += adjustedWidths[i];
+      //   });
+
+      //   return y + rowHeight;
+      // };
+
       const drawHeader = (yPos) => {
         let x = startX;
-        let headerHeight = rowHeight * 2; // make space for 2 rows
 
-        // First row
-        // firstRow.forEach((label, i) => {
-        //   let span = 1;
-        //   if (label === "Printed in current Year") span = 3;
-        //   if (label === "Copies-wise Consumption") span = 3;
-        //   if (label === "Closing Stock") span = 3;
-        //   if (label) {
-        //     let width = 0;
-        //     for (let j = 0; j < span; j++) width += adjustedWidths[i + j];
-
-        //     // Draw merged parent
-        //     doc.rect(x, yPos, width, rowHeight);
-        //     doc.text(label, x + width / 2, yPos + 13, { align: "center" });
-
-        //     x += width;
-        //   }
-        // });
-
-        columnGroups.forEach((group, i) => {
+        // --- First row (parent groups) ---
+        columnGroups.forEach((group, groupIndex) => {
+          // Calculate total width for this group
           let groupWidth = 0;
           for (let j = 0; j < group.span; j++) {
-            groupWidth += adjustedWidths[i + j];
+            groupWidth +=
+              adjustedWidths[
+                groupIndex === 0
+                  ? j
+                  : columnGroups
+                      .slice(0, groupIndex)
+                      .reduce((a, g) => a + g.span, 0) + j
+              ];
           }
 
+          // Draw merged parent cell
           doc.rect(x, yPos, groupWidth, rowHeight);
           doc.text(group.label, x + groupWidth / 2, yPos + 13, {
             align: "center",
           });
 
           x += groupWidth;
-          i += group.span;
         });
 
-        // Second row
-        // x = startX;
-        // let y = yPos + rowHeight;
-        // secondRow.forEach((label, i) => {
-        //   if (!firstRow[i]) {
-        //     doc.rect(x, y, adjustedWidths[i], rowHeight);
-        //     doc.text(label, x + adjustedWidths[i] / 2, y + 13, {
-        //       align: "center",
-        //     });
-        //   } else {
-        //     doc.rect(x, y, adjustedWidths[i], rowHeight);
-        //   }
-        //   x += adjustedWidths[i];
-        // });
-
+        // --- Second row (child headers) ---
         x = startX;
         let y = yPos + rowHeight;
 
         secondRow.forEach((label, i) => {
-          doc.rect(x, y, adjustedWidths[i], rowHeight);
-          doc.text(label, x + adjustedWidths[i] / 2, y + 13, {
-            align: "center",
-          });
-          x += adjustedWidths[i];
+          let width = adjustedWidths[i];
+          doc.rect(x, y, width, rowHeight);
+          doc.text(label, x + width / 2, y + 13, { align: "center" });
+          x += width;
         });
 
         return y + rowHeight;

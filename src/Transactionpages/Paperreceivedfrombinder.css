@@ -50,6 +50,14 @@
     border-collapse: collapse;
     background-color: #ffffff;
   }
+
+    .paperreceivedfrombinder-table thead th {
+      position: sticky;
+      top: 0;
+      padding: 2px;
+      background: #f4f4f4;
+      z-index: 1;
+    }
   
   .paperreceivedfrombinder-table table {
     width: 100%;

@@ -437,9 +437,7 @@ function Publication() {
             </h2>
             <form className="publication-form">
               <div>
-                <label className="publication-label">
-                  Publication Name <b className="required">*</b>
-                </label>
+                <label className="publication-label">Publication Name</label>
                 <div>
                   <Tooltip
                     title={
@@ -471,9 +469,7 @@ function Publication() {
               </div>
 
               <div>
-                <label className="publication-label">
-                  Publication Code<b className="required">*</b>
-                </label>
+                <label className="publication-label">Publication Code</label>
                 <div>
                   <input
                     type="text"
@@ -497,9 +493,7 @@ function Publication() {
               </div>
 
               <div>
-                <label className="publication-label">
-                  Short Name <b className="required">*</b>
-                </label>
+                <label className="publication-label">Short Name</label>
                 <div>
                   <Tooltip
                     title={
@@ -530,9 +524,7 @@ function Publication() {
               </div>
 
               <div>
-                <label className="college-label">
-                  Country <b className="required">*</b>
-                </label>
+                <label className="college-label">Country</label>
                 <div>
                   <Select
                     id="CountryId"
@@ -566,9 +558,7 @@ function Publication() {
               </div>
 
               <div>
-                <label className="college-label">
-                  State <b className="required">*</b>
-                </label>
+                <label className="college-label">State</label>
                 <div>
                   <Select
                     id="StateId"
@@ -602,9 +592,7 @@ function Publication() {
               </div>
 
               <div>
-                <label className="college-label">
-                  City <b className="required">*</b>
-                </label>
+                <label className="college-label">City</label>
                 <div>
                   <Select
                     id="CityId"
@@ -638,9 +626,7 @@ function Publication() {
               </div>
 
               <div>
-                <label className="publication-label">
-                  Address <b className="required">*</b>
-                </label>
+                <label className="publication-label">Address</label>
                 <div>
                   <Tooltip
                     title={
@@ -673,9 +659,7 @@ function Publication() {
               </div>
 
               <div>
-                <label className="publication-label">
-                  Contact No <b className="required">*</b>
-                </label>
+                <label className="publication-label">Contact No</label>
                 <div>
                   <input
                     type="number"
@@ -705,7 +689,7 @@ function Publication() {
 
               <div>
                 <label className="publication-label">
-                  Other Publication Flag <b className="required">*</b>
+                  Other Publication Flag
                 </label>
                 <div>
                   <input

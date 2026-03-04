@@ -214,6 +214,7 @@ function Netsalesummaryreport() {
               <DatePicker
                 value={fromdate}
                 onChange={setFromDate}
+                format="DD-MM-YYYY"
                 slotProps={{ textField: { size: "small", fullWidth: true } }}
               />
             </Grid>
@@ -225,6 +226,7 @@ function Netsalesummaryreport() {
               <DatePicker
                 value={todate}
                 onChange={setToDate}
+                format="DD-MM-YYYY"
                 slotProps={{ textField: { size: "small", fullWidth: true } }}
               />
             </Grid>

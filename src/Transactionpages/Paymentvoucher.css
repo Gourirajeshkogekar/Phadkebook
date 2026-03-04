@@ -49,13 +49,21 @@
   height: 300px;
   overflow-y: auto;
   overflow-x: auto;
-  width: 100%;
+  /* width: 100%; */
   border-collapse: collapse;
   background-color: #ffffff;
 }
 
+.paymentvoucher-table thead th {
+  position: sticky;
+  top: 0;
+  padding: 10px;
+  background: #f4f4f4;
+  z-index: 1;
+}
+
 .paymentvoucher-table table {
-  width: 100%;
+  /* width: 100%; */
   
   border: 1px solid #ddd;
   border-radius: 8px;
@@ -63,7 +71,7 @@
 }
 
 .paymentvoucher-table th, .paymentvoucher-table td {
-  padding: 12px;
+  /* padding: 12px; */
   text-align: left;
   border-bottom: 1px solid #ddd;
 }
@@ -74,24 +82,14 @@
 }
 
 .paymentvoucher-table input {
-  width: 100%;
-  padding: 8px;
+  /* width: 100%;
+  padding: 8px; */
   box-sizing: border-box;
   border: 1px solid #ccc;
   border-radius: 4px;
 }
 
-.paymentvoucher-table tr:nth-child(even) {
-  background-color: #f9f9f9;
-}
 
-.paymentvoucher-table tr:hover {
-  background-color: #f1f1f1;
-}
-
-.paymentvoucher-table-container {
-  overflow-x: auto;
-}
 
 
 

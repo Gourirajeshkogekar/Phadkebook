@@ -101,7 +101,7 @@ const Stockstmtdetailsreport = () => {
   };
 
   const generateStockSummaryPDF = async (summaryData) => {
-    const pdf = new jsPDF("p", "mm", "a4");
+    const pdf = new jsPDF("l", "mm", "a4");
     const pageWidth = pdf.internal.pageSize.getWidth();
     const margin = 10;
 
@@ -213,13 +213,13 @@ const Stockstmtdetailsreport = () => {
             "Total",
             "Balance",
             "Amount",
-            "Spec Val",
-            "Sales Val",
+            "Spec val",
+            "Sales",
           ],
         ],
         body,
         styles: {
-          fontSize: 7,
+          fontSize: 8,
           cellPadding: 1.5,
         },
         headStyles: {
@@ -324,6 +324,7 @@ const Stockstmtdetailsreport = () => {
               <DatePicker
                 value={fromdate}
                 onChange={(newValue) => setFromDate(newValue)}
+                format="DD-MM-YYYY"
                 slotProps={{ textField: { size: "small", fullWidth: true } }}
               />
             </Grid>
@@ -335,6 +336,7 @@ const Stockstmtdetailsreport = () => {
               <DatePicker
                 value={todate}
                 onChange={(newValue) => setToDate(newValue)}
+                format="DD-MM-YYYY"
                 slotProps={{ textField: { size: "small", fullWidth: true } }}
               />
             </Grid>

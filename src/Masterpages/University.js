@@ -302,9 +302,7 @@ function University() {
             </h2>
             <form onSubmit={handleSubmit} className="university-form">
               <div>
-                <label className="university-label">
-                  University Name <b className="required">*</b>
-                </label>
+                <label className="university-label">University Name</label>
                 <div>
                   <Tooltip
                     title={
@@ -329,30 +327,6 @@ function University() {
                   <div>
                     {errors.UniversityName && (
                       <b className="error-text">{errors.UniversityName}</b>
-                    )}
-                  </div>
-                </div>
-              </div>
-              <div>
-                <label className="university-label">
-                  University Code <b className="required">*</b>
-                </label>
-                <div>
-                  <input
-                    type="number"
-                    id="UniversityCode"
-                    name="UniversityCode"
-                    value={UniversityCode}
-                    onChange={(e) => setUniversityCode(e.target.value)}
-                    maxLength={100}
-                    ref={unicodeRef}
-                    onKeyDown={(e) => handleKeyDown(e, saveRef)}
-                    placeholder="Enter university Code"
-                    className="university-control"
-                  />
-                  <div>
-                    {errors.UniversityCode && (
-                      <b className="error-text">{errors.UniversityCode}</b>
                     )}
                   </div>
                 </div>

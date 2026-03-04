@@ -292,29 +292,19 @@ function Godown() {
             </h2>
             <form className="godown-form">
               <div>
-                <label className="godown-label">
-                  Godown Name <b className="required">*</b>
-                </label>
+                <label className="godown-label">Godown Name</label>
                 <div>
-                  <Tooltip
-                    title={
-                      <span style={{ fontSize: "14px", fontWeight: "bold" }}>
-                        {GodownName}
-                      </span>
-                    }
-                    arrow>
-                    <input
-                      id="GodownName"
-                      name="GodownName"
-                      value={GodownName}
-                      onChange={(e) => setGodownName(e.target.value)}
-                      maxLength={50}
-                      ref={godownRef}
-                      onKeyDown={(e) => handleKeyDown(e, saveRef)}
-                      placeholder="Enter godown name"
-                      className="godown-control"
-                    />
-                  </Tooltip>
+                  <input
+                    id="GodownName"
+                    name="GodownName"
+                    value={GodownName}
+                    onChange={(e) => setGodownName(e.target.value)}
+                    maxLength={50}
+                    ref={godownRef}
+                    onKeyDown={(e) => handleKeyDown(e, saveRef)}
+                    placeholder="Enter godown name"
+                    className="godown-control"
+                  />
 
                   <div>
                     {errors.GodownName && (

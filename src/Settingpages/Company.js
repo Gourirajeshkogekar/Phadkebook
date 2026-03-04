@@ -1,13 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import "./Company.css";
-import {
-  Modal,
-  Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-} from "@mui/material";
+
 import Select from "react-select";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -17,6 +10,11 @@ import {
   useMaterialReactTable,
 } from "material-react-table";
 import { RiDeleteBin5Line } from "react-icons/ri";
+import {
+    Dialog, DialogActions, DialogContent, DialogTitle,Button,Modal,
+  Tabs, Tab, Box, TextField, Checkbox, FormControlLabel, Grid, Typography, Paper, Divider
+} from "@mui/material";
+
 
 function Company() {
   const [userId, setUserId] = useState("");
@@ -41,6 +39,10 @@ function Company() {
 
     fetchCompanies();
   }, []);
+// Custom blue for the legacy input style
+const legacyBlue = "#99d9ea";
+const legacyYellow = "#ffff00"; 
+
 
   const [CompanyName, setCompanyName] = useState("");
   const [Director, setDirector] = useState("");
@@ -70,20 +72,120 @@ function Company() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [deleteIndex, setDeleteIndex] = useState(null);
   const [deleteId, setDeleteId] = useState(null);
+
+
+  const [activeTab, setActiveTab] = useState(0);
+ 
+  
+  const [City, setCity] = useState("");
+  const [Pin, setPin] = useState("");
+  const [State, setState] = useState("");
+  const [Country, setCountry] = useState("India");
+  const [TelNo, setTelNo] = useState("");
+   const [Email, setEmail] = useState("");
+  const [WebSite, setWebSite] = useState("");
+
+  // Tab 2: TIN/PAN
+  const [tinNo, setTinNo] = useState("");
+  const [cstTin, setCstTin] = useState("");
+  const [serviceTaxNo, setServiceTaxNo] = useState("");
+  const [panNo, setPanNo] = useState("");
+  const [tanNo, setTanNo] = useState("");
+  const [lbtNo, setLbtNo] = useState("");
+  const [q1, setQ1] = useState("");
+  const [q2, setQ2] = useState("");
+  const [q3, setQ3] = useState("");
+  const [q4, setQ4] = useState("");
+
+  // Tab 3: Other Settings
+  const [settings, setSettings] = useState({
+    isBranch: false,
+    genReceiptAuto: false,
+    genInvoiceAuto: false,
+    genInvoiceNoChallan: false,
+    printReceiptSave: false,
+    printInvoiceAdd: false,
+    printInvoiceEdit: false,
+    selectRateFromMaster: false,
+    defaultInvoice: "Credit"
+  });
+  const [tdsRate, setTdsRate] = useState(10);
+  const [surcharge, setSurcharge] = useState(0);
+  const [eduCess, setEduCess] = useState(3);
+  const [tdsDedAmt, setTdsDedAmt] = useState(5000);
+  const [yearFrom, setYearFrom] = useState("2025-04-01");
+  const [yearTo, setYearTo] = useState("2026-03-31");
+
+  const inputSx = {
+    backgroundColor: legacyBlue,
+    "& .MuiInputBase-input": { padding: "4px 8px", fontSize: "0.85rem" },
+    "& fieldset": { borderRadius: 0 }
+  };
+
+  const labelSx = { fontWeight: "bold", fontSize: "0.85rem", display: "flex", alignItems: "center" };
+
+
+const legacyBox = {
+  border: "1px solid #9e9e9e",
+  width: 520,
+  p: 1.2,   // 🔽 reduced
+  mt: 0.5,
+  ml: 2,
+};
+
+
+const legendSx = {
+  fontSize: "0.8rem",
+  fontWeight: "bold",
+  px: 0.5,
+};
+
+const legacyInput = {
+  backgroundColor: "#8fd7f0",
+  "& .MuiInputBase-input": {
+    fontSize: "0.8rem",
+    padding: "4px 6px",
+  },
+};
+const handleSettingChange = (key) => {
+  setSettings((prev) => ({
+    ...prev,
+    [key]: !prev[key],
+  }));
+};
+
+  const handleTabChange = (event, newValue) => setActiveTab(newValue);
+
   const resetForm = () => {
     setCompanyName("");
     setDirector("");
     setDesignation("");
     setAddress1("");
-    setCityId("");
-    setPincode("");
-    setStateId("");
-    setCountryId("");
-    setMobileNo("");
-    setEmailId("");
+    setCity(""); setState(""); setPin("");
+
+      setCountry("");
+      setMobileNo("");
+setWebSite("")   ;
+ setTelNo("");
+    setEmail("");
     setFaxNo("");
-    setWebsite("");
-    setTinpanno("");
+     setTinNo("");
+     setCstTin("");
+     setServiceTaxNo("");
+     setPanNo("");
+     setTanNo("");
+     setLbtNo("");
+     setQ1("");
+     setQ2("");
+     setQ3("");
+     setQ4("");
+     setSettings(false);
+     setTdsRate(null);
+     setTdsDedAmt(null);
+     setSurcharge(null);
+     setEduCess(null);
+
+     
   };
 
   useEffect(() => {
@@ -223,95 +325,97 @@ function Company() {
     setDeleteIndex(null);
   };
 
-  const validateForm = () => {
-    let formErrors = {};
-    let isValid = true;
+  // const validateForm = () => {
+  //   let formErrors = {};
+  //   let isValid = true;
 
-    if (!CompanyName) {
-      formErrors.CompanyName = "Company Name is required.";
-      isValid = false;
-    }
+  //   if (!CompanyName) {
+  //     formErrors.CompanyName = "Company Name is required.";
+  //     isValid = false;
+  //   }
 
-    if (!Director) {
-      formErrors.Director = "Director is required.";
-      isValid = false;
-    }
+  //   if (!Director) {
+  //     formErrors.Director = "Director is required.";
+  //     isValid = false;
+  //   }
 
-    if (!Designation) {
-      formErrors.Designation = "Designation is required.";
-      isValid = false;
-    }
+  //   if (!Designation) {
+  //     formErrors.Designation = "Designation is required.";
+  //     isValid = false;
+  //   }
 
-    if (!Address1) {
-      formErrors.Address1 = "Address is required.";
-      isValid = false;
-    }
+  //   if (!Address1) {
+  //     formErrors.Address1 = "Address is required.";
+  //     isValid = false;
+  //   }
 
-    if (!CityId) {
-      formErrors.CityId = "City is required.";
-      isValid = false;
-    }
+  //   if (!CityId) {
+  //     formErrors.CityId = "City is required.";
+  //     isValid = false;
+  //   }
 
-    if (!StateId) {
-      formErrors.StateId = "State is required.";
-      isValid = false;
-    }
-    if (!Pincode) {
-      formErrors.Pincode = "Pincode is required.";
-      isValid = false;
-    } else if (!/^\d{6}$/.test(Pincode)) {
-      formErrors.Pincode = "Pincode must be 6 digits.";
-      isValid = false;
-    }
+  //   if (!StateId) {
+  //     formErrors.StateId = "State is required.";
+  //     isValid = false;
+  //   }
+  //   if (!Pincode) {
+  //     formErrors.Pincode = "Pincode is required.";
+  //     isValid = false;
+  //   } else if (!/^\d{6}$/.test(Pincode)) {
+  //     formErrors.Pincode = "Pincode must be 6 digits.";
+  //     isValid = false;
+  //   }
 
-    if (!CountryId) {
-      formErrors.CountryId = "Country is required.";
-      isValid = false;
-    }
+  //   if (!CountryId) {
+  //     formErrors.CountryId = "Country is required.";
+  //     isValid = false;
+  //   }
 
-    if (!MobileNo) {
-      formErrors.MobileNo = "Mobile No is required.";
-      isValid = false;
-    } else if (!/^\d{10}$/.test(MobileNo)) {
-      formErrors.MobileNo = "MobileNo must be 10 digits.";
-      isValid = false;
-    }
+  //   if (!MobileNo) {
+  //     formErrors.MobileNo = "Mobile No is required.";
+  //     isValid = false;
+  //   } else if (!/^\d{10}$/.test(MobileNo)) {
+  //     formErrors.MobileNo = "MobileNo must be 10 digits.";
+  //     isValid = false;
+  //   }
 
-    // Fax No
-    if (!FaxNo) {
-      formErrors.FaxNo = "FaxNo  is required.";
-      isValid = false;
-    } else if (!/^\d{10}$/.test(FaxNo)) {
-      formErrors.FaxNo = "Fax No must be 10 digits.";
-      isValid = false;
-    }
+  //   // Fax No
+  //   if (!FaxNo) {
+  //     formErrors.FaxNo = "FaxNo  is required.";
+  //     isValid = false;
+  //   } else if (!/^\d{10}$/.test(FaxNo)) {
+  //     formErrors.FaxNo = "Fax No must be 10 digits.";
+  //     isValid = false;
+  //   }
 
-    // Email ID
-    if (!EmailId) {
-      formErrors.EmailId = "Email Id is required.";
-      isValid = false;
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(EmailId)) {
-      formErrors.EmailId = "Email Id is invalid.";
-      isValid = false;
-    }
+  //   // Email ID
+  //   if (!EmailId) {
+  //     formErrors.EmailId = "Email Id is required.";
+  //     isValid = false;
+  //   } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(EmailId)) {
+  //     formErrors.EmailId = "Email Id is invalid.";
+  //     isValid = false;
+  //   }
 
-    if (!Website) {
-      formErrors.Website = "Website is required.";
-      isValid = false;
-    }
+  //   if (!Website) {
+  //     formErrors.Website = "Website is required.";
+  //     isValid = false;
+  //   }
 
-    if (!Address1) {
-      formErrors.Address1 = "Address1 is required.";
-      isValid = false;
-    }
+  //   if (!Address1) {
+  //     formErrors.Address1 = "Address1 is required.";
+  //     isValid = false;
+  //   }
 
-    setErrors(formErrors);
-    return isValid;
-  };
+  //   setErrors(formErrors);
+  //   return isValid;
+  // };
+
+ 
 
   const handleSubmit = async (e) => {
     e.preventDefault(); // Prevent the default form submission
-    if (!validateForm()) return;
+    // if (!validateForm()) return;
 
     const data = {
       CompanyName: CompanyName,
@@ -424,386 +528,411 @@ function Company() {
     },
   });
 
-  return (
-    <div className="company-container">
-      <h1>Company Master</h1>
 
-      <div className="companytable-master">
-        <div className="companytable1-master">
-          <Button
-            onClick={handleNewClick}
-            style={{
-              color: "#FFFF",
-              fontWeight: "700",
-              background: "#0a60bd",
-              width: "15%",
-            }}>
-            New
+   return (
+    <Box p={3}>
+      <Typography variant="h5" mb={2}>
+        Company Master
+      </Typography>
+
+      <Button variant="contained" onClick={handleNewClick}>
+        New
+      </Button>
+
+      <Box mt={2}>
+        <MaterialReactTable table={table} />
+      </Box>
+
+      {/* ===================== MODAL ===================== */}
+      <Modal open={isModalOpen} onClose={() => setIsModalOpen(false)}>
+<Paper
+  sx={{
+    width: 1000,
+    mx: "auto",
+    mt: 0.5,     // 🔽 reduced
+    p: 1.5,      // 🔽 reduced
+    maxHeight: "95vh",
+    overflowY: "auto", // safety
+  }}
+>
+<Typography fontWeight="bold" sx={{ mb: 0.5, textAlign:'center', fontSize:'18px' }}>
+            {isEditing ? "Edit Company" : "Add Company"}
+          </Typography>
+
+<Grid container columnSpacing={1} rowSpacing={0.5}>
+  <Grid item xs={4} sx={{ fontWeight: "bold", alignSelf: "center" }}>
+    Company Name
+  </Grid>
+  <Grid item xs={8}>
+    <TextField
+      fullWidth
+      size="small"
+      value={CompanyName}
+      onChange={(e) => setCompanyName(e.target.value)}
+    />
+  </Grid>
+
+  <Grid item xs={4} sx={{ fontWeight: "bold", alignSelf: "center" }}>
+    Director
+  </Grid>
+  <Grid item xs={8}>
+    <TextField
+      fullWidth
+      size="small"
+      value={Director}
+      onChange={(e) => setDirector(e.target.value)}
+    />
+  </Grid>
+
+  <Grid item xs={4} sx={{ fontWeight: "bold", alignSelf: "center" }}>
+    Designation
+  </Grid>
+  <Grid item xs={8}>
+    <TextField
+      fullWidth
+      size="small"
+      value={Designation}
+      onChange={(e) => setDesignation(e.target.value)}
+    />
+  </Grid>
+</Grid>
+
+
+<Tabs
+  value={activeTab}
+  onChange={(e, v) => setActiveTab(v)}
+  sx={{
+    minHeight: 32,
+    mt: 1,
+    "& .MuiTab-root": {
+      minHeight: 32,
+      padding: "4px 12px",
+      fontSize: "0.8rem",
+      fontWeight: "bold",
+    },
+  }}
+>
+            <Tab label="Address" />
+            <Tab label="TIN,PAN Number" />
+                        <Tab label="Other Settings" />
+
+          </Tabs>
+
+  {activeTab === 0 && (
+  <Box sx={legacyBox}>
+    <Typography sx={legendSx}>Office Address</Typography>
+
+    <Grid container spacing={1} sx={{ mt: 0.2 }}>
+
+      {/* Address */}
+      <Grid item xs={12}>
+        <TextField
+          multiline
+          rows={2}
+          fullWidth
+          size="small"
+          sx={legacyInput}
+          value={Address1}
+          onChange={(e) => setAddress1(e.target.value)}
+        />
+      </Grid>
+
+      {/* City + PIN */}
+      <Grid item xs={3} sx={labelSx}>City</Grid>
+      <Grid item xs={5}>
+        <TextField size="small" fullWidth sx={legacyInput} value={City} onChange={(e)=> setCity(e.target.value)} />
+      </Grid>
+
+      <Grid item xs={2} sx={labelSx}>PIN</Grid>
+      <Grid item xs={2}>
+        <TextField size="small" fullWidth sx={legacyInput} value={Pin} onChange={(e)=> setPin(e.target.value)}/>
+      </Grid>
+
+      {/* State + Country */}
+      <Grid item xs={3} sx={labelSx}>State</Grid>
+      <Grid item xs={5}>
+        <TextField size="small" fullWidth sx={legacyInput} value={State} onChange={(e)=> setState(e.target.value)}/>
+      </Grid>
+
+      <Grid item xs={2} sx={labelSx}>Country</Grid>
+      <Grid item xs={2}>
+        <TextField size="small" fullWidth sx={legacyInput} value={Country} onChange={(e)=> setCountry(e.target.value)} />
+      </Grid>
+
+      {/* Tel */}
+      <Grid item xs={3} sx={labelSx}>Tel. No</Grid>
+      <Grid item xs={9}>
+        <TextField size="small" fullWidth sx={legacyInput} value={TelNo} onChange={(e)=> setTelNo(e.target.value)}/>
+      </Grid>
+
+      {/* Fax */}
+      <Grid item xs={3} sx={labelSx}>Fax No.</Grid>
+      <Grid item xs={9}>
+        <TextField size="small" fullWidth sx={legacyInput} value={FaxNo} onChange={(e)=> setFaxNo(e.target.value)}/>
+      </Grid>
+
+      {/* Email */}
+      <Grid item xs={3} sx={labelSx}>E-Mail</Grid>
+      <Grid item xs={9}>
+        <TextField size="small" fullWidth sx={legacyInput} value={Email}onChange={(e)=> setEmail(e.target.value)} />
+      </Grid>
+
+      {/* Website */}
+      <Grid item xs={3} sx={labelSx}>Web Site</Grid>
+      <Grid item xs={9}>
+        <TextField size="small" fullWidth sx={legacyInput} value={WebSite} onChange={(e)=> setWebSite(e.target.value)}/>
+      </Grid>
+
+    </Grid>
+  </Box>
+)}
+
+
+{activeTab === 1 && (
+  <Grid container spacing={2} sx={{ mt: 1 }}>
+    
+    {/* LEFT SIDE – TIN / PAN */}
+    <Grid item xs={6}>
+      <Grid container spacing={1}>
+        <Grid item xs={4} sx={labelSx}>TIN No.</Grid>
+        <Grid item xs={8}>
+          <TextField fullWidth size="small" sx={inputSx} value={tinNo} onChange={(e) => setTinNo(e.target.value)} />
+        </Grid>
+
+        <Grid item xs={4} sx={labelSx}>CST TIN</Grid>
+        <Grid item xs={8}>
+          <TextField fullWidth size="small" sx={inputSx} value={cstTin} onChange={(e) => setCstTin(e.target.value)} />
+        </Grid>
+
+        <Grid item xs={4} sx={labelSx}>Service Tax No.</Grid>
+        <Grid item xs={8}>
+          <TextField fullWidth size="small" sx={inputSx} value={serviceTaxNo} onChange={(e) => setServiceTaxNo(e.target.value)} />
+        </Grid>
+
+        <Grid item xs={4} sx={labelSx}>PAN No.</Grid>
+        <Grid item xs={8}>
+          <TextField fullWidth size="small" sx={inputSx} value={panNo} onChange={(e) => setPanNo(e.target.value)} />
+        </Grid>
+
+        <Grid item xs={4} sx={labelSx}>TAN No.</Grid>
+        <Grid item xs={4}>
+          <TextField fullWidth size="small" sx={inputSx} value={tanNo} onChange={(e) => setTanNo(e.target.value)} />
+        </Grid>
+        <Grid item xs={4}></Grid>
+
+        <Grid item xs={4} sx={labelSx}>LBT No.</Grid>
+        <Grid item xs={4}>
+          <TextField fullWidth size="small" sx={inputSx} value={lbtNo} onChange={(e) => setLbtNo(e.target.value)} />
+        </Grid>
+      </Grid>
+    </Grid>
+
+    {/* RIGHT SIDE – ACKNOWLEDGEMENT */}
+    <Grid item xs={6}>
+      <Typography
+        sx={{
+          fontWeight: "bold",
+          fontSize: "0.75rem",
+          textDecoration: "underline",
+          mb: 1,
+        }}
+      >
+        Acknowledgement Nos. given By TIN faci. Centre
+      </Typography>
+
+      <Grid container spacing={1}>
+        <Grid item xs={4} sx={labelSx}>1st Quarter</Grid>
+        <Grid item xs={8}>
+          <TextField fullWidth size="small" sx={inputSx} value={q1} onChange={(e) => setQ1(e.target.value)} />
+        </Grid>
+
+        <Grid item xs={4} sx={labelSx}>2nd Quarter</Grid>
+        <Grid item xs={8}>
+          <TextField fullWidth size="small" sx={inputSx} value={q2} onChange={(e) => setQ2(e.target.value)} />
+        </Grid>
+
+        <Grid item xs={4} sx={labelSx}>3rd Quarter</Grid>
+        <Grid item xs={8}>
+          <TextField fullWidth size="small" sx={inputSx} value={q3} onChange={(e) => setQ3(e.target.value)} />
+        </Grid>
+
+        <Grid item xs={4} sx={labelSx}>4th Quarter</Grid>
+        <Grid item xs={8}>
+          <TextField fullWidth size="small" sx={inputSx} value={q4} onChange={(e) => setQ4(e.target.value)} />
+        </Grid>
+      </Grid>
+    </Grid>
+
+  </Grid>
+)}
+
+
+
+         {activeTab === 2 && (
+  <Grid container spacing={2} sx={{ mt: 1 }}>
+
+    {/* LEFT COLUMN – CHECKBOXES */}
+   <Grid item xs={4} sx={{ borderRight: "1px dashed #ccc" }}>
+  {[
+    { label: "Is this a branch ?", key: "isBranch" },
+    { label: "Generate receipt No. automatically?", key: "genReceiptAuto" },
+    { label: "Generate invoice No. automatically?", key: "genInvoiceAuto" },
+    { label: "Generate invoice without Challan?", key: "genInvoiceNoChallan" },
+    { label: "Print Receipt after saving?", key: "printReceiptSave" },
+    { label: "Print invoice in add mode?", key: "printInvoiceAdd" },
+    { label: "Print invoice in edit mode?", key: "printInvoiceEdit" },
+  ].map((item) => (
+    <Grid
+      key={item.key}
+      container
+      alignItems="center"
+      sx={{ mb: 0.5 }}
+    >
+      <Grid item xs={9}>
+        <Typography sx={{ fontSize: "0.8rem", fontWeight: "bold" }}>
+          {item.label}
+        </Typography>
+      </Grid>
+      <Grid item xs={3}>
+<Checkbox
+  size="small"
+  checked={settings[item.key]}
+  onChange={() => handleSettingChange(item.key)}
+/>
+      </Grid>
+    </Grid>
+  ))}
+</Grid>
+
+
+    {/* MIDDLE COLUMN – INVOICE + DEPOSIT */}
+    <Grid item xs={4}>
+      <FormControlLabel
+  control={
+    <Checkbox
+      size="small"
+      checked={settings.selectRateFromMaster}
+      onChange={() => handleSettingChange("selectRateFromMaster")}
+    />
+  }
+  label={
+    <Typography sx={{ fontSize: "0.8rem", fontWeight: "bold" }}>
+      For invoice select rate from master
+    </Typography>
+  }
+/>
+
+
+      <Box sx={{ border: "1px solid #ccc", p: 1, mt: 1 }}>
+        <Typography
+          sx={{
+            fontSize: "0.75rem",
+            fontWeight: "bold",
+            mt: -2,
+            bgcolor: "white",
+            width: "fit-content",
+            px: 0.5,
+          }}
+        >
+          Deposit
+        </Typography>
+
+        <Grid container spacing={1} alignItems="center">
+          <Grid item xs={7} sx={labelSx}>TDS %</Grid>
+          <Grid item xs={5}>
+            <TextField size="small" sx={{ ...inputSx, backgroundColor: legacyYellow }} value={tdsRate} onChange={(e)=> setTdsRate(e.target.value)}/>
+          </Grid>
+
+          <Grid item xs={7} sx={labelSx}>Surcharge %</Grid>
+          <Grid item xs={5}>
+            <TextField size="small" sx={{ ...inputSx, backgroundColor: legacyYellow }} value={surcharge} onChange={(e)=> setSurcharge(e.target.value)}/>
+          </Grid>
+
+          <Grid item xs={7} sx={labelSx}>Edu. Cess %</Grid>
+          <Grid item xs={5}>
+            <TextField size="small" sx={{ ...inputSx, backgroundColor: legacyYellow }} value={eduCess} onChange={(e)=> setEduCess(e.target.value)}/>
+          </Grid>
+
+          <Grid item xs={7} sx={labelSx}>TDS Ded Amt</Grid>
+          <Grid item xs={5}>
+            <TextField size="small" sx={{ ...inputSx, backgroundColor: legacyYellow }} value={tdsDedAmt} onChange={(e)=> setTdsDedAmt(e.target.value)}/>
+          </Grid>
+        </Grid>
+      </Box>
+    </Grid>
+
+    {/* RIGHT COLUMN – ACCOUNTING YEAR */}
+    <Grid item xs={4}>
+      <Box sx={{ border: "1px solid #ccc", p: 1 }}>
+        <Typography
+          sx={{
+            fontSize: "0.75rem",
+            fontWeight: "bold",
+            mt: -2,
+            bgcolor: "white",
+            width: "fit-content",
+            px: 0.5,
+          }}
+        >
+          Accounting Year
+        </Typography>
+
+        <Grid container spacing={1} alignItems="center">
+          <Grid item xs={3} sx={labelSx}>From</Grid>
+          <Grid item xs={9}>
+            <TextField type="date" size="small" fullWidth sx={inputSx} value={yearFrom} />
+          </Grid>
+
+          <Grid item xs={3} sx={labelSx}>To</Grid>
+          <Grid item xs={9}>
+            <TextField type="date" size="small" fullWidth sx={inputSx} value={yearTo} />
+          </Grid>
+        </Grid>
+      </Box>
+    </Grid>
+
+  </Grid>
+)}
+
+
+                
+         
+
+        <Box mt={3} textAlign="center">
+  <Button onClick={handleSubmit} variant="contained">
+    Save
+  </Button>
+
+  <Button
+    onClick={() => setIsModalOpen(false)}
+    variant="contained"
+    color="error"
+    sx={{ ml: 2 }}
+  >
+    Cancel
+  </Button>
+</Box>
+
+        </Paper>
+      </Modal>
+
+      {/* ===================== DELETE DIALOG ===================== */}
+      <Dialog open={isDeleteDialogOpen} onClose={() => setIsDeleteDialogOpen(false)}>
+        <DialogTitle>Confirm Delete</DialogTitle>
+        <DialogContent>Are you sure?</DialogContent>
+        <DialogActions>
+          <Button onClick={() => setIsDeleteDialogOpen(false)}>Cancel</Button>
+          <Button color="error" onClick={confirmDelete}>
+            Delete
           </Button>
-          <div className="companytable-container">
-            <MaterialReactTable table={table} />
-          </div>
-        </div>
+        </DialogActions>
+      </Dialog>
 
-        {isModalOpen && (
-          <div
-            className="company-overlay"
-            onClick={() => setIsModalOpen(false)}
-          />
-        )}
-
-        <Modal open={isModalOpen}>
-          <div className="company-modal">
-            <h1
-              style={{
-                textAlign: "center",
-                fontWeight: "500",
-                margin: "2px",
-              }}>
-              {editingIndex >= 0 ? "Edit Company" : "Add Company"}
-            </h1>
-            <form onSubmit={handleSubmit} className="company-form">
-              <div>
-                <label className="company-label">Name of Company:</label>
-                <div>
-                  <input
-                    type="text"
-                    id="CompanyName"
-                    name="CompanyName"
-                    value={CompanyName}
-                    onChange={(e) => setCompanyName(e.target.value)}
-                    maxLength={50}
-                    className="company-control"
-                    placeholder="Enter Company Name"
-                  />
-
-                  <div>
-                    {errors.CompanyName && (
-                      <b className="error-text">{errors.CompanyName}</b>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <label className="company-label">Name of Director:</label>
-                <div>
-                  <input
-                    type="text"
-                    id="Director"
-                    name="Director"
-                    value={Director}
-                    onChange={(e) => setDirector(e.target.value)}
-                    className="company-control"
-                    placeholder="Enter Director Name "
-                  />
-                  <div>
-                    {errors.Director && (
-                      <b className="error-text">{errors.Director}</b>
-                    )}
-                  </div>
-                </div>
-              </div>
-              <div>
-                <label className="company-label">Designation:</label>
-                <div>
-                  <input
-                    type="text"
-                    id="Designation"
-                    name="Designation"
-                    value={Designation}
-                    onChange={(e) => setDesignation(e.target.value)}
-                    className="company-control"
-                    placeholder="Enter Designation"
-                  />
-
-                  <div>
-                    {errors.Designation && (
-                      <b className="error-text">{errors.Designation}</b>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <label className="company-label">Office Address:</label>
-                <div>
-                  <input
-                    type="text"
-                    id="Address1"
-                    name="Address1"
-                    value={Address1}
-                    onChange={(e) => setAddress1(e.target.value)}
-                    maxLength={100}
-                    className="company-control"
-                    placeholder="Enter office address"
-                  />
-                </div>
-
-                <div>
-                  {errors.Address1 && (
-                    <b className="error-text">{errors.Address1}</b>
-                  )}
-                </div>
-              </div>
-
-              <div>
-                <label className="company-label">Country:</label>
-                <div>
-                  <Select
-                    id="CountryId"
-                    name="CountryId"
-                    value={countryOptions.find(
-                      (option) => option.value === CountryId
-                    )}
-                    onChange={(option) => setCountryId(option.value)}
-                    options={countryOptions}
-                    styles={{
-                      control: (base) => ({
-                        ...base,
-                        width: "170px",
-                        marginTop: "10px",
-                        marginBottom: "5px",
-                        border: "1px solid rgb(223, 222, 222)",
-                        borderRadius: "4px",
-                      }),
-                    }}
-                    placeholder="Select Country"
-                  />{" "}
-                  <div>
-                    {errors.CountryId && (
-                      <b className="error-text">{errors.CountryId}</b>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <label className="company-label">State:</label>
-                <div>
-                  <Select
-                    id="StateId"
-                    name="StateId"
-                    value={stateOptions.find(
-                      (option) => option.value === StateId
-                    )}
-                    onChange={(option) => setStateId(option.value)}
-                    options={stateOptions}
-                    styles={{
-                      control: (base) => ({
-                        ...base,
-                        width: "170px",
-                        marginTop: "10px",
-                        marginBottom: "5px",
-                        border: "1px solid rgb(223, 222, 222)",
-                        borderRadius: "4px",
-                      }),
-                    }}
-                    placeholder="Select State"
-                  />{" "}
-                  <div>
-                    {errors.StateId && (
-                      <b className="error-text">{errors.StateId}</b>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <label className="company-label">City:</label>
-                <div>
-                  <Select
-                    id="CityId"
-                    name="CityId"
-                    value={cityOptions.find(
-                      (option) => option.value === CityId
-                    )}
-                    onChange={(option) => setCityId(option.value)}
-                    options={cityOptions}
-                    styles={{
-                      control: (base) => ({
-                        ...base,
-                        width: "170px",
-                        marginTop: "10px",
-                        marginBottom: "5px",
-                        border: "1px solid rgb(223, 222, 222)",
-                        borderRadius: "4px",
-                      }),
-                    }}
-                    placeholder="Select City"
-                  />{" "}
-                  <div>
-                    {errors.CityId && (
-                      <b className="error-text">{errors.CityId}</b>
-                    )}
-                  </div>
-                </div>
-              </div>
-              <div>
-                <label className="company-label">Pincode:</label>
-                <div>
-                  <input
-                    type="text"
-                    id="Pincode"
-                    name="Pincode"
-                    value={Pincode}
-                    onChange={(e) => setPincode(e.target.value)}
-                    maxLength={6}
-                    className="company-control"
-                    placeholder="Enter Pin"
-                  />
-                  <div>
-                    {errors.Pincode && (
-                      <b className="error-text">{errors.Pincode}</b>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <label className="company-label">Mobile No:</label>
-                <div>
-                  <input
-                    type="text"
-                    id="MobileNo"
-                    name="MobileNo"
-                    value={MobileNo}
-                    maxLength={10}
-                    onChange={(e) => setMobileNo(e.target.value)}
-                    className="company-control"
-                    placeholder="Enter tel no"
-                  />
-                  <div>
-                    {errors.MobileNo && (
-                      <b className="error-text">{errors.MobileNo}</b>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <label className="company-label">Fax No:</label>
-                <div>
-                  <input
-                    type="text"
-                    id="FaxNo"
-                    name="FaxNo"
-                    value={FaxNo}
-                    onChange={(e) => setFaxNo(e.target.value)}
-                    maxLength={10}
-                    className="company-control"
-                    placeholder="Enter fax no"
-                  />
-                  <div>
-                    {errors.FaxNo && (
-                      <b className="error-text">{errors.FaxNo}</b>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <label className="company-label">Email Address:</label>
-                <div>
-                  <input
-                    type="text"
-                    id="EmailId"
-                    name="EmailId"
-                    value={EmailId}
-                    onChange={(e) => setEmailId(e.target.value)}
-                    maxLength={100}
-                    className="company-control"
-                    placeholder="Enter email"
-                  />
-                  <div>
-                    {errors.EmailId && (
-                      <b className="error-text">{errors.EmailId}</b>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <label className="company-label">Website:</label>
-                <div>
-                  <input
-                    type="text"
-                    id="Website"
-                    name="Website"
-                    value={Website}
-                    onChange={(e) => setWebsite(e.target.value)}
-                    className="company-control"
-                    placeholder="Enter website"
-                  />
-                  <div>
-                    {errors.Website && (
-                      <b className="error-text">{errors.Website}</b>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </form>
-
-            <div className="book-btn-container">
-              <Button
-                onClick={handleSubmit}
-                type="submit"
-                style={{
-                  background: "#0a60bd",
-                  alignContent: "center",
-                  color: "white",
-                }}>
-                {editingIndex >= 0 ? "Update" : "Save"}
-              </Button>
-              <Button
-                onClick={() => setIsModalOpen(false)}
-                style={{
-                  background: "red",
-                  color: "white",
-                }}>
-                Cancel
-              </Button>
-            </div>
-          </div>
-        </Modal>
-
-        {/* Confirmation Dialog for Delete */}
-        <Dialog open={isDeleteDialogOpen} onClose={cancelDelete}>
-          <DialogTitle style={{ color: "navy", fontWeight: "600" }}>
-            Confirm Deletion
-          </DialogTitle>
-          <DialogContent>
-            Are you sure you want to delete this{" "}
-            <b style={{ color: "red" }}>
-              <u>Company</u>
-            </b>
-            ?
-          </DialogContent>
-          <DialogActions>
-            <Button
-              onClick={cancelDelete}
-              style={{
-                background: "red",
-                color: "white",
-                marginRight: "5px",
-              }}>
-              Cancel
-            </Button>
-            <Button
-              onClick={confirmDelete}
-              style={{
-                background: "#0a60bd",
-                color: "white",
-                marginRight: "5px",
-              }}>
-              Confirm
-            </Button>
-          </DialogActions>
-        </Dialog>
-      </div>
       <ToastContainer />
-    </div>
+    </Box>
   );
 }
+ 
+
 
 export default Company;

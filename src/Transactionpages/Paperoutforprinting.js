@@ -42,7 +42,6 @@ import {
 import CloseIcon from "@mui/icons-material/Close";
 import { useTheme } from "@mui/material/styles";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
-import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { DatePicker } from "@mui/x-date-pickers";
 import { Edit, Delete, Add, MoreVert, Print } from "@mui/icons-material";
 import {
@@ -53,6 +52,8 @@ import {
 } from "@mui/material";
 import dayjs from "dayjs";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { TimePicker } from "@mui/x-date-pickers/TimePicker";
+import { useRef } from "react";
 
 function Paperoutforprinting() {
   const [userId, setUserId] = useState("");
@@ -85,7 +86,8 @@ function Paperoutforprinting() {
   const [GodownId, setGodownId] = useState("");
 
   const [AccountId, setAccountId] = useState("");
-  const [TimeOfRemoval, setTimeOfRemoval] = useState("");
+  const [PartyStock, setPartyStock] = useState("");
+  const [GodownStock, setGodownStock] = useState("");
   const [VehicleNo, setVehicleNo] = useState("");
   const [NameOfDriver, setNameOfDriver] = useState("");
 
@@ -107,12 +109,20 @@ function Paperoutforprinting() {
   const [rows, setRows] = useState([
     {
       PaperId: "",
+      PaperCode: "",
+      PaperSizeName: "",
       MillName: "",
       Bundles: "",
       Quantity: "",
       Unit: "",
       Papers: "",
       CurrentStock: "",
+      OpeningStock: "", // ✅ needed
+      SubName:"",
+      BookCode: "",
+      BookPages: "",
+      PressPaperBalance: "",
+      BookQuantity: ""
     },
     // Add more rows as needed
   ]);
@@ -158,7 +168,7 @@ function Paperoutforprinting() {
   const fetchPaperheaders = async () => {
     try {
       const response = await axios.get(
-        `https://publication.microtechsolutions.net.in/php/get/gettblpage.php?Table=PaperOutwardForPrintingHeader&PageNo=${pageIndex}`
+        `https://publication.microtechsolutions.net.in/php/get/gettblpage.php?Table=PaperOutwardForPrintingHeader&PageNo=${pageIndex}`,
       );
       console.log(response.data, "response of Paper outward header");
 
@@ -173,7 +183,7 @@ function Paperoutforprinting() {
   const fetchPaperdetails = async () => {
     try {
       const response = await axios.get(
-        "https://publication.microtechsolutions.net.in/php/get/gettable.php?Table=PaperOutwardForPrintingDetail"
+        "https://publication.microtechsolutions.net.in/php/get/gettable.php?Table=PaperOutwardForPrintingDetail",
       );
       setPaperoutdetails(response.data);
     } catch (error) {
@@ -263,11 +273,14 @@ function Paperoutforprinting() {
   const fetchPapers = async () => {
     try {
       const response = await axios.get(
-        "https://publication.microtechsolutions.net.in/php/PaperSizeget.php"
+        "https://publication.microtechsolutions.net.in/php/PaperSizeget.php",
       );
       const paperOptions = response.data.map((paper) => ({
         value: paper.Id,
         label: paper.PaperSizeName,
+        code: paper.STRSize_Code,
+        unit: paper.Unit,
+        openingstock: paper.OpeningStock,
       }));
       setPaperOptions(paperOptions);
     } catch (error) {
@@ -278,7 +291,7 @@ function Paperoutforprinting() {
   const fetchAccounts = async () => {
     try {
       const response = await axios.get(
-        "https://publication.microtechsolutions.net.in/php/Accountget.php"
+        "https://publication.microtechsolutions.net.in/php/Accountget.php",
       );
       const accountOptions = response.data.map((acc) => ({
         value: acc.Id,
@@ -293,7 +306,7 @@ function Paperoutforprinting() {
   const fetchGodowns = async () => {
     try {
       const response = await axios.get(
-        "https://publication.microtechsolutions.net.in/php/Godownget.php"
+        "https://publication.microtechsolutions.net.in/php/Godownget.php",
       );
       const godownOptions = response.data.map((god) => ({
         value: god.Id,
@@ -312,8 +325,7 @@ function Paperoutforprinting() {
     setChallanNo("");
     setGodownId("");
     setAccountId("");
-    // setTimeOfRemoval("");
-    setTimeofremoval(dayjs());
+    setTimeOfRemoval(null);
     setTimeerror("");
     setVehicleNo("");
     setNameOfDriver("");
@@ -326,6 +338,7 @@ function Paperoutforprinting() {
         Unit: "",
         Papers: "",
         CurrentStock: "",
+        PartyStock: "",
       },
     ]);
   };
@@ -350,7 +363,7 @@ function Paperoutforprinting() {
 
     // Filter purchase details to match the selected PurchaseId
     const paperdetail = paperoutdetails.filter(
-      (detail) => detail.PaperOutwardId === paperheader.Id
+      (detail) => detail.PaperOutwardId === paperheader.Id,
     );
 
     // Convert date strings to DD-MM-YYYY format
@@ -365,7 +378,7 @@ function Paperoutforprinting() {
     };
 
     // Map the details to rows
-    const mappedRows = paperdetail.map((detail) => ({
+    let mappedRows = paperdetail.map((detail) => ({
       PaperOutwardId: detail.PaperOutwardId,
       PaperId: detail.PaperId,
       MillName: detail.MillName,
@@ -374,26 +387,52 @@ function Paperoutforprinting() {
       Unit: detail.Unit,
       Papers: detail.Papers,
       CurrentStock: detail.CurrentStock,
+      PartyStock: detail.PartyStock,
       Id: detail.Id, // Include the detail Id in the mapped row for tracking
     }));
 
-    const challandate = dayjs(paperheader.ChallanDate?.date);
+    mappedRows = mappedRows.map((row) => {
+      const paper = paperOptions.find((b) => b.value === row.PaperId);
 
-    const timeofremoval = dayjs(paperheader.TimeOfRemoval?.date);
+      return {
+        ...row,
+        STRSize_Code: paper?.code || "",
+        PaperSizeName: paper?.label || "",
+        Unit: row.Unit || "",
+        OpeningStock: paper?.openingstock || "",
+      };
+    });
+
+    const challandate = dayjs(paperheader.ChallanDate?.date);
+    const extractTime = (dateObj) => {
+      if (!dateObj?.date) return null;
+
+      // "1900-01-01 12:00:00.000000"
+      const timePart = dateObj.date.split(" ")[1]; // "12:00:00.000000"
+      const cleanTime = timePart.split(".")[0]; // "12:00:00"
+
+      return dayjs(cleanTime, "HH:mm:ss");
+    };
+
+    const timeofremoval = paperheader.TimeOfRemoval
+      ? extractTime(paperheader.TimeOfRemoval)
+      : null;
+
+    setTimeOfRemoval(timeofremoval);
 
     setChallanNo(paperheader.ChallanNo);
-    // setChallanDate(challandate);
     setChallandate(challandate);
     setGodownId(paperheader.GodownId);
     setAccountId(paperheader.AccountId);
-    // setTimeOfRemoval(timeofremoval);
-    setTimeofremoval(timeofremoval);
     setVehicleNo(paperheader.VehicleNo);
     setNameOfDriver(paperheader.NameOfDriver);
-
-    // console.log(paperheader, 'Paper Header')
-    // console.log(paperdetail, 'paper detail')
-
+    setPartyStock(paperheader.PartyStock);
+    setGodownStock(paperheader.GodownStock);
+    setTimeOfRemoval(
+      paperheader.TimeOfRemoval?.date
+        ? dayjs(paperheader.TimeOfRemoval.date, "HH:mm:ss")
+        : null,
+    );
     setRows(mappedRows);
 
     setIsEditing(true);
@@ -403,7 +442,7 @@ function Paperoutforprinting() {
     handleMenuClose();
     // Determine which specific detail to edit
     const specificDetail = paperdetail.find(
-      (detail) => detail.Id === currentRow.original.Id
+      (detail) => detail.Id === currentRow.original.Id,
     );
     if (specificDetail) {
       setPaperoutdetailId(specificDetail.Id); // Set the specific detail Id
@@ -412,52 +451,66 @@ function Paperoutforprinting() {
     fetchPaperdetails();
   };
 
-  const validateForm = () => {
-    let formErrors = {};
-    let isValid = true;
+  const handlePaperNameChange = (index, selectedId) => {
+    const selectedPaper = paperOptions.find(
+      (p) => p.value === Number(selectedId),
+    );
 
-    // if (!ChallanNo) {
-    //   isValid = false;
-    //   formErrors.ChallanNo = "Challan No is required";
-    // }
+    if (!selectedPaper) return;
 
-    if (!challandate) {
-      isValid = false;
-      formErrors.challandate = "Challan Date is required";
-    }
+    const updatedRows = [...rows];
+    updatedRows[index] = {
+      ...updatedRows[index],
+      PaperId: selectedPaper.value,
+      STRSize_Code: selectedPaper.code,
+      Unit: selectedPaper.unit,
+      OpeningStock: selectedPaper.openingstock, // 🔥 HERE
+    };
 
-    if (!GodownId) {
-      isValid = false;
-      formErrors.GodownId = "Godown Id is required";
-    }
-
-    if (!AccountId) {
-      isValid = false;
-      formErrors.AccountId = "Account Id is required";
-    }
-
-    if (!timeofremoval) {
-      isValid = false;
-      formErrors.timeofremoval = "Time Of removal is required";
-    }
-
-    if (!VehicleNo) {
-      isValid = false;
-      formErrors.VehicleNo = "Vehicle No is required";
-    }
-
-    if (!NameOfDriver) {
-      isValid = false;
-      formErrors.NameOfDriver = "Name Of Driver is required";
-    }
-
-    setErrors(formErrors);
-    return isValid;
+    setRows(updatedRows);
   };
+
+  // const validateForm = () => {
+  //   let formErrors = {};
+  //   let isValid = true;
+
+  //   if (!challandate) {
+  //     isValid = false;
+  //     formErrors.challandate = "Challan Date is required";
+  //   }
+
+  //   if (!GodownId) {
+  //     isValid = false;
+  //     formErrors.GodownId = "Godown Id is required";
+  //   }
+
+  //   if (!AccountId) {
+  //     isValid = false;
+  //     formErrors.AccountId = "Account Id is required";
+  //   }
+
+  //   if (!timeofremoval) {
+  //     isValid = false;
+  //     formErrors.timeofremoval = "Time Of removal is required";
+  //   }
+
+  //   if (!VehicleNo) {
+  //     isValid = false;
+  //     formErrors.VehicleNo = "Vehicle No is required";
+  //   }
+
+  //   if (!NameOfDriver) {
+  //     isValid = false;
+  //     formErrors.NameOfDriver = "Name Of Driver is required";
+  //   }
+
+  //   setErrors(formErrors);
+  //   return isValid;
+  // };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!validateForm()) return;
+    // if (!validateForm()) return;
 
     if (
       !challandate ||
@@ -472,7 +525,9 @@ function Paperoutforprinting() {
     }
 
     const formattedChallandate = dayjs(challandate).format("YYYY-MM-DD");
-    const formattedTimeofremoval = dayjs(timeofremoval).format("YYYY-MM-DD");
+    const formattedTime = timeofremoval
+      ? dayjs(timeofremoval).format("HH:mm:ss")
+      : null;
 
     const paperData = {
       Id: isEditing ? id : "", // Include the Id for updating, null for new records
@@ -480,9 +535,11 @@ function Paperoutforprinting() {
       ChallanDate: formattedChallandate,
       GodownId: GodownId,
       AccountId: AccountId,
-      TimeOfRemoval: formattedTimeofremoval,
+      TimeOfRemoval: formattedTime,
       VehicleNo: VehicleNo,
       NameOfDriver: NameOfDriver,
+      PartyStock: PartyStock,
+      GodownStock: GodownStock,
       CreatedBy: !isEditing ? userId : undefined,
       UpdatedBy: isEditing ? userId : undefined,
     };
@@ -497,8 +554,8 @@ function Paperoutforprinting() {
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
       });
 
-      const paperOutwardId = isEditing ? id : parseInt(response.data.Id, 10);
-
+      const paperOutwardId = isEditing ? id : parseInt(response.data?.data?.Id, 10);
+console.log(paperOutwardId, 'PaperoutId')
       for (const row of rows) {
         const rowData = {
           PaperOutwardId: paperOutwardId,
@@ -506,9 +563,14 @@ function Paperoutforprinting() {
           MillName: row.MillName,
           Bundles: parseInt(row.Bundles, 10),
           Quantity: parseFloat(row.Quantity),
-          Unit: row.Unit,
+          Unit: row.Unit, // ✅ FIX HERE
           Papers: parseInt(row.Papers, 10),
           CurrentStock: parseInt(row.CurrentStock, 10),
+          partyStock: parseInt(row.PartyStock, 10),
+          SubName: row.SubName,
+          BookCode: row.BookCode,
+          BookPages:row.BookPages,
+          PressPaperBalance: row.PressPaperBalance,
           CreatedBy: row.Id ? undefined : userId,
           UpdatedBy: row.Id ? userId : undefined,
           Id: row.Id,
@@ -534,7 +596,7 @@ function Paperoutforprinting() {
       toast.success(
         isEditing
           ? "Paper & Paper Details updated successfully!"
-          : "Paper & Paper Details added successfully!"
+          : "Paper & Paper Details added successfully!",
       );
       resetForm(); // Reset the form fields after successful submission
     } catch (error) {
@@ -546,8 +608,19 @@ function Paperoutforprinting() {
   const [challandate, setChallandate] = useState(dayjs());
   const [challanerror, setChallanerror] = useState("");
 
-  const [timeofremoval, setTimeofremoval] = useState(dayjs());
+  const [timeofremoval, setTimeOfRemoval] = useState(null);
   const [timeerror, setTimeerror] = useState("");
+
+  const handleTimeChange = (newValue) => {
+    if (!dayjs.isDayjs(newValue) || !newValue.isValid()) {
+      setTimeerror("Please select valid time");
+      setTimeOfRemoval(null);
+      return;
+    }
+
+    setTimeerror("");
+    setTimeOfRemoval(newValue);
+  };
 
   const handleDateChange1 = (newValue) => {
     if (!newValue || !dayjs(newValue).isValid()) {
@@ -556,37 +629,19 @@ function Paperoutforprinting() {
       return;
     }
 
-    const today = dayjs();
-    const minDate = today.subtract(3, "day");
-    const maxDate = today.add(2, "day");
+    // const today = dayjs();
+    // const minDate = today.subtract(3, "day");
+    // const maxDate = today.add(2, "day");
 
-    if (newValue.isBefore(minDate) || newValue.isAfter(maxDate)) {
-      setChallanerror("You can select only 2 days before or after today");
-    } else {
-      setChallanerror("");
-    }
+    // if (newValue.isBefore(minDate) || newValue.isAfter(maxDate)) {
+    //   setChallanerror("You can select only 2 days before or after today");
+    // } else {
+    //   setChallanerror("");
+    // }
 
-    setChallandate(newValue);
-  };
+    setChallanerror("");
 
-  const handleDateChange2 = (newValue) => {
-    if (!newValue || !dayjs(newValue).isValid()) {
-      setTimeerror("Invalid date");
-      setTimeofremoval(null);
-      return;
-    }
-
-    const today = dayjs();
-    const minDate = today.subtract(3, "day");
-    const maxDate = today.add(2, "day");
-
-    if (newValue.isBefore(minDate) || newValue.isAfter(maxDate)) {
-      setTimeerror("You can select only 2 days before or after today");
-    } else {
-      setTimeerror("");
-    }
-
-    setTimeofremoval(newValue);
+    setChallandate(dayjs(newValue));
   };
 
   const handleInputChange = (index, field, value) => {
@@ -641,7 +696,7 @@ function Paperoutforprinting() {
         ),
       },
     ],
-    [paperoutheaders]
+    [paperoutheaders],
   );
 
   const table = useMaterialReactTable({
@@ -744,35 +799,10 @@ function Paperoutforprinting() {
                 : "Add Paper Outward for Printing"}
             </h2>
             <form className="paperout-form">
-              <div>
-                <label className="paperout-label">
-                  Challan No <b className="required">*</b>
-                </label>
-                <div>
-                  <input
-                    type="text"
-                    id="ChallanNo"
-                    name="ChallanNo"
-                    value={ChallanNo}
-                    onChange={(e) => setChallanNo(e.target.value)}
-                    className="paperout-control"
-                    style={{ background: "#f5f5f5" }}
-                    placeholder="Auto-Incremented"
-                    readOnly
-                  />
-                </div>
 
-                <div>
-                  {errors.ChallanNo && (
-                    <b className="error-text">{errors.ChallanNo}</b>
-                  )}
-                </div>
-              </div>
 
-              <div>
-                <label className="paperout-label">
-                  Challan Date <b className="required">*</b>
-                </label>
+               <div>
+                <label className="paperout-label">Challan Date</label>
                 <div>
                   <LocalizationProvider dateAdapter={AdapterDayjs}>
                     <DatePicker
@@ -795,25 +825,37 @@ function Paperoutforprinting() {
                     />
                   </LocalizationProvider>
                 </div>
+              </div>
 
+
+
+
+              <div style={{marginLeft:'250px'}}>
+                <label className="paperout-label">Challan No</label>
                 <div>
-                  {errors.challandate && (
-                    <b className="error-text">{errors.challandate}</b>
-                  )}
+                  <input
+                    type="text"
+                    id="ChallanNo"
+                    name="ChallanNo"
+                    value={ChallanNo}
+                    onChange={(e) => setChallanNo(e.target.value)}
+                    className="paperout-control"
+                    style={{ background: "#f5f5f5" , }}
+                    placeholder="Auto-Incremented"
+                    readOnly
+                  />
                 </div>
               </div>
 
+             
               <div>
-                <label className="paperout-label">
-                  {" "}
-                  Godown <b className="required">*</b>
-                </label>
+                <label className="paperout-label"> Godown</label>
                 <div>
                   <Autocomplete
                     options={godownOptions}
                     value={
                       godownOptions.find(
-                        (option) => option.value === GodownId
+                        (option) => option.value === GodownId,
                       ) || null
                     }
                     onChange={(event, newValue) =>
@@ -832,25 +874,18 @@ function Paperoutforprinting() {
                     sx={{ mt: 1.25, mb: 0.625, width: 300 }} // Equivalent to 10px and 5px
                   />
                 </div>
-
-                <div>
-                  {errors.GodownId && (
-                    <b className="error-text">{errors.GodownId}</b>
-                  )}
-                </div>
               </div>
+            </form>
 
+            <form className="paperout-form">
               <div>
-                <label className="paperout-label">
-                  {" "}
-                  Account <b className="required">*</b>
-                </label>
+                <label className="paperout-label"> Party Name</label>
                 <div>
                   <Autocomplete
                     options={accountOptions}
                     value={
                       accountOptions.find(
-                        (option) => option.value === AccountId
+                        (option) => option.value === AccountId,
                       ) || null
                     }
                     onChange={(event, newValue) =>
@@ -866,97 +901,8 @@ function Paperoutforprinting() {
                         fullWidth
                       />
                     )}
-                    sx={{ mt: 1.25, mb: 0.625, width: 300 }} // Equivalent to 10px and 5px
+                    sx={{ mt: 1.25, mb: 0.625, width: 400 }} // Equivalent to 10px and 5px
                   />
-                </div>
-
-                <div>
-                  {errors.AccountId && (
-                    <b className="error-text">{errors.AccountId}</b>
-                  )}
-                </div>
-              </div>
-
-              <div>
-                <label className="paperout-label">
-                  Time Of Removal <b className="required">*</b>
-                </label>
-                <div>
-                  <LocalizationProvider dateAdapter={AdapterDayjs}>
-                    <DatePicker
-                      value={timeofremoval}
-                      onChange={handleDateChange2}
-                      format="DD-MM-YYYY"
-                      slotProps={{
-                        textField: {
-                          size: "small",
-                          fullWidth: true,
-                          error: !!timeerror,
-                          helperText: timeerror,
-                        },
-                      }}
-                      sx={{
-                        marginTop: "10px",
-                        marginBottom: "5px",
-                        width: "165px",
-                      }}
-                    />
-                  </LocalizationProvider>
-                </div>
-
-                <div>
-                  {errors.timeerror && (
-                    <b className="error-text">{errors.timeerror}</b>
-                  )}
-                </div>
-              </div>
-
-              <div>
-                <label className="paperout-label">
-                  Vehicle No <b className="required">*</b>
-                </label>
-                <div>
-                  <input
-                    type="text"
-                    id="VehicleNo"
-                    name="VehicleNo"
-                    value={VehicleNo}
-                    onChange={(e) => setVehicleNo(e.target.value)}
-                    maxLength={20}
-                    className="paperout-control"
-                    placeholder="Enter Vehicle No"
-                  />
-                </div>
-
-                <div>
-                  {errors.VehicleNo && (
-                    <b className="error-text">{errors.VehicleNo}</b>
-                  )}
-                </div>
-              </div>
-
-              <div>
-                <label className="paperout-label">
-                  Name Of Driver <b className="required">*</b>
-                </label>
-                <div>
-                  <input
-                    type="text"
-                    id="NameOfDriver"
-                    name="NameOfDriver"
-                    value={NameOfDriver}
-                    onChange={(e) => setNameOfDriver(e.target.value)}
-                    maxLength={50}
-                    style={{ width: "300px" }}
-                    className="paperout-control"
-                    placeholder="Enter Name of Driver"
-                  />
-                </div>
-
-                <div>
-                  {errors.NameOfDriver && (
-                    <b className="error-text">{errors.NameOfDriver}</b>
-                  )}
                 </div>
               </div>
             </form>
@@ -965,28 +911,23 @@ function Paperoutforprinting() {
               <table>
                 <thead>
                   <tr>
-                    <th>Serial No</th>
-                    <th>
-                      Paper Id <b className="required">*</b>
-                    </th>
-                    <th>
-                      Mill Name <b className="required">*</b>
-                    </th>
-                    <th>
-                      Bundles <b className="required">*</b>
-                    </th>
-                    <th>
-                      Quantity <b className="required">*</b>
-                    </th>
-                    <th>
-                      Unit <b className="required">*</b>
-                    </th>
-                    <th>
-                      Papers <b className="required">*</b>
-                    </th>
-                    <th>
-                      CurrentStock <b className="required">*</b>
-                    </th>
+                    <th>Sr No</th>
+                    <th> Code</th>
+<th style={{ width: "500px" }}>Name of the Paper</th>   
+                 {/* <th>Mill Name</th> */}
+                    <th>Bundles</th>
+                    <th>Quantity</th>
+                    <th>Unit</th>
+                    <th>Papers</th>
+                    <th>CurrentStock</th>
+                    <th>Party Stock</th>
+                    <th  style={{ width: "400px" }}>Sub Name </th>
+                   <th>Book Code</th>
+                    <th>Book Pages</th>
+                    <th >Press Paper Balance</th>
+                    <th>Book Quantity</th>
+
+
                     <th>Actions</th>
                   </tr>
                 </thead>
@@ -1022,140 +963,194 @@ function Paperoutforprinting() {
                       <tr key={index}>
                         <td>{index + 1}</td>
                         <td>
-                          <Autocomplete
+                          <input
+                            type="text"
+                            value={row.STRSize_Code || ""}
+                            readOnly
+                            placeholder="Paper Code"
+                            style={{ width: "100px" }}
+                            className="paperout-control"
+                          />
+                        </td>
+
+<td  >             
+               <Autocomplete
                             options={paperOptions}
+                            getOptionLabel={(option) => option.label || ""}
                             value={
                               paperOptions.find(
-                                (option) => option.value === row.PaperId
+                                (p) => p.value === row.PaperId,
                               ) || null
                             }
-                            onChange={(event, newValue) =>
-                              handleInputChange(
+                            onChange={(event, newValue) => {
+                              handlePaperNameChange(
                                 index,
-                                "PaperId",
-                                newValue ? newValue.value : ""
-                              )
-                            }
-                            sx={{ width: 400 }} // Set width
-                            getOptionLabel={(option) => option.label}
+                                newValue ? newValue.value : "",
+                              );
+                            }}
                             renderInput={(params) => (
                               <TextField
                                 {...params}
-                                placeholder="Select PaperId"
-                                size="big"
-                                fullWidth
-                                sx={{
-                                  "& .MuiInputBase-root": {
-                                    height: "50px",
-                                    // width: "200px", // Adjust height here
-                                  },
-                                  "& .MuiInputBase-input": {
-                                    padding: "14px", // Adjust padding for better alignment
-                                  },
-                                }}
+                                placeholder="Select Paper Name"
+                                size="small"
                               />
                             )}
+                              sx={{ width: "100%" }}
+                            isOptionEqualToValue={(option, value) =>
+                              option.value === value.value
+                            }
                           />
                         </td>
-                        <td>
+
+                        {/* <td>
                           <input
                             type="text"
-                            value={row.MillName}
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              if (value.length <= 50) {
-                                handleInputChange(index, "MillName", value);
-                              }
-                            }}
-                            style={{
-                              width: "170px",
-                            }}
-                            placeholder="Enter MillName"
+                            value={row.MillName || ""}
+                            onChange={(e) =>
+                              handleInputChange(
+                                index,
+                                "MillName",
+                                e.target.value,
+                              )
+                            }
+                            style={{ width: "100px" }}
+                            className="paperout-control"
                           />
-                        </td>
+                        </td> */}
+
                         <td>
                           <input
                             type="number"
-                            value={row.Bundles}
+                            value={row.Bundles || ""}
                             onChange={(e) =>
                               handleInputChange(
                                 index,
                                 "Bundles",
-                                e.target.value
+                                e.target.value,
                               )
                             }
-                            style={{
-                              width: "100px",
-                            }}
+                            style={{ width: "70px" }}
                             placeholder="Enter Bundles"
+                            className="paperout-control"
                           />
                         </td>
+
                         <td>
                           <input
                             type="number"
-                            value={row.Quantity}
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              // Regex to validate decimal numbers with at most 18 digits total and 2 decimal places
-                              const regex = /^\d{0,18}(\.\d{0,2})?$/;
-
-                              // Check if the value matches the regex
-                              if (value === "" || regex.test(value)) {
-                                handleInputChange(index, "Quantity", value);
-                              }
-                            }}
-                            style={{
-                              width: "100px",
-                            }}
-                            placeholder="Enter Quantity"
+                            value={row.Quantity || ""}
+                            onChange={(e) =>
+                              handleInputChange(
+                                index,
+                                "Quantity",
+                                e.target.value,
+                              )
+                            }
+                            style={{ width: "100px" }}
+                            placeholder="Enter Qunatity"
+                            className="paperout-control"
                           />
                         </td>
+
                         <td>
                           <input
                             type="text"
-                            value={row.Unit}
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              if (value.length <= 15) {
-                                handleInputChange(index, "Unit", value);
-                              }
-                            }}
-                            style={{
-                              width: "100px",
-                            }}
-                            placeholder="Enter Unit "
+                            value={row.Unit || ""}
+                            readOnly
+                            style={{ width: "70px" }}
+                            className="paperout-control"
                           />
                         </td>
+
                         <td>
                           <input
-                            type="number"
-                            value={row.Papers}
+                            type="text"
+                            value={row.Papers || ""}
                             onChange={(e) =>
                               handleInputChange(index, "Papers", e.target.value)
                             }
-                            style={{
-                              width: "100px",
-                            }}
+                            style={{ width: "70px" }}
                             placeholder="Enter Papers"
+                            className="paperout-control"
                           />
                         </td>
+
                         <td>
                           <input
                             type="number"
                             value={row.CurrentStock}
-                            onChange={(e) =>
-                              handleInputChange(
-                                index,
-                                "CurrentStock",
-                                e.target.value
-                              )
-                            }
-                            style={{
-                              width: "100px",
-                            }}
+                            className="paperout-control"
                             placeholder="Enter CurrentStock"
                           />
                         </td>
+                        <td>
+                          <input
+                            type="number"
+                            value={row.OpeningStock || ""}
+                            readOnly
+                            style={{ width: "100px" }}
+                            className="paperout-control"
+                            placeholder="Party stock"
+                          />
+                        </td>
+
+                            <td>
+                          <input
+                            type="text"
+                            value={row.SubName || ""}
+                              onChange={(e) =>
+                              handleInputChange(index, "SubName", e.target.value)
+                            }
+                              style={{ width: "100%" }}
+                            className="paperout-control"
+                            placeholder="Sub Name"
+                          />
+                        </td>    <td>
+                          <input
+                            type="number"
+                            value={row.BookCode || ""}
+                              onChange={(e) =>
+                              handleInputChange(index, "BookCode", e.target.value)
+                            }
+                            style={{ width: "100px" }}
+                            className="paperout-control"
+                            placeholder="Book Code"
+                          />
+                        </td>    <td>
+                          <input
+                            type="number"
+                            value={row.BookPages || ""}
+                              onChange={(e) =>
+                              handleInputChange(index, "BookPages", e.target.value)
+                            }
+                            style={{ width: "100px" }}
+                            className="paperout-control"
+                            placeholder="Book Pages"
+                          />
+                        </td>    <td>
+                          <input
+                            type="number"
+                            value={row.PressPaperBalance || ""}
+                              onChange={(e) =>
+                              handleInputChange(index, "PressPaperBalance", e.target.value)
+                            }
+                            style={{ width: "150px" }}
+                            className="paperout-control"
+                            placeholder="Press Paper Balance"
+                          />
+                        </td>    <td>
+                          <input
+                            type="number"
+                            value={row.BookQuantity || ""}
+                              onChange={(e) =>
+                              handleInputChange(index, "BookQuantity", e.target.value)
+                            }
+                            style={{ width: "100px" }}
+                            className="paperout-control"
+                            placeholder="Book Quantity"
+                          />
+                        </td>
+
                         <td>
                           <div
                             style={{
@@ -1184,6 +1179,67 @@ function Paperoutforprinting() {
                 </tbody>
               </table>
             </div>
+
+            <form className="paperout-form">
+              <div>
+                <label className="paperout-label">Vehicle No</label>
+                <div>
+                  <input
+                    type="text"
+                    id="VehicleNo"
+                    name="VehicleNo"
+                    value={VehicleNo}
+                    onChange={(e) => setVehicleNo(e.target.value)}
+                    maxLength={20}
+                    className="paperout-control"
+                    placeholder="Enter Vehicle No"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="paperout-label">Name Of Driver</label>
+                <div>
+                  <input
+                    type="text"
+                    id="NameOfDriver"
+                    name="NameOfDriver"
+                    value={NameOfDriver}
+                    onChange={(e) => setNameOfDriver(e.target.value)}
+                    maxLength={50}
+                    style={{ width: "300px" }}
+                    className="paperout-control"
+                    placeholder="Enter Name of Driver"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="paperout-label">Time Of Removal</label>
+                <div>
+                  <LocalizationProvider dateAdapter={AdapterDayjs}>
+                    <TimePicker
+                      value={timeofremoval}
+                      onChange={handleTimeChange}
+                      ampm={true} // set false if you want 24-hour format
+                      slotProps={{
+                        textField: {
+                          size: "small",
+                          fullWidth: true,
+                          error: !!timeerror,
+                          helperText: timeerror,
+                        },
+                      }}
+                      sx={{
+                        marginTop: "10px",
+                        marginBottom: "5px",
+                        width: "165px",
+                      }}
+                    />
+                  </LocalizationProvider>
+                </div>
+              </div>
+            </form>
 
             <div className="paperout-btn-container">
               <Button

@@ -9,9 +9,14 @@ function RoyaltyStatementsummary() {
   const [yearid, setYearId] = useState("");
   const [companyName, setCompanyName] = useState("");
 
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+
   useEffect(() => {
     const storedUserId = sessionStorage.getItem("UserId");
     const storedYearId = sessionStorage.getItem("YearId");
+    const storedFromDate = sessionStorage.getItem("FromDate");
+    const storedToDate = sessionStorage.getItem("ToDate");
 
     if (storedUserId) {
       setUserId(storedUserId);
@@ -24,7 +29,17 @@ function RoyaltyStatementsummary() {
     } else {
       toast.error("Year is not set.");
     }
+
+    if (storedFromDate) setFromDate(storedFromDate);
+    if (storedToDate) setToDate(storedToDate);
   }, []);
+
+  function formatDate(dateStr) {
+    if (!dateStr) return "";
+    const date = new Date(dateStr);
+    const options = { day: "2-digit", month: "short", year: "numeric" };
+    return date.toLocaleDateString("en-GB", options).replace(",", "");
+  }
 
   const fetchCompanies = async () => {
     try {
@@ -102,7 +117,12 @@ function RoyaltyStatementsummary() {
       // Date Range
       y += 6;
       doc.setFontSize(11);
-      doc.text(getYearRange(yearid), pageWidth / 2, y, { align: "center" });
+      doc.text(
+        `From ${formatDate(fromDate)} To ${formatDate(toDate)}`,
+        pageWidth / 2,
+        y,
+        { align: "center" }
+      );
 
       y += 10;
 

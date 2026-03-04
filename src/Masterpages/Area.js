@@ -47,8 +47,9 @@ function Area() {
   const [areas, setAreas] = useState([]);
   const [cityOptions, setCityOptions] = useState([]);
   const [CityId, setCityId] = useState("");
+  const [StateId, setStateId] = useState("");
+  const [CanvassorId, setCanvassorId] = useState("");
 
-  const [convassor, setConvassor] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingIndex, setEditingIndex] = useState(-1);
   const [id, setId] = useState("");
@@ -85,7 +86,12 @@ function Area() {
         "https://publication.microtechsolutions.net.in/php/Areaget.php"
       );
 
-      setAreas(response.data);
+      // sort by Id (assuming higher Id = newer)
+      const sortedData = [...response.data].sort(
+        (a, b) => a.Id - b.Id // ASC
+        // (b.Id - a.Id)        // DESC (latest first)
+      );
+      setAreas(sortedData);
     } catch (error) {
       // toast.error("Error fetching Areas:", error);
     }
@@ -182,6 +188,9 @@ function Area() {
 
     const data = {
       AreaName: AreaName,
+      StateId: StateId,
+      CityId: CityId,
+      CanvassorId: CanvassorId,
       CreatedBy: userId,
     };
 

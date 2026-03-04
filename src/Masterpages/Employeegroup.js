@@ -306,9 +306,7 @@ function Employeegroup() {
             </h1>
             <form className="employeegroup-form">
               <div>
-                <label className="employeegroup-label">
-                  Category Name<b className="required">*</b>
-                </label>
+                <label className="employeegroup-label">Category Name</label>
                 <div>
                   <Tooltip
                     title={
@@ -338,9 +336,7 @@ function Employeegroup() {
               </div>
 
               <div>
-                <label className="employeegroup-label">
-                  Category Code<b className="required">*</b>
-                </label>
+                <label className="employeegroup-label">Category Code</label>
                 <div>
                   <input
                     type="text"

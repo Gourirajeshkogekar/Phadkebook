@@ -53,6 +53,7 @@ import {
 } from "@mui/material";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
+import { useRef } from "react";
 
 function PaperReceivedfrombinder() {
   const [userId, setUserId] = useState("");
@@ -102,10 +103,11 @@ function PaperReceivedfrombinder() {
 
   const [rows, setRows] = useState([
     {
-      PaperCode: "",
-      PaperId: 0,
+      PaperId: "",
+      STRSize_Code: "",
       Quantity: "",
       Unit: "",
+      Papers: "",
     },
   ]);
 
@@ -162,7 +164,7 @@ function PaperReceivedfrombinder() {
   const fetchPaperreceived = async () => {
     try {
       const response = await axios.get(
-        `https://publication.microtechsolutions.net.in/php/get/gettblpage.php?Table=Paper_recevied_binder&PageNo=${pageIndex}`
+        `https://publication.microtechsolutions.net.in/php/get/gettblpage.php?Table=Paper_recevied_binder&PageNo=${pageIndex}`,
       );
       console.log(response.data, "response of convassor daily report");
 
@@ -176,7 +178,7 @@ function PaperReceivedfrombinder() {
   const fetchPaperdetails = async () => {
     try {
       const response = await axios.get(
-        "https://publication.microtechsolutions.net.in/php/get/gettable.php?Table=Paper_recevied_binder_detail"
+        "https://publication.microtechsolutions.net.in/php/get/gettable.php?Table=Paper_recevied_binder_detail",
       );
       console.log(response.data, "response of paper details");
       setPaperdetails(response.data);
@@ -188,13 +190,13 @@ function PaperReceivedfrombinder() {
   const fetchPapersize = async () => {
     try {
       const response = await axios.get(
-        "https://publication.microtechsolutions.net.in/php/Papersizeget.php"
+        "https://publication.microtechsolutions.net.in/php/Papersizeget.php",
       );
       const paperOptions = response.data.map((pp) => ({
         value: pp.Id,
         label: pp.PaperSizeName,
-        code: pp.SizeCode,
-        unit: pp.Unit,
+        code: pp.STRSize_Code,
+        unit: pp.Unit || "",
       }));
       setPaperoptions(paperOptions);
     } catch (error) {
@@ -205,7 +207,7 @@ function PaperReceivedfrombinder() {
   const fetchAccounts = async () => {
     try {
       const response = await axios.get(
-        "https://publication.microtechsolutions.net.in/php/Accountget.php"
+        "https://publication.microtechsolutions.net.in/php/Accountget.php",
       );
       const accountOptions = response.data.map((acc) => ({
         value: acc.Id,
@@ -220,7 +222,7 @@ function PaperReceivedfrombinder() {
   const fetchGodowns = async () => {
     try {
       const response = await axios.get(
-        "https://publication.microtechsolutions.net.in/php/Godownget.php"
+        "https://publication.microtechsolutions.net.in/php/Godownget.php",
       );
       const godownOptions = response.data.map((godown) => ({
         value: godown.Id,
@@ -245,17 +247,19 @@ function PaperReceivedfrombinder() {
       return;
     }
 
-    const today = dayjs();
-    const minDate = today.subtract(3, "day");
-    const maxDate = today.add(2, "day");
+    // const today = dayjs();
+    // const minDate = today.subtract(3, "day");
+    // const maxDate = today.add(2, "day");
 
-    if (newValue.isBefore(minDate) || newValue.isAfter(maxDate)) {
-      setdateerror("You can select only 2 days before or after today");
-    } else {
-      setdateerror("");
-    }
+    // if (newValue.isBefore(minDate) || newValue.isAfter(maxDate)) {
+    //   setdateerror("You can select only 2 days before or after today");
+    // } else {
+    //   setdateerror("");
+    // }
 
-    setinwarddate(newValue);
+    setdateerror("");
+
+    setinwarddate(dayjs(newValue));
   };
 
   const handleDateChange2 = (newValue) => {
@@ -265,17 +269,17 @@ function PaperReceivedfrombinder() {
       return;
     }
 
-    const today = dayjs();
-    const minDate = today.subtract(3, "day");
-    const maxDate = today.add(2, "day");
+    // const today = dayjs();
+    // const minDate = today.subtract(3, "day");
+    // const maxDate = today.add(2, "day");
 
-    if (newValue.isBefore(minDate) || newValue.isAfter(maxDate)) {
-      setdcdateerror("You can select only 2 days before or after today");
-    } else {
-      setdcdateerror("");
-    }
-
-    setdcdate(newValue);
+    // if (newValue.isBefore(minDate) || newValue.isAfter(maxDate)) {
+    //   setdcdateerror("You can select only 2 days before or after today");
+    // } else {
+    //   setdcdateerror("");
+    // }
+    setdcdateerror("");
+    setdcdate(dayjs(newValue));
   };
 
   const handleInputChange = (index, field, value) => {
@@ -293,8 +297,10 @@ function PaperReceivedfrombinder() {
       ...rows,
       {
         PaperId: "",
+        STRSize_Code: "",
         Quantity: "",
         Unit: "",
+        Papers: "",
       },
     ]);
   };
@@ -377,6 +383,7 @@ function PaperReceivedfrombinder() {
         PaperId: "",
         Quantity: "",
         Unit: "",
+        Papers: "",
       },
     ]);
   };
@@ -401,7 +408,7 @@ function PaperReceivedfrombinder() {
 
     // Filter purchase details to match the selected PurchaseId
     const paperreceiveddetail = paperdetails.filter(
-      (detail) => detail.PaperBinderRecevidId === paperreceivedheader.Id
+      (detail) => detail.PaperBinderRecevidId === paperreceivedheader.Id,
     );
 
     // Map the details to rows
@@ -416,17 +423,32 @@ function PaperReceivedfrombinder() {
       }
     };
 
-    const mappedRows = paperreceiveddetail.map((detail) => ({
+    let mappedRows = paperreceiveddetail.map((detail) => ({
       // PurchaseReturnId: detail.PurchaseReturnId,
 
       PaperBinderRecevidId: detail.PaperBinderRecevidId,
       // SerialNo:detail.SerialNo,
+      STRSize_Code: detail.STRSize_Code,
       PaperId: detail.PaperId,
       Quantity: detail.Quantity,
       Unit: detail.Unit,
+      Papers: detail.Papers,
 
       Id: detail.Id, // Include the detail Id in the mapped row for tracking
     }));
+
+    // ⭐ No API call needed — match from local bookOptions
+    mappedRows = mappedRows.map((row) => {
+      const paper = paperOptions.find((b) => b.value === row.PaperId);
+
+      return {
+        ...row,
+        STRSize_Code: paper?.code || "",
+        PaperSizeName: paper?.label || "",
+        Unit: row.Unit || "",
+        Papers: row.Papers || "",
+      };
+    });
 
     const date = dayjs(paperreceivedheader.Date?.date);
     const dcdate = dayjs(paperreceivedheader.DC_date?.date);
@@ -455,7 +477,7 @@ function PaperReceivedfrombinder() {
     handleMenuClose();
     // Determine which specific detail to edit
     const specificDetail = paperreceiveddetail.find(
-      (detail) => detail.Id === currentRow.original.Id
+      (detail) => detail.Id === currentRow.original.Id,
     );
     if (specificDetail) {
       setPaperdetailId(specificDetail.Id); // Set the specific detail Id
@@ -464,6 +486,22 @@ function PaperReceivedfrombinder() {
     fetchPaperdetails().then(() => {
       setIsLoading(false); // Stop loading after data is fetched
     });
+  };
+
+  const handlePaperNameChange = (index, paperId) => {
+    const selectedPaper = paperOptions.find((p) => p.value === Number(paperId));
+
+    if (!selectedPaper) return;
+
+    const updatedRows = [...rows];
+    updatedRows[index] = {
+      ...updatedRows[index],
+      PaperId: selectedPaper.value,
+      STRSize_Code: selectedPaper.code,
+      Unit: selectedPaper.unit,
+      // Papers: selectedPaper.label,
+    };
+    setRows(updatedRows);
   };
 
   const validateForm = () => {
@@ -518,7 +556,7 @@ function PaperReceivedfrombinder() {
         qs.stringify(paperreceiveddata),
         {
           headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        }
+        },
       );
 
       // const purchasereturnId = isEditing ? id : parseInt(response.data.newId, 10);
@@ -532,8 +570,9 @@ function PaperReceivedfrombinder() {
           SerialNo: rows.indexOf(row) + 1,
           PaperId: row.PaperId,
           Quantity: row.Quantity,
-          Unit: row.Unit,
-
+          Unit: row.Unit, // ✅ FIX HERE
+          Papers: row.Papers,
+          STRSize_Code: row.STRSize_Code,
           Id: row.Id,
           CreatedBy: row.Id ? undefined : userId,
           UpdatedBy: row.Id ? userId : undefined,
@@ -557,7 +596,7 @@ function PaperReceivedfrombinder() {
       toast.success(
         isEditing
           ? "Paper Received & Paper Received Details updated successfully!"
-          : "Paper Received & Paper Received Details added successfully!"
+          : "Paper Received & Paper Received Details added successfully!",
       );
       resetForm(); // Reset the form fields after successful submission
     } catch (error) {
@@ -606,7 +645,7 @@ function PaperReceivedfrombinder() {
         ),
       },
     ],
-    [papers]
+    [papers],
   );
 
   const table = useMaterialReactTable({
@@ -841,7 +880,7 @@ borderWidth: 1,
                   options={accountOptions}
                   value={
                     accountOptions.find(
-                      (option) => option.value === AccountId
+                      (option) => option.value === AccountId,
                     ) || null
                   }
                   onChange={(event, newValue) =>
@@ -889,24 +928,17 @@ borderWidth: 1,
               </Box>
             </Box>
 
-            <div className="creditnote-table">
+            <div className="paperreceivedfrombinder-table">
               <table>
                 <thead>
                   <tr>
                     <th>Serial No</th>
-                    <th>
-                      Paper Code<b className="required">*</b>
-                    </th>
+                    <th>Paper Code</th>
 
-                    <th>
-                      Paper<b className="required">*</b>
-                    </th>
-                    <th>
-                      Quantity<b className="required">*</b>
-                    </th>
-                    <th>
-                      Unit<b className="required">*</b>
-                    </th>
+                    <th>Paper Name</th>
+                    <th>Quantity</th>
+                    <th>Unit</th>
+                    <th>Papers</th>
 
                     <th>Actions</th>
                   </tr>
@@ -943,68 +975,79 @@ borderWidth: 1,
                       <tr key={index}>
                         <td>{index + 1}</td>
                         <td>
-                          {paperOptions.find(
-                            (option) => option.value === row.PaperId
-                          )?.code || ""}
+                          <input
+                            type="text"
+                            value={row.STRSize_Code || ""}
+                            readOnly
+                            placeholder="Paper Code"
+                            style={{ width: "100px" }}
+                            className="paperout-control"
+                          />
                         </td>
 
-                        <td>
+                        <td style={{ width: "400px" }}>
                           <Autocomplete
                             options={paperOptions}
+                            getOptionLabel={(option) => option.label || ""}
                             value={
                               paperOptions.find(
-                                (option) => option.value === row.PaperId
+                                (p) => p.value === row.PaperId,
                               ) || null
                             }
-                            onChange={(event, newValue) =>
-                              handleInputChange(
+                            onChange={(event, newValue) => {
+                              handlePaperNameChange(
                                 index,
-                                "PaperId",
-                                newValue ? newValue.value : ""
-                              )
-                            }
-                            sx={{ width: 400 }} // Set width
-                            getOptionLabel={(option) => option.label}
+                                newValue ? newValue.value : "",
+                              );
+                            }}
                             renderInput={(params) => (
                               <TextField
                                 {...params}
-                                placeholder="Select PaperId"
-                                size="big"
-                                fullWidth
-                                sx={{
-                                  "& .MuiInputBase-root": {
-                                    height: "50px",
-                                    // width: "200px", // Adjust height here
-                                  },
-                                  "& .MuiInputBase-input": {
-                                    padding: "14px", // Adjust padding for better alignment
-                                  },
-                                }}
+                                placeholder="Select Paper Name"
+                                size="small"
                               />
                             )}
+                            isOptionEqualToValue={(option, value) =>
+                              option.value === value.value
+                            }
                           />
                         </td>
 
                         <td>
                           <input
                             type="number"
-                            value={row.Quantity}
+                            value={row.Quantity || ""}
                             onChange={(e) =>
                               handleInputChange(
                                 index,
                                 "Quantity",
-                                e.target.value
+                                e.target.value,
                               )
                             }
-                            style={{ width: "100px" }}
-                            placeholder="Quantity"
+                            style={{ width: "70px" }}
+                            className="paperout-control"
                           />
                         </td>
 
                         <td>
-                          {paperOptions.find(
-                            (option) => option.value === row.PaperId
-                          )?.unit || ""}
+                          <input
+                            type="text"
+                            value={row.Unit || ""}
+                            readOnly
+                            style={{ width: "70px" }}
+                            className="paperout-control"
+                          />
+                        </td>
+                        <td>
+                          <input
+                            type="number"
+                            value={row.Papers || ""}
+                            onChange={(e) =>
+                              handleInputChange(index, "Papers", e.target.value)
+                            }
+                            style={{ width: "70px" }}
+                            className="paperout-control"
+                          />
                         </td>
 
                         <td>
@@ -1035,37 +1078,6 @@ borderWidth: 1,
                 </tbody>
               </table>
             </div>
-
-            {/* Total Credit & Debit Inputs Below the Table */}
-            <Box display="flex" justifyContent="flex-end" gap={2}>
-              <Box>
-                <Typography variant="body2" fontWeight="bold">
-                  Starting No
-                </Typography>
-                <TextField
-                  value={StartingNo}
-                  onChange={(e) => setStartingNo(e.target.value)}
-                  size="small"
-                  margin="none"
-                  placeholder="Starting No"
-                  fullWidth
-                />
-              </Box>
-
-              <Box>
-                <Typography variant="body2" fontWeight="bold">
-                  Ending No
-                </Typography>
-                <TextField
-                  value={EndingNo}
-                  onChange={(e) => setEndingNo(e.target.value)}
-                  size="small"
-                  margin="none"
-                  placeholder="Ending No"
-                  fullWidth
-                />
-              </Box>
-            </Box>
           </Box>
 
           <Box

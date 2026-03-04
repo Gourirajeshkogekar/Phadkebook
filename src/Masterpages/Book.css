@@ -1,31 +1,5 @@
-.book-container {
-   
-}
 
-/* Style for the loading container */
-.loadingbook-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    flex-direction: column;
-    height: 100vh; /* Full viewport height */
-    text-align: center;
-  }
-  .loadingbook-container p {
-    margin-top: 10px;
-    font-size: 25px;
-    font-weight: bold; 
-font-style: italic; 
-text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2); 
-text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2); /* Adds a soft shadow */
-text-transform: uppercase; /* Makes all text uppercase */
-text-transform: capitalize; /* Capitalizes the first letter of each word */
-line-height: 1.5; /* Increases line height */
-background: linear-gradient(90deg, #0a60bd, #006989);
--webkit-background-clip: text; /* Ensures the gradient is clipped to text */
-color: transparent; /* Make the text color transparent to show the background */
-padding: 5px 15px; /* Adds padding around the text */
-  }
+
 
 .book-container h1{
     font-weight: 600; 
@@ -33,13 +7,10 @@ padding: 5px 15px; /* Adds padding around the text */
 }
 
 .booktable-container{
-    /* background-color: #3c7291; */
- /* width: 800px; */
-        /* height: 320px; */
+    
         height: 320px;
         overflow-y: auto;
         overflow-x: auto;
-        white-space: nowrap; /* Prevent wrapping for horizontal scrolling */
 }
 
 .booktable-master {
@@ -48,42 +19,24 @@ padding: 5px 15px; /* Adds padding around the text */
 }
 
 .booktable1-master {
- /* width: 90%;  */
-   
+  
     padding: 10px;
     border-radius: 4px;
     box-shadow: 0 2px 4px #a4a6a6;
 }
 
-.booktable1-master h2 {
-    margin-bottom: 10px;
-    text-align: center;
-}
+
 
 .masterbook-form {
     display: grid;
     gap: 10px;
-    grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr;
 margin-top: 15px;
    
 }
 
-.masterbook-form {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-    margin-top: 15px; }
 
-.first-row {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
-}
 
-.other-rows {
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 10px; }
 
 .masterbook-control {
     padding: 10px;
@@ -97,7 +50,6 @@ margin-top: 15px;
 .marathibook-control {
     font-family: 'Shivaji01', sans-serif; 
     font-size: 14px;
-    /* line-height: 1.5; */
     padding: 10px;
     border: 1px solid #ccc;
     border-radius: 4px;
@@ -105,7 +57,6 @@ margin-top: 15px;
 
     width: 150px;
     margin-bottom: 5px;   
-     /* box-sizing: border-box; */
   }
   
   .marathibook-control:focus {
@@ -114,7 +65,7 @@ margin-top: 15px;
   }
   
   .marathibook-control::placeholder {
-    color: #888; /* Placeholder text color */
+    color: #888;
   }
   
 .book-label {
@@ -126,20 +77,20 @@ margin-top: 15px;
     top: 0;
     left: 0;
     width: 100%;
-    height: 100%;
+    /* height: 100%; */
     background-color: rgba(0, 0, 0, 0.5);
     z-index: 999;
   }
 
   
   .book-modal {
-
-    margin-top: 20px;
-    margin-left: 30px;
+border-color: #007bff;
+    /* margin-top: 10px; */
+    margin-left: 10px;
     background-color: white;
     overflow-y: auto;
-    height: 560px;
-    width: 95%;
+    height: 100px;
+    width: 97%;
     border-radius: 8px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
     padding: 10px;
@@ -147,13 +98,330 @@ margin-top: 15px;
   
 
 .book-btn-container {
-    display: flex; 
+    display: flex;  
     justify-content: center;
     align-items: center;
     gap: 10px;
-margin-top: 20px;}
+}
 
 
+
+
+.book-master-layout {
+    display: grid;
+    grid-template-columns: 60% 40%;
+    gap: 20px;
+    padding: 5px;
+}
+
+.book-master-left {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.book-master-left .form-row {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.book-label {
+    width: 150px;
+    font-weight: bold;
+}
+
+.masterbook-control {
+    width: 200px;
+    padding: 6px;
+    border: 1px solid #d0d0d0;
+    border-radius: 4px;
+    background: white;
+}
+
+.book-master-right {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.print-order-box,
+.royalty-box {
+    border: 1px solid #c7c7c7;
+    padding: 5px;
+    border-radius: 5px;
+    background: #f8f8f8;
+}
+
+.printorder-table input {
+    height: 36px;
+    padding: 8px;
+    font-size: 15px;
+    width: 100%;
+    /* Full width inside the cell */
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+}
+
+
+.royalty-select {
+    width: 220px;
+    margin-right: 5px;
+}
+
+
+/* second implement for book form */
+.book-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+}
+
+
+.book-modal {
+
+    margin-top: 5px;
+    margin-left: 10px;
+    background-color: white;
+    overflow-y: auto;
+    height: 600px;
+    width: 97%;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    padding: 10px;
+}
+
+.book-master-layout {
+    display: grid;
+    grid-template-columns: 50% 50%;
+    gap: 20px;
+}
+
+/* LEFT SIDE FORM */
+.book-master-left {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.first-row {
+    display: grid;
+    grid-template-columns: repeat(1, 1fr);
+    gap: 10px;
+}
+
+.other-rows {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+}
+
+
+
+/* Each form row → horizontal */
+.form-row {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+/* Label */
+.book-label {
+    width: 180px;
+    font-weight: bold;
+    text-align: left;
+}
+
+/* Input */
+.masterbook-control,
+.marathibook-control {
+    width: 220px;
+    padding: 6px 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+/* RIGHT SIDE */
+.book-master-right {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+ 
+
+
+
+
+
+
+
+
+.print-order-container {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.printorder-table,
+.royaltybook-table {
+    width: 100%;
+    border-collapse: collapse;
+    border: 1px solid #cfcfcf;
+    /* outer border */
+}
+
+ .printorder-table thead th,
+ .royaltybook-table thead th {
+     box-shadow: 0 2px 2px rgba(0, 0, 0, 0.05);
+ }
+
+
+.printorder-table th,
+.printorder-table td,
+.royaltybook-table th,
+.royaltybook-table td {
+    border: 1px solid #d6d6d6;
+    /* cell borders */
+    padding: 6px 8px;
+    /* compact spacing */
+    text-align: center;
+    vertical-align: middle;
+}
+ .print-order-box,
+ .royalty-box {
+     position: relative;
+     max-height: 300px;
+     overflow-y: auto;
+ }
+
+ /* Sticky section title */
+ .print-order-box .section-title,
+ .royalty-box .section-title {
+     position: sticky;
+     top: 0;
+     z-index: 10;
+     background: #f9f9f9;
+     padding: 6px 4px;
+     margin: 0;
+     border-bottom: 1px solid #d0d0d0;
+ }
+
+ 
+
+
+ 
+
+.royalty-table th,
+.royalty-table td {
+    padding: 4px;
+    border: 1px solid #ccc;
+    text-align: center;
+}
+
+.right-button-column {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.side-btn {
+    width: 60px;
+    /* Small button */
+    font-size: 12px;
+    padding: 4px 6px;
+}
+
+
+
+/* Right side vertical buttons */
+.print-order-container {
+    display: flex;
+    gap: 10px;
+}
+
+.right-button-column {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.side-btn {
+    width: 60px;
+    padding: 5px;
+    background: #d9d9d9;
+    border: 1px solid #888;
+    cursor: pointer;
+}
+
+.side-btn.delete {
+    background: #ffcccc;
+}
+
+/* Footer */
+.print-footer {
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.command-box {
+    width: 120px;
+    padding: 5px;
+}
+
+.total-label {
+    font-weight: bold;
+}
+
+.total-box {
+    width: 95px;
+    padding: 5px;
+    font-weight: bold;
+}
+
+/* Table Container */
+.royalty-table-wrapper {
+    border: 1px solid black;
+    margin-bottom: 5px;
+}
+
+/* Header Cells */
+.royalty-header {
+    font-weight: bold;
+    border: 1px solid black !important;
+    background: #f1f1f1;
+}
+
+/* Table Cells */
+.royalty-cell {
+    border: 1px solid black !important;
+    padding: 8px;
+    font-size: 14px;
+    border: 1px solid #000;
+}
+
+/* Footer Row (Add/Delete) */
+.royalty-footer {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+/* Total Royalty Box */
+.total-royalty {
+    margin-top: 10px;
+    display: flex;
+    justify-content: flex-end;
+}
 
 @media (max-width: 768px) {
 
@@ -171,7 +439,11 @@ margin-top: 20px;}
 
     }
 
-    .bookatable1-master {}
+    .bookatable1-master {
+        box-shadow: 0 2px 4px #a4a6a6;
+        padding: 10px;
+            border-radius: 4px;
+    }
 
     .book-modal {
         width: 60%;
@@ -186,7 +458,7 @@ margin-top: 20px;}
     }
 
     .masterbook-control {
-        padding: 8px;
+        padding: 10px;
         margin: 8px 0;
     }
 
@@ -199,3 +471,4 @@ margin-top: 20px;}
         gap: 5px;
     }
 }
+

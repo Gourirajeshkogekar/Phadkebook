@@ -87,6 +87,8 @@ function Creditnote() {
   const [deleteIndex, setDeleteIndex] = useState(null);
   const [deleteId, setDeleteId] = useState(null);
   const [CreditNoteNo, setCreditNoteNo] = useState("");
+      const [AccountId, setAccountId] = useState("");
+  
   const [VoucherDate, setVoucherDate] = useState(null);
   const [Narration, setNarration] = useState("");
 
@@ -221,6 +223,33 @@ function Creditnote() {
     }
   };
 
+
+  const [partyDetails, setPartyDetails] = useState(null);
+        const fetchPartyDetails = async (accountId) => {
+      try {
+        const response = await axios.get(
+          `https://publication.microtechsolutions.net.in/php/Addressget.php?AccountId=${accountId}`
+        );
+    
+        console.log("Party Details:", response.data);
+    
+        if (
+          response.data?.status === "success" &&
+          response.data?.data?.length > 0
+        ) {
+          setPartyDetails(response.data.data[0]); // ✅ correct path
+        } else {
+          setPartyDetails(null);
+        }
+      } catch (error) {
+        console.error("Error fetching party details:", error);
+        setPartyDetails(null);
+      }
+    };
+    
+
+
+
   const [rowErrors, setRowErrors] = useState([]); // array of objects per row
 
   const [safedate, setSafedate] = useState(dayjs());
@@ -232,17 +261,17 @@ function Creditnote() {
       return;
     }
 
-    const today = dayjs();
-    const minDate = today.subtract(3, "day");
-    const maxDate = today.add(2, "day");
+    // const today = dayjs();
+    // const minDate = today.subtract(3, "day");
+    // const maxDate = today.add(2, "day");
 
-    if (newValue.isBefore(minDate) || newValue.isAfter(maxDate)) {
-      setDateError("You can select only 2 days before or after today");
-    } else {
-      setDateError("");
-    }
-
-    setSafedate(newValue);
+    // if (newValue.isBefore(minDate) || newValue.isAfter(maxDate)) {
+    //   setDateError("You can select only 2 days before or after today");
+    // } else {
+    //   setDateError("");
+    // }
+    setDateError("");
+    setSafedate(dayjs(newValue));
   };
 
   const handleInputChange = (index, field, value) => {
@@ -480,6 +509,23 @@ function Creditnote() {
       return;
     }
 
+    let totalDebit = 0;
+    let totalCredit = 0;
+
+    rows.forEach((row) => {
+      const amount = parseFloat(row.Amount) || 0;
+
+      if (row.DOrC === "D") totalDebit += amount;
+      else if (row.DOrC === "C") totalCredit += amount;
+    });
+
+    if (totalDebit !== totalCredit) {
+      toast.error(
+        `Debit (${totalDebit}) and Credit (${totalCredit}) amounts must be equal!`
+      );
+      return;
+    }
+
     const formattedVoucherDate = dayjs(safedate).format("YYYY-MM-DD");
 
     const voucherData = {
@@ -675,7 +721,7 @@ function Creditnote() {
           PaperProps={{
             sx: {
               borderRadius: isSmallScreen ? "0" : "10px 0 0 10px",
-              width: isSmallScreen ? "100%" : "80%",
+              width: isSmallScreen ? "100%" : "85%",
               zIndex: 1000,
             },
           }}>
@@ -768,41 +814,10 @@ borderWidth: 1,
                   <tr>
                     <th>Serial No</th>
 
-                    <th>
-                      Account Id <b className="required">*</b>
-                    </th>
-                    <th>
-                      Dr/Cr <b className="required">*</b>
-                    </th>
-                    <th>
-                      Narration <b className="required">*</b>
-                    </th>
-                    <th>
-                      Amount <b className="required">*</b>
-                    </th>
-
-                    <th>
-                      Cost Center Id <b className="required">*</b>
-                    </th>
-                    <th>
-                      Cheque No <b className="required">*</b>
-                    </th>
-                    <th>
-                      Cheque Date <b className="required">*</b>
-                    </th>
-
-                    <th>
-                      Cheque Amount <b className="required">*</b>
-                    </th>
-                    <th>
-                      MICR Code <b className="required">*</b>
-                    </th>
-                    <th>
-                      Bank Name <b className="required">*</b>
-                    </th>
-                    <th>
-                      Bank Branch <b className="required">*</b>
-                    </th>
+                    <th>Account Id</th>
+                    <th>Dr/Cr</th>
+                    <th>Narration</th>
+                    <th>Amount</th>
 
                     <th>Actions</th>
                   </tr>
@@ -840,9 +855,6 @@ borderWidth: 1,
                         <td>{index + 1}</td>
 
                         <td>
-                          {/* {index === 0 ? (
-          accountOptions.find(option => option.value === row.AccountId)?.label || ''
-        ) : ( */}
                           <Autocomplete
                             options={accountOptions}
                             value={
@@ -850,14 +862,21 @@ borderWidth: 1,
                                 (option) => option.value === row.AccountId
                               ) || null
                             }
-                            onChange={(event, newValue) =>
-                              handleInputChange(
-                                index,
-                                "AccountId",
-                                newValue ? newValue.value : ""
-                              )
-                            }
-                            sx={{ width: 550 }} // Set width
+                        onChange={(e, newValue) => {
+  const id = newValue ? newValue.value : "";
+
+  // ✅ Update row properly
+  handleInputChange(index, "AccountId", id);
+
+  // ✅ Fetch party details
+  if (id) {
+    fetchPartyDetails(id);
+    setAccountId(id);   // optional (for party box)
+  } else {
+    setPartyDetails(null);
+    setAccountId(null);
+  }
+}}
                             getOptionLabel={(option) => option.label}
                             renderInput={(params) => (
                               <TextField
@@ -867,26 +886,20 @@ borderWidth: 1,
                                 fullWidth
                                 sx={{
                                   "& .MuiInputBase-root": {
-                                    height: "50px",
-                                    // width: "200px", // Adjust height here
+                                    height: "40px",
+                                    width: "300px",
                                   },
-                                  "& .MuiInputBase-input": {
-                                    padding: "14px", // Adjust padding for better alignment
-                                  },
+                                  "& .MuiInputBase-input": {},
                                 }}
                               />
                             )}
                           />
-                          {/* )} */}
+
+
+                         
                         </td>
 
                         <td>
-                          {/* {index === 0 ? (
-          // row.DOrC
-          // 'D'
-          dOrCOptions.find(option => option.value === row.DOrC)?.label || 'C'
-
-        ) : ( */}
                           <Autocomplete
                             options={dOrCOptions}
                             value={
@@ -901,7 +914,6 @@ borderWidth: 1,
                                 newValue ? newValue.value : ""
                               )
                             }
-                            sx={{ width: 100 }} // Set width
                             getOptionLabel={(option) => option.label}
                             renderInput={(params) => (
                               <TextField
@@ -911,23 +923,19 @@ borderWidth: 1,
                                 fullWidth
                                 sx={{
                                   "& .MuiInputBase-root": {
-                                    height: "50px",
-                                    // width: "150px", // Adjust height here
+                                    height: "40px",
+                                    width: "100px",
                                   },
                                   "& .MuiInputBase-input": {
-                                    padding: "14px", // Adjust padding for better alignment
+                                    // padding: "14px",
                                   },
                                 }}
                               />
                             )}
                           />
-                          {/* )} */}
                         </td>
 
                         <td>
-                          {/* {index === 0 ? (
-          row.Narration
-        ) : ( */}
                           <input
                             type="text"
                             value={row.Narration}
@@ -944,13 +952,9 @@ borderWidth: 1,
                             className="creditnote-control"
                             placeholder="Enter Narration"
                           />
-                          {/* )} */}
                         </td>
 
                         <td>
-                          {/* {index === 0 ? (
-          row.Amount
-        ) : ( */}
                           <input
                             type="number"
                             value={row.Amount}
@@ -963,191 +967,8 @@ borderWidth: 1,
                             className="creditnote-control"
                             placeholder="Amount"
                           />
-                          {/* )} */}
                         </td>
 
-                        <td>
-                          {/* {index === 0 ? (
-          row.CostCenterId
-        ) : ( */}
-
-                          <Autocomplete
-                            options={costcenterOptions}
-                            value={
-                              costcenterOptions.find(
-                                (option) => option.value === row.CostCenterId
-                              ) || null
-                            }
-                            onChange={(event, newValue) =>
-                              handleInputChange(
-                                index,
-                                "CostCenterId",
-                                newValue ? newValue.value : ""
-                              )
-                            }
-                            sx={{ width: 200 }} // Set width
-                            getOptionLabel={(option) => option.label}
-                            renderInput={(params) => (
-                              <TextField
-                                {...params}
-                                placeholder="Select Cost Center"
-                                size="big"
-                                fullWidth
-                                sx={{
-                                  "& .MuiInputBase-root": {
-                                    height: "50px",
-                                    // width: "200px", // Adjust height here
-                                  },
-                                  "& .MuiInputBase-input": {
-                                    padding: "14px", // Adjust padding for better alignment
-                                  },
-                                }}
-                              />
-                            )}
-                          />
-                          {/* )} */}
-                        </td>
-
-                        <td>
-                          {/* {index === 0 ? (
-          row.CheckNo
-        ) : ( */}
-                          <input
-                            type="text"
-                            value={row.ChequeNo}
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              if (value.length <= 15) {
-                                handleInputChange(index, "ChequeNo", value);
-                              }
-                            }}
-                            style={{
-                              width: "120px",
-                            }}
-                            className="creditnote-control"
-                            placeholder="ChequeNo"
-                          />
-                          {/* )} */}
-                        </td>
-
-                        <td>
-                          {/* {index === 0 ? (
-          row.CheckDate
-        ) : ( */}
-                          <input
-                            type="date"
-                            value={
-                              row.ChequeDate ||
-                              new Date().toISOString().split("T")[0]
-                            }
-                            onChange={(e) =>
-                              handleInputChange(
-                                index,
-                                "ChequeDate",
-                                e.target.value
-                              )
-                            }
-                            style={{ width: "150px" }}
-                            placeholder="Cheque Date"
-                            className="paymentvoucher-control"
-                          />
-
-                          {rowErrors[index]?.ChequeDate && (
-                            <span style={{ color: "red", fontSize: "12px" }}>
-                              {rowErrors[index].ChequeDate}
-                            </span>
-                          )}
-                          {/* )} */}
-                        </td>
-
-                        <td>
-                          {/* {index === 0 ? (
-          row.CheckAmount
-        ) : ( */}
-                          <input
-                            type="number"
-                            value={row.ChequeAmount}
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              // Validate for Check Amount as well
-                              const regex = /^\d{0,18}(\.\d{0,2})?$/;
-
-                              // Check if the value matches the regex
-                              if (value === "" || regex.test(value)) {
-                                handleInputChange(index, "ChequeAmount", value);
-                              }
-                            }}
-                            style={{
-                              width: "120px",
-                            }}
-                            placeholder="Cheque Amount"
-                            className="creditnote-control"
-                          />
-                          {/* )} */}
-                        </td>
-                        <td>
-                          {/* {index === 0 ? (
-          row.MICRCode
-        ) : ( */}
-                          <input
-                            type="text"
-                            value={row.MICRCode}
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              if (value.length <= 30) {
-                                handleInputChange(index, "MICRCode", value);
-                              }
-                            }}
-                            style={{
-                              width: "150px",
-                            }}
-                            placeholder="MICR Code"
-                            className="creditnote-control"
-                          />
-                          {/* )} */}
-                        </td>
-                        <td>
-                          {/* {index === 0 ? (
-          row.BankName
-        ) : ( */}
-                          <input
-                            type="text"
-                            value={row.BankName}
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              if (value.length <= 50) {
-                                handleInputChange(index, "BankName", value);
-                              }
-                            }}
-                            style={{
-                              width: "150px",
-                            }}
-                            placeholder="Bank Name"
-                            className="creditnote-control"
-                          />
-                          {/* )} */}
-                        </td>
-                        <td>
-                          {/* {index === 0 ? (
-          row.BankBranch
-        ) : ( */}
-                          <input
-                            type="text"
-                            value={row.BankBranch}
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              if (value.length <= 50) {
-                                handleInputChange(index, "BankBranch", value);
-                              }
-                            }}
-                            style={{
-                              width: "150px",
-                            }}
-                            placeholder="Bank Branch"
-                            className="creditnote-control"
-                          />
-                          {/* )} */}
-                        </td>
                         <td>
                           <div
                             style={{
@@ -1177,6 +998,67 @@ borderWidth: 1,
               </table>
             </div>
 
+
+             {/* Ensure the box shows as soon as a PartyId is selected */}
+                                 {AccountId && (
+                                   <Box
+                                     sx={{
+                                       m: 1,
+                                       width: "500px",
+                                       p: 1,
+                                       backgroundColor: "#336699",
+                                       color: "white",
+                                       borderRadius: 1,
+                                       border: "1px solid #003366",
+                                       minHeight: "70px", // Ensures box has a consistent size
+                                       display: "flex",
+                                       flexDirection: "column",
+                                       justifyContent: "center"
+                                     }}
+                                   >
+                                     {partyDetails ? (
+                                       <>
+                                         {/* Case 1: Party Info exists - Show Name */}
+                                         <Typography fontWeight="bold" variant="body1">
+                                           {partyDetails.AccountName || "Account Name Not Available"} ({AccountId})
+                                         </Typography>
+                                 
+                                         {/* Check for any address lines */}
+                                         {(partyDetails.Address1 || partyDetails.Address2 || partyDetails.Address3) ? (
+                                           <Box sx={{ mt: 0.2 }}>
+                                             {partyDetails.Address1 && <Typography variant="caption" display="block">{partyDetails.Address1}</Typography>}
+                                             {partyDetails.Address2 && <Typography variant="caption" display="block">{partyDetails.Address2}</Typography>}
+                                             {partyDetails.Address3 && <Typography variant="caption" display="block">{partyDetails.Address3}</Typography>}
+                                           </Box>
+                                         ) : (
+                                           <Typography variant="caption" sx={{ fontStyle: "italic", mt: 1, display: "block", color: "#FFD700" }}>
+                                             ⚠️ No address info available
+                                           </Typography>
+                                         )}
+                                 
+                                         {partyDetails.MobileNo && (
+                                           <Typography variant="caption" display="block" mt={0.2}>
+                                             Mobile: {partyDetails.MobileNo}
+                                           </Typography>
+                                         )}
+                                 
+                                         <Box sx={{ m:1, borderTop: "1px solid rgba(255,255,255,0.3)" }}>
+                                           <Typography fontWeight="bold">
+                                             Bal. = {partyDetails.Balance || "0.00"} Dr
+                                           </Typography>
+                                         </Box>
+                                       </>
+                                     ) : (
+                                       /* Case 2: partyInfo is null or undefined (Still fetching or not found) */
+                                       <Box sx={{ textAlign: "center" }}>
+                                          <Typography variant="body2" sx={{ fontStyle: "bold" }}>
+                                           Party details not Available
+                                          </Typography>
+                                       </Box>
+                                     )}
+                                   </Box>
+                                 )}
+
             {/* Total Credit & Debit Inputs Below the Table */}
             <Box display="flex" justifyContent="flex-end" mt={1} gap={2}>
               <Box>
@@ -1188,7 +1070,14 @@ borderWidth: 1,
                   value={TotalCredit} // Calculate total credit
                   size="small"
                   margin="normal"
-                  InputProps={{ readOnly: true }}
+                  InputProps={{
+                    sx: {
+                      fontSize: "1.2rem",
+                      fontWeight: "bold",
+                      color: "green",
+                      readOnly: true,
+                    },
+                  }}
                 />
               </Box>
 
@@ -1201,7 +1090,14 @@ borderWidth: 1,
                   value={TotalDebit}
                   size="small"
                   margin="normal"
-                  InputProps={{ readOnly: true }}
+                  InputProps={{
+                    sx: {
+                      fontSize: "1.2rem",
+                      fontWeight: "bold",
+                      color: "red",
+                      readOnly: true,
+                    },
+                  }}
                 />
               </Box>
             </Box>

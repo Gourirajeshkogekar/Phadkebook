@@ -58,6 +58,7 @@ import {
 import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
+import { useRef } from "react";
 
 function Misprint() {
   const [userId, setUserId] = useState("");
@@ -111,13 +112,17 @@ function Misprint() {
   const [bookCodes, setBookcodes] = useState([]);
   const [bookOptions, setBookOptions] = useState([]);
   const [accountOptions, setAccountOptions] = useState([]);
+
+  const [TotalCopies, setTotalCopies] = useState("");
+  const [TotalAmount, setTotalAmount] = useState("");
+
   const [rows, setRows] = useState([
     {
-      SerialNo: "",
-      BookCode: "",
       BookId: "", // Default value for the first row
       Copies: 0,
       BookRate: 0,
+      DiscountPercentage: 0,
+      DiscountAmount: 0,
       Amount: 0,
     },
   ]);
@@ -175,7 +180,7 @@ function Misprint() {
       const response = await axios.get(
         "https://publication.microtechsolutions.net.in/php/get/gettable.php?Table=Missprintdetail"
       );
-      console.log(response.data, "response of misprint details");
+      console.log(response.data, "response of missprint details");
       setMisprintdetails(response.data);
     } catch (error) {
       console.error("Error fetching missprint details:", error);
@@ -224,64 +229,88 @@ function Misprint() {
       return;
     }
 
-    const today = dayjs();
-    const minDate = today.subtract(3, "day");
-    const maxDate = today.add(2, "day");
+    // const today = dayjs();
+    // const minDate = today.subtract(3, "day");
+    // const maxDate = today.add(2, "day");
 
-    if (newValue.isBefore(minDate) || newValue.isAfter(maxDate)) {
-      setdateerror("You can select only 2 days before or after today");
-    } else {
-      setdateerror("");
-    }
+    // if (newValue.isBefore(minDate) || newValue.isAfter(maxDate)) {
+    //   setdateerror("You can select only 2 days before or after today");
+    // } else {
+    //   setdateerror("");
+    // }
 
-    setSafedate(newValue);
+    setdateerror("");
+
+    setSafedate(dayjs(newValue));
   };
 
   const handleInputChange = (index, field, value) => {
     const updatedRows = [...rows];
     updatedRows[index][field] = value;
 
-    // Fetch selected book based on updated BookId
+    // Always fetch rate based on BookId
     const selectedBook = bookOptions.find(
-      (book) =>
-        book.value === (field === "BookId" ? value : updatedRows[index].BookId)
+      (book) => book.value === updatedRows[index].BookId
     );
-
-    // Update rate based on selected book
     updatedRows[index].BookRate = selectedBook
       ? parseFloat(selectedBook.price) || 0
       : 0;
 
-    // Recalculate amount
+    // Parse inputs
     const copies = parseFloat(updatedRows[index].Copies) || 0;
     const rate = parseFloat(updatedRows[index].BookRate) || 0;
+    const discountPercentage =
+      parseFloat(updatedRows[index].DiscountPercentage) || 0;
 
+    // Calculate original amount
     const originalAmount = copies * rate;
 
-    // You can add discount logic here if needed
-    updatedRows[index].Amount = originalAmount;
+    // Calculate discount
+    const discountAmount = (originalAmount * discountPercentage) / 100;
 
-    // Update the rows state
+    // Final amount after discount
+    const amountAfterDiscount = originalAmount - discountAmount;
+
+    // Set values
+    updatedRows[index].DiscountAmount = discountAmount;
+    updatedRows[index].Amount = amountAfterDiscount;
+
     setRows(updatedRows);
+  };
+
+  const calculateTotals = () => {
+    let totalCopies = 0;
+    let total = 0;
+
+    rows.forEach((row) => {
+      totalCopies += Number(row.Copies) || 0;
+      total += Number(row.Amount) || 0;
+    });
+    setTotalCopies(totalCopies);
+    setTotalAmount(total);
   };
 
   const handleAddRow = () => {
     setRows([
       ...rows,
       {
+        BookId: "", // This will be empty for new rows
         SerialNo: "",
-        BookCode: "",
-        BookId: "", // Default value for the first row
-        Copies: 0,
-        BookRate: 0,
-        Amount: 0,
+        Copies: "",
+        BookRate: "",
+        DiscountPercentage: "",
+        DiscountAmount: "",
+        Amount: "",
       },
     ]);
+    calculateTotals();
   };
 
   const handleDeleteRow = (index) => {
     const updatedRows = rows.filter((_, i) => i !== index);
     setRows(updatedRows);
+    toast.success("Book Details Deleted Succefully");
+    calculateTotals();
   };
 
   const handleDelete = () => {
@@ -323,7 +352,7 @@ function Misprint() {
       .then((response) => response.text()) // Handle the response
       .then((result) => {
         console.log(result);
-        toast.success("Misprint Deleted Successfully"); // Show success toast
+        toast.success("Missprint Deleted Successfully"); // Show success toast
         setIsDeleteDialogOpen(false); // Close delete dialog
         fetchMisprints(); // Refresh vouchers list
       })
@@ -393,7 +422,7 @@ function Misprint() {
       }
     };
 
-    const mappedRows = misprintdetail.map((detail) => ({
+    let mappedRows = misprintdetail.map((detail) => ({
       // PurchaseReturnId: detail.PurchaseReturnId,
 
       MissprintId: detail.MissprintId,
@@ -404,6 +433,17 @@ function Misprint() {
       Amount: detail.Amount,
       Id: detail.Id, // Include the detail Id in the mapped row for tracking
     }));
+
+    mappedRows = mappedRows.map((row) => {
+      const book = bookOptions.find((b) => b.value === row.BookId);
+
+      return {
+        ...row,
+        BookCode: book?.code || "",
+        BookName: book?.label || "",
+        Rate: row.Rate || book?.price || 0,
+      };
+    });
 
     const date = dayjs(misprint.Date?.date);
 
@@ -443,6 +483,80 @@ function Misprint() {
     (sum, row) => sum + (parseInt(row.Copies) || 0),
     0
   );
+
+  const bookCodeTimer = useRef(null);
+
+  const handleBookCodeChange = (rowIndex, value) => {
+    const updatedRows = [...rows];
+    updatedRows[rowIndex].BookCode = value;
+    setRows(updatedRows);
+
+    // 🔴 Clear previous timer
+    if (bookCodeTimer.current) {
+      clearTimeout(bookCodeTimer.current);
+    }
+
+    // if book code is blank → reset row fields
+    if (value.trim() === "") {
+      updatedRows[rowIndex].BookName = "";
+      updatedRows[rowIndex].BookNameMarathi = "";
+      updatedRows[rowIndex].Price = "";
+      updatedRows[rowIndex].BookRate = "";
+      updatedRows[rowIndex].BookId = "";
+      updatedRows[rowIndex].Copies = "";
+      updatedRows[rowIndex].Amount = "";
+      updatedRows[rowIndex].Discount = "";
+      updatedRows[rowIndex].FinalAmount = "";
+
+      setRows(updatedRows);
+      return; // stop here
+    }
+
+    // 🟡 Wait until user finishes typing (500ms)
+    bookCodeTimer.current = setTimeout(() => {
+      // 🔒 Minimum length check (VERY IMPORTANT)
+      if (value.length < 2) return;
+
+      // Fetch data
+      fetchBookDataForRow(rowIndex, value);
+    }, 400);
+  };
+
+  const fetchBookDataForRow = async (rowIndex, bookCode) => {
+    if (!bookCode) return; // guard clause
+
+    try {
+      const response = await fetch(
+        `https://publication.microtechsolutions.net.in/php/Bookcodeget.php?BookCode=${bookCode}`
+      );
+      const data = await response.json();
+
+      if (Array.isArray(data) && data.length > 0) {
+        const book = data[0];
+
+        setRows((prevRows) => {
+          const updatedRows = [...prevRows];
+          updatedRows[rowIndex] = {
+            ...updatedRows[rowIndex],
+            BookName: book.BookName || book.BookNameMarathi || "",
+            Price: book.BookRate || 0,
+            BookId: book.Id || "", // This is important
+          };
+          return updatedRows;
+        });
+      } else {
+        // ❌ Now this WILL fire correctly
+        toast.error("Invalid Book Code");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to fetch Book");
+    }
+  };
+
+  useEffect(() => {
+    calculateTotals();
+  }, [rows]);
 
   const validateForm = () => {
     let formErrors = {};
@@ -522,8 +636,8 @@ function Misprint() {
       setIsDrawerOpen(false);
       toast.success(
         isEditing
-          ? "Misprint & Misprint Details updated successfully!"
-          : "Misprint  & Misprint Details added successfully!"
+          ? "Missprint & Missprint Details updated successfully!"
+          : "Missprint  & Missprint Details added successfully!"
       );
       resetForm(); // Reset the form fields after successful submission
     } catch (error) {
@@ -580,7 +694,7 @@ function Misprint() {
 
   return (
     <div className="misprint-container">
-      <h1>Misprint</h1>
+      <h1>Missprint</h1>
 
       <div className="misprinttable-master">
         <div className="misprinttable1-master">
@@ -655,7 +769,7 @@ function Misprint() {
           PaperProps={{
             sx: {
               borderRadius: isSmallScreen ? "0" : "10px 0 0 10px",
-              width: isSmallScreen ? "100%" : "90%",
+              width: isSmallScreen ? "100%" : "80%",
               zIndex: 1000,
               paddingLeft: "16px",
             },
@@ -669,7 +783,7 @@ function Misprint() {
               justifyContent: "space-between",
             }}>
             <Typography variant="h6">
-              <b>{isEditing ? "Edit Misprint" : "Create Misprint "}</b>
+              <b>{isEditing ? "Edit Missprint" : "Create Missprint "}</b>
             </Typography>{" "}
             <CloseIcon sx={{ cursor: "pointer" }} onClick={handleDrawerClose} />
           </Box>
@@ -784,18 +898,10 @@ function Misprint() {
                   <th style={{ width: "80px", minWidth: "150px" }}>
                     Book Code
                   </th>
-                  <th>
-                    Book Name<b className="required">*</b>
-                  </th>
-                  <th>
-                    Copies<b className="required">*</b>
-                  </th>
-                  <th>
-                    Book Rate<b className="required">*</b>
-                  </th>
-                  <th>
-                    Amount<b className="required">*</b>
-                  </th>
+                  <th>Book Name</th>
+                  <th>Copies</th>
+                  <th> Rate</th>
+                  <th>Amount</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -813,7 +919,7 @@ function Misprint() {
                       Loading data...
                     </td>
                   </tr>
-                ) : rows.length === 0 ? ( // Check if rows is empty
+                ) : rows.length === 0 ? (
                   <tr>
                     <td
                       colSpan="10"
@@ -830,45 +936,26 @@ function Misprint() {
                   rows.map((row, index) => (
                     <tr key={index}>
                       <td>{index + 1}</td>
-                      <td style={{ width: "80px", minWidth: "150px" }}>
-                        {bookOptions.find(
-                          (option) => option.value === row.BookId
-                        )?.code || ""}
+                      <td>
+                        <input
+                          type="text"
+                          value={row.BookCode || ""}
+                          onChange={(e) =>
+                            handleBookCodeChange(index, e.target.value)
+                          }
+                          placeholder="Enter Book Code"
+                          style={{ width: "100px" }}
+                          className="misprint-control"
+                        />
                       </td>
                       <td>
-                        <Autocomplete
-                          options={bookOptions}
-                          value={
-                            bookOptions.find(
-                              (option) => option.value === row.BookId
-                            ) || null
-                          }
-                          onChange={(event, newValue) =>
-                            handleInputChange(
-                              index,
-                              "BookId",
-                              newValue ? newValue.value : ""
-                            )
-                          }
-                          sx={{ width: 500 }} // Set width
-                          getOptionLabel={(option) => option.label}
-                          renderInput={(params) => (
-                            <TextField
-                              {...params}
-                              placeholder="Select Book"
-                              size="big"
-                              fullWidth
-                              sx={{
-                                "& .MuiInputBase-root": {
-                                  height: "50px",
-                                  // width: "200px", // Adjust height here
-                                },
-                                "& .MuiInputBase-input": {
-                                  padding: "14px", // Adjust padding for better alignment
-                                },
-                              }}
-                            />
-                          )}
+                        <input
+                          type="text"
+                          value={row.BookName || row.BookNameMarathi || ""}
+                          readOnly
+                          placeholder="Book Name / Book Name Marathi"
+                          style={{ width: "420px" }}
+                          className="misprint-control"
                         />
                       </td>
                       <td>
@@ -879,31 +966,34 @@ function Misprint() {
                             handleInputChange(index, "Copies", e.target.value)
                           }
                           style={{
-                            width: "100px",
+                            width: "65px",
                           }}
+                          className="misprint-control"
                           placeholder="Copies"
                         />
                       </td>
                       <td>
                         <input
-                          type="number"
-                          value={row.BookRate}
+                          type="text"
+                          value={row.BookRate || row.Price || ""}
                           readOnly
+                          placeholder="Book Rate"
                           style={{ width: "100px" }}
                           className="misprint-control"
                         />
                       </td>
+
                       <td>
                         <input
                           type="number"
-                          value={row.Amount}
+                          value={row.Amount || ""}
                           readOnly
-                          style={{
-                            width: "100px",
-                          }}
+                          style={{ width: "100px" }}
                           placeholder="Amount"
+                          className="misprint-control"
                         />
                       </td>
+
                       <td>
                         <div
                           style={{
@@ -932,12 +1022,21 @@ function Misprint() {
               </tbody>
               <tfoot>
                 <tr>
-                  <td colSpan={2}></td>
-                  <td>
-                    <b>Total Copies:</b>
+                  <td
+                    colSpan="3"
+                    style={{
+                      textAlign: "right",
+                      fontWeight: "bold",
+                      paddingLeft: "20px",
+                    }}>
+                    Total Copies:
                   </td>
-                  <td colSpan={3}>
-                    <strong>{totalCopies}</strong>
+                  <td
+                    style={{
+                      fontWeight: "bold",
+                      paddingLeft: "10px", // 👈 adds space before Copies
+                    }}>
+                    {TotalCopies}
                   </td>
                 </tr>
               </tfoot>
@@ -972,7 +1071,7 @@ function Misprint() {
           <DialogContent>
             Are you sure you want to delete this{" "}
             <b style={{ color: "red" }}>
-              <u>Misprint</u>
+              <u>Missprint</u>
             </b>
             ?
           </DialogContent>

@@ -103,12 +103,18 @@ function Receiptvoucher() {
   const [Amount, setAmount] = useState("");
   const [ChequeorDDType, setChequeorDDType] = useState("cheque"); // "cheque" or "dd"
   const [ChequeorDDBankName, setChequeBankName] = useState("");
+  const [BankName, setBankName] = useState("")
   const [Towards, setTowards] = useState("");
   const [TowardsId, setTowardsId] = useState("");
   const [KachiPavatiNo, setKachiPavatiNo] = useState("");
   const [KachiPavatiDate, setKachiPavatiDate] = useState(dayjs());
   const [VoucherType, setVoucherType] = useState("RE");
-  const [PaymentType, setPaymenttype] = useState("");
+
+  const [PaymentType, setPaymenttype] = useState(0); // 0: Cash, 1: Bank, 2: MBB Receipt
+  const isCash = PaymentType === 0;
+  const isBank = PaymentType === 1;
+  const isMBB = PaymentType === 2;
+
   const [VoucherNo, setVoucherNo] = useState(null);
   const [VoucherDate, setVoucherDate] = useState(dayjs());
   const [ChequeNo, setChequeNo] = useState("");
@@ -117,6 +123,7 @@ function Receiptvoucher() {
 
   const [IsOldCheque, setIsoldcheque] = useState(false);
   const [AccountPayeeCheque, setAccountpayeecheque] = useState(false);
+  const [CanvassorName, setCanvassorName] = useState("");
 
   const [selectedCashorbank, setSelectedCashorbank] = useState("");
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -135,8 +142,9 @@ function Receiptvoucher() {
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm"));
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [weekstart, setWeekStart] = useState("");
-  const [weekend, setWeekEnd] = useState("");
+
+  const [srn1Id, setSrn1Id] = useState(null); // Debit detail Id
+  const [srn2Id, setSrn2Id] = useState(null); // Credit detail Id
 
   // const handleDateChange1 = (newDate1) => {
   //   if (!newDate1 || !dayjs.isDayjs(newDate1) || !newDate1.isValid()) return;
@@ -144,15 +152,11 @@ function Receiptvoucher() {
   //   console.log("Selected date:", newDate1.format("YYYY-MM-DD"));
 
   // };
+  const [selectedAccount, setSelectedAccount] = useState(null);
 
   const [receiptsafeDate, setReceiptsafeDate] = useState(dayjs());
 
-  // useEffect(() => {
-  //   if (!isEditing) {
-  //     setReceiptsafeDate(dayjs());
-  //   }
-  // }, [isEditing]);
-
+ 
   const handleDateChange1 = (newValue) => {
     if (!newValue || !dayjs(newValue).isValid()) {
       setDateError("Invalid date");
@@ -160,24 +164,9 @@ function Receiptvoucher() {
       return;
     }
 
-    const today = dayjs();
-    const minDate = today.subtract(3, "day");
-    const maxDate = today.add(2, "day");
-
-    if (newValue.isBefore(minDate) || newValue.isAfter(maxDate)) {
-      setDateError("You can select only 2 days before or after today");
-    } else {
-      setDateError("");
-    }
-
-    setReceiptsafeDate(newValue);
+    setDateError("");
+    setReceiptsafeDate(dayjs(newValue));
   };
-
-  // const handleDateChange2 = (newDate2) => {
-  //   if (!newDate2 || !dayjs.isDayjs(newDate2) || !newDate2.isValid()) return;
-  //   setChequeDate(newDate2);
-  //   console.log("Selected date:", newDate2.format("YYYY-MM-DD"));
-  // };
 
   const [chequesafeDate, setchequesafeDate] = useState(dayjs());
 
@@ -188,17 +177,8 @@ function Receiptvoucher() {
       return;
     }
 
-    const today = dayjs();
-    const minDate = today.subtract(3, "day");
-    const maxDate = today.add(2, "day");
-
-    if (newValue.isBefore(minDate) || newValue.isAfter(maxDate)) {
-      setchequedateerror("You can select only 2 days before or after today");
-    } else {
-      setchequedateerror("");
-    }
-
-    setchequesafeDate(newValue);
+    setDateError("");
+    setchequesafeDate(dayjs(newValue));
   };
 
   const [kachipavatisafeDate, setkachipavatisafeDate] = useState(dayjs());
@@ -210,37 +190,9 @@ function Receiptvoucher() {
       return;
     }
 
-    const today = dayjs();
-    const minDate = today.subtract(3, "day");
-    const maxDate = today.add(2, "day");
-
-    if (newValue.isBefore(minDate) || newValue.isAfter(maxDate)) {
-      setkachipavatidateerror(
-        "You can select only 2 days before or after today"
-      );
-    } else {
-      setkachipavatidateerror("");
-    }
-
-    setkachipavatisafeDate(newValue);
+    setDateError("");
+    setkachipavatisafeDate(dayjs(newValue));
   };
-
-  // const handleDateChange3 = (newDate3) => {
-  //   if (!newDate3 || !dayjs.isDayjs(newDate3) || !newDate3.isValid()) return;
-  //   setKachiPavatiDate(newDate3);
-  //   console.log("Selected date:", newDate3.format("YYYY-MM-DD"));
-  // };
-
-  // const receiptsafeDate =
-  //   dayjs.isDayjs(VoucherDate) && VoucherDate.isValid() ? VoucherDate : dayjs();
-
-  // const chequesafeDate =
-  //   dayjs.isDayjs(ChequeDate) && ChequeDate.isValid() ? ChequeDate : dayjs();
-
-  // const kachipavatisafeDate =
-  //   dayjs.isDayjs(KachiPavatiDate) && KachiPavatiDate.isValid()
-  // ? KachiPavatiDate
-  //     : dayjs();
 
   const handleDrawerOpen = () => {
     setIsDrawerOpen(true);
@@ -265,12 +217,20 @@ function Receiptvoucher() {
     fetchReceipts();
     fetchVouchers();
     fetchAccounts();
+     
   }, []);
+
+  const DEFAULT_CASH_BANK_ID = 1; // or 999 or whatever exists in DB
+  useEffect(() => {
+    if (PaymentType === 0) {
+      setBankId(DEFAULT_CASH_BANK_ID); // 🔥 invisible but required
+    }
+  }, [PaymentType]);
 
   const fetchReceipts = async () => {
     try {
       const response = await axios.get(
-        "https://publication.microtechsolutions.net.in/php/Vouchertypeget.php?VoucherType=RE"
+        "https://publication.microtechsolutions.net.in/php/Vouchertypeget.php?VoucherType=RE",
       );
       console.log(response.data, "receipt vouchers");
       setReceipts(response.data);
@@ -281,21 +241,27 @@ function Receiptvoucher() {
   };
 
   const fetchVouchers = async () => {
-    try {
-      const response = await axios.get(
-        "https://publication.microtechsolutions.net.in/php/Voucherhdget.php?VoucherType=RE"
-      );
-      setReceipts(response.data);
-    } catch (error) {
-      // toast.error("Error fetching Vouchers:", error);
-      console.error("Error fetching Vouchers:", error);
-    }
-  };
+  try {
+    const response = await axios.get(
+      "https://publication.microtechsolutions.net.in/php/Voucherhdget.php?VoucherType=RE"
+    );
+
+    const sortedData = [...response.data].sort((a, b) => {
+      const dateA = new Date(a.VoucherDate?.date);
+      const dateB = new Date(b.VoucherDate?.date);
+      return dateA - dateB; // 🔥 OLD → NEW
+    });
+
+    setReceipts(sortedData);
+  } catch (error) {
+    console.error("Error fetching Vouchers:", error);
+  }
+};
 
   const fetchVoucherdetails = async () => {
     try {
       const response = await axios.get(
-        "https://publication.microtechsolutions.net.in/php/Voucherdetailget.php"
+        "https://publication.microtechsolutions.net.in/php/Voucherdetailget.php",
       );
       setReceiptdetails(response.data);
     } catch (error) {
@@ -307,7 +273,7 @@ function Receiptvoucher() {
   const fetchAccounts = async () => {
     try {
       const response = await axios.get(
-        "https://publication.microtechsolutions.net.in/php/Accountget.php"
+        "https://publication.microtechsolutions.net.in/php/Accountget.php",
       );
       const accountOptions = response.data.map((acc) => ({
         value: acc.Id,
@@ -319,6 +285,107 @@ function Receiptvoucher() {
       console.error("Error fetching Accounts:", error);
     }
   };
+useEffect(() => {
+    
+    fetchCities();
+     
+    fetchAreas()
+  }, []);
+
+
+  useEffect(() => {
+  if (PartyId) {
+    fetchPartyInfo(PartyId);
+  } else {
+    setPartyDetails(null);
+  }
+}, [PartyId]);
+const [partyInfo, setPartyInfo] = useState(null);
+
+const [partyDetails, setPartyDetails] = useState(null);
+
+
+
+  const fetchPartyInfo = async (accountId) => {
+  try {
+    const response = await axios.get(
+      `https://publication.microtechsolutions.net.in/php/Addressget.php?AccountId=${accountId}`
+    );
+
+    console.log("Party API Response:", response.data);
+
+    if (
+      response.data?.status === "success" &&
+      response.data?.data?.length > 0
+    ) {
+      // 🔥 If multiple records exist → pick latest UpdatedOn
+      const sorted = [...response.data.data].sort(
+        (a, b) =>
+          new Date(b.UpdatedOn.date) - new Date(a.UpdatedOn.date)
+      );
+
+      setPartyInfo(sorted[0]); // ✅ most recently updated address
+    } else {
+      setPartyInfo(null);
+    }
+  } catch (error) {
+    console.error("Error fetching party info:", error);
+    setPartyInfo(null);
+  }
+};
+
+
+  const [cities, setCities] = useState([]);
+  const [areas, setareas] = useState([]);
+
+
+
+const fetchCities = async () => {
+    try {
+      const response = await axios.get(
+        "https://publication.microtechsolutions.net.in/php/Cityget.php",
+      );
+      const cityOptions = response.data.map((city) => ({
+        value: city.Id,
+        label: city.CityName,
+      }));
+      setCities(cityOptions);
+    } catch (error) {
+      // toast.error("Error fetching cities:", error);
+    }
+  };
+
+  const fetchAreas = async () => {
+    try {
+      const response = await axios.get(
+        "https://publication.microtechsolutions.net.in/php/Areaget.php",
+      );
+      const areaOptions = response.data.map((area) => ({
+        value: area.Id,
+        label: area.AreaName,
+      }));
+      setareas(areaOptions);
+    } catch (error) {
+      // toast.error("Error fetching areas:", error);
+    }
+  };
+
+  
+  const getAreaName = (areaId) =>
+    areas.find((a) => a.value === areaId)?.label || "";
+
+  const getCityName = (cityId) =>
+    cities.find((c) => c.value === cityId)?.label || "";
+
+  
+  const TOWARDS_OPTIONS = [
+    { value: 1, label: "Cash Received" },
+    { value: 2, label: "Cash Received – Sales Counter" },
+    { value: 3, label: "On Account" },
+    { value: 4, label: "CORE BANKING BANK A/C NO." },
+    { value: 5, label: "Cash Withdrawn Self Chq. No." },
+    { value: 6, label: "CORE BANKING BANK A/C NO. HDFC" },
+  ];
 
   const resetForm = () => {
     setVoucherNo("");
@@ -335,6 +402,7 @@ function Receiptvoucher() {
     setchequedateerror("");
     setChequeNo("");
     setTowards("");
+    setCanvassorName("");
     // setKachiPavatiDate("");
     setkachipavatisafeDate(dayjs());
     setkachipavatidateerror("");
@@ -351,14 +419,7 @@ function Receiptvoucher() {
 
   const [idwiseData, setIdwiseData] = useState("");
 
-  useEffect(() => {
-    if (isEditing && accountOptions.length > 0) {
-      setPartyid((prev) => prev); // Force state update to re-trigger Autocomplete value mapping
-      setBankId((prev) => prev);
-    }
-  }, [isEditing, accountOptions]);
-
-  const handleEdit = () => {
+  const handleEdit = async () => {
     if (currentRow) {
       console.log("Editing item with ID:", currentRow.original.Id);
       setIdwiseData(currentRow.original.Id);
@@ -367,13 +428,17 @@ function Receiptvoucher() {
     console.log(currentRow, "row");
     const voucherheader = receipts[currentRow.index];
 
-    // Filter purchase details to match the selected PurchaseId
-    const voucherdetail = receiptdetails.filter(
-      (detail) => detail.VoucherId === voucherheader.Id
+    const response = await axios.get(
+      "https://publication.microtechsolutions.net.in/php/Voucherdetailget.php",
+    );
+    setReceiptdetails(response.data);
+
+    // filter details for this voucherId
+    const voucherdetail = response.data.filter(
+      (detail) => detail.VoucherId === voucherheader.Id,
     );
 
     console.log(voucherdetail, "voucherdetails");
-
     const convertDateForInput = (dateStr) => {
       if (typeof dateStr === "string" && dateStr.includes("-")) {
         const [year, month, day] = dateStr.split(" ")[0].split("-");
@@ -381,39 +446,42 @@ function Receiptvoucher() {
       }
       return null;
     };
-
     const formattedchequedate = convertDateForInput(
-      voucherheader.ChequeDate?.date
+      voucherheader.ChequeDate?.date,
     );
     const formattedvoucherdate = convertDateForInput(
-      voucherheader.VoucherDate?.date
+      voucherheader.VoucherDate?.date,
     );
     const formattedkachipavtidate = convertDateForInput(
-      voucherheader.KachiPavatiDate?.date
+      voucherheader.KachiPavatiDate?.date,
     );
 
+    const debitRow = voucherdetail.find((d) => d.DOrC === "D");
+    const creditRow = voucherdetail.find((d) => d.DOrC === "C");
+
+    console.log(debitRow, "debit row");
+    console.log(creditRow, "credit row");
+    // ✅ store real detail IDs
+    setSrn1Id(debitRow?.Id || null);
+    setSrn2Id(creditRow?.Id || null);
+
+    setBankId(debitRow?.AccountId || null);
+    setPartyid(creditRow?.AccountId || null);
+
+    setAmount(debitRow?.Amount || "");
     setReceiptsafeDate(dayjs(formattedvoucherdate));
     setchequesafeDate(dayjs(formattedchequedate));
     setkachipavatisafeDate(dayjs(formattedkachipavtidate));
-
     setVoucherNo(voucherheader.VoucherNo);
-    // setVoucherDate(formattedvoucherdate); // Convert to Date object if needed
-    // setSelectedCashorbank(voucherheader.selectedCashorbank);
-    setBankId(voucherdetail[0]?.AccountId);
-
-    setPartyid(voucherdetail[1]?.AccountId);
-
-    // setPartyid(voucherdetail[1]?.AccountId);
     // setBankId(voucherdetail[0]?.AccountId);
-
-    setAmount(voucherdetail[0]?.Amount);
+    // setPartyid(voucherdetail[1]?.AccountId);
+    // setAmount(voucherdetail[0]?.Amount);
     setChequeBankName(voucherdetail[1]?.BankName);
-    // setTowardsId(voucherdetail[1]?.AccountId);
     setTowards(Number(voucherheader.Towards));
+    setCanvassorName(voucherheader.CanvassorName || "");
+
     setNarration(voucherheader.Narration);
     setChequeNo(voucherheader.ChequeNo);
-    // setChequeDate(formattedchequedate); // Convert to Date object
-    // setKachiPavatiDate(formattedkachipavtidate);
     setKachiPavatiNo(voucherheader.KachiPavatiNo);
     setPaymenttype(voucherheader.PaymentType);
     console.log(voucherheader, "voucher header");
@@ -426,7 +494,7 @@ function Receiptvoucher() {
 
     // Determine which specific detail to edit
     const specificDetail = voucherdetail.find(
-      (detail) => detail.Id === currentRow.original.Id
+      (detail) => detail.Id === currentRow.original.Id,
     );
     if (specificDetail) {
       setVoucherdetailId(specificDetail.Id); // Set the specific detail Id
@@ -434,6 +502,60 @@ function Receiptvoucher() {
 
     fetchVoucherdetails();
   };
+
+  const [selectedVoucher, setSelectedVoucher] = useState(null);
+
+  useEffect(() => {
+    if (!selectedVoucher) return;
+    const { voucherheader, voucherdetail, row } = selectedVoucher;
+
+    const convertDateForInput = (dateStr) => {
+      if (typeof dateStr === "string" && dateStr.includes("-")) {
+        const [year, month, day] = dateStr.split(" ")[0].split("-");
+        return dayjs(`${year}-${month}-${day}`);
+      }
+      return null;
+    };
+
+    const formattedchequedate = convertDateForInput(
+      voucherheader.ChequeDate?.date,
+    );
+    const formattedvoucherdate = convertDateForInput(
+      voucherheader.VoucherDate?.date,
+    );
+    const formattedkachipavtidate = convertDateForInput(
+      voucherheader.KachiPavatiDate?.date,
+    );
+
+    setReceiptsafeDate(dayjs(formattedvoucherdate));
+    setchequesafeDate(dayjs(formattedchequedate));
+    setkachipavatisafeDate(dayjs(formattedkachipavtidate));
+
+    setVoucherNo(voucherheader.VoucherNo);
+    setBankId(voucherdetail[0]?.AccountId);
+    setPartyid(voucherdetail[1]?.AccountId);
+    setAmount(voucherdetail[0]?.Amount);
+    setChequeBankName(voucherdetail[1]?.BankName);
+    setTowards(Number(voucherheader.Towards));
+    setNarration(voucherheader.Narration);
+    setChequeNo(voucherheader.ChequeNo);
+    setKachiPavatiNo(voucherheader.KachiPavatiNo);
+    setPaymenttype(voucherheader.PaymentType);
+
+    setEditingIndex(row.index);
+    setIsEditing(true);
+    setId(voucherheader.Id);
+
+    const specificDetail = voucherdetail.find(
+      (detail) => detail.Id === row.original.Id,
+    );
+    if (specificDetail) {
+      setVoucherdetailId(specificDetail.Id);
+    }
+
+    setIsDrawerOpen(true); // ✅ only once, after states are ready
+    fetchVoucherdetails();
+  }, [selectedVoucher]);
 
   const handleDelete = () => {
     const row = currentRow;
@@ -467,7 +589,7 @@ function Receiptvoucher() {
 
     fetch(
       "https://publication.microtechsolutions.net.in/php/Voucherhddelete.php",
-      requestOptions
+      requestOptions,
     )
       .then((response) => response.text())
       .then((result) => console.log(result))
@@ -495,6 +617,7 @@ function Receiptvoucher() {
     setErrors(formErrors);
     return isValid;
   };
+  const CASH_ACCOUNT_ID = 1; // Cash in Hand
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -520,7 +643,7 @@ function Receiptvoucher() {
     console.log(formattedVoucherdate, "format voucher date");
     console.log(
       "moment(receiptsafeDate).format:",
-      dayjs(receiptsafeDate).format("YYYY-MM-DD")
+      dayjs(receiptsafeDate).format("YYYY-MM-DD"),
     );
     const formattedchequedate = dayjs(chequesafeDate).format("YYYY-MM-DD");
     const formattedkachipavtidate =
@@ -538,7 +661,10 @@ function Receiptvoucher() {
       KachiPavatiNo: KachiPavatiNo,
       KachiPavatiDate: formattedkachipavtidate,
       Towards: Towards,
+      CanvassorName: CanvassorName, // ✅ added
+
       PaymentType: PaymentType,
+
       CreatedBy: !isEditing ? userId : undefined,
       UpdatedBy: isEditing ? userId : undefined,
     };
@@ -561,74 +687,77 @@ function Receiptvoucher() {
 
       const voucherNo = isEditing ? VoucherNo : response.data.VoucherNo;
 
-      const srn1Id = voucherId; // Same ID for SRN:1
-      const srn2Id = srn1Id + 1; // Generate a different ID for SRN:2 (You can modify this logic)
-
       const formattedVoucherdate = dayjs(receiptsafeDate).format("YYYY-MM-DD");
       const formattedchequedate = dayjs(chequesafeDate).format("YYYY-MM-DD");
 
+     
+      
+
       const detailsData = [
         {
-          Id: isEditing ? srn1Id : null,
+          Id: isEditing ? srn1Id : null, // ✅ real ID
           VoucherId: voucherId,
           VoucherType: "RE",
           SRN: 1,
-          VoucherNo: VoucherNo ? voucherNo : null, // Ensures it takes `null` if `VoucherNo` is not provided
+          VoucherNo: voucherNo,
           VoucherDate: formattedVoucherdate,
-          AccountId: parseInt(BankId, 10),
-          Amount: parseFloat(Amount),
+          // 🔴 Debit side
+          AccountId:
+            PaymentType === 0
+              ? DEFAULT_CASH_BANK_ID // 👈 hidden bank
+              : Number(BankId),
+          Amount: Number(Amount),
           DOrC: "D",
-          Narration: Narration,
+          Narration,
           CostCenterId: 1,
+          BankName: BankName,
           ChequeNo: ChequeNo,
           ChequeDate: formattedchequedate,
-          ChequeAmount: Amount,
-          MICRCode: "MICR123",
-          BankName: ChequeorDDBankName,
-          BankBranch: ChequeorDDBankName,
-          IsOldCheque: IsOldCheque,
-          AccountPayeeCheque: AccountPayeeCheque,
           CreatedBy: !isEditing ? userId : undefined,
           UpdatedBy: isEditing ? userId : undefined,
         },
         {
-          Id: isEditing ? srn2Id : null,
+          Id: isEditing ? srn2Id : null, // ✅ real ID
           VoucherId: voucherId,
           VoucherType: "RE",
           SRN: 2,
-          VoucherNo: VoucherNo ? voucherNo : null, // Ensures it takes `null` if `VoucherNo` is not provided
+          VoucherNo: voucherNo,
           VoucherDate: formattedVoucherdate,
-          AccountId: parseInt(PartyId, 10),
-          Amount: parseFloat(Amount),
+          AccountId: Number(PartyId),
+          Amount: Number(Amount),
           DOrC: "C",
-          Narration: Narration,
+          Narration,
           CostCenterId: 1,
-          ChequeNo: ChequeNo,
+                    BankName: BankName,
+
+          ChequeNo:ChequeNo,
           ChequeDate: formattedchequedate,
-          ChequeAmount: Amount,
-          MICRCode: "MICR123",
-          BankName: ChequeorDDBankName,
-          BankBranch: ChequeorDDBankName,
-          IsOldCheque: IsOldCheque,
-          AccountPayeeCheque: AccountPayeeCheque,
           CreatedBy: !isEditing ? userId : undefined,
           UpdatedBy: isEditing ? userId : undefined,
         },
       ];
+
+      console.log("UPDATE DETAIL IDS:", srn1Id, srn2Id);
+      console.log("UPDATED AMOUNT:", Amount);
 
       const voucherdetailurl =
         isEditing && voucherId
           ? "https://publication.microtechsolutions.net.in/php/Voucherdetailupdate.php"
           : "https://publication.microtechsolutions.net.in/php/Voucherdetailpost.php";
 
-      // Send the detailsData in two separate API requests
-      await axios.post(voucherdetailurl, qs.stringify(detailsData[0]), {
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      });
+      // 🔹 Debit row
+      if (!isEditing || srn1Id) {
+        await axios.post(voucherdetailurl, qs.stringify(detailsData[0]), {
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        });
+      }
 
-      await axios.post(voucherdetailurl, qs.stringify(detailsData[1]), {
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      });
+      // 🔹 Credit row
+      if (!isEditing || srn2Id) {
+        await axios.post(voucherdetailurl, qs.stringify(detailsData[1]), {
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        });
+      }
 
       fetchVouchers();
       fetchVoucherdetails();
@@ -636,7 +765,7 @@ function Receiptvoucher() {
       toast.success(
         isEditing
           ? "Receipt Voucher & Receipt Voucher Details updated successfully!"
-          : "Receipt Voucher & Receipt Voucher Details added successfully!"
+          : "Receipt Voucher & Receipt Voucher Details added successfully!",
       );
       resetForm();
     } catch (error) {
@@ -648,7 +777,7 @@ function Receiptvoucher() {
   const navigate = useNavigate();
   const handlePrint = () => {
     navigate(
-      `/transaction/receiptvoucher/receiptvoucherprint/${currentRow.original.Id}`
+      `/transaction/receiptvoucher/receiptvoucherprint/${currentRow.original.Id}`,
     );
   };
 
@@ -694,7 +823,7 @@ function Receiptvoucher() {
         ),
       },
     ],
-    [receipts]
+    [receipts],
   );
 
   const table = useMaterialReactTable({
@@ -838,7 +967,7 @@ function Receiptvoucher() {
               <Box>
                 <Box flex={2} ml={3}>
                   <Typography variant="body2" fontWeight="bold">
-                    Cash/Bank
+                    Cash/Bank/MBB Receipt
                   </Typography>
                   <RadioGroup
                     value={PaymentType}
@@ -869,55 +998,86 @@ function Receiptvoucher() {
                 <Typography fontWeight="bold" variant="body2">
                   Party Name
                 </Typography>
-                <Autocomplete
+                {/* <Autocomplete
                   options={accountOptions}
                   value={
-                    accountOptions.find((option) => option.value === PartyId) ||
-                    null
+                    accountOptions.find((o) => o.value === PartyId) || null
                   }
-                  onChange={(event, newValue) =>
+                  onChange={(e, newValue) =>
                     setPartyid(newValue ? newValue.value : null)
                   }
-                  getOptionLabel={(option) => option.label} // Display only label in dropdown
+                  getOptionLabel={(option) => option.label}
+                  // disabled={PaymentType === 0}
                   renderInput={(params) => (
                     <TextField
                       {...params}
-                      placeholder="Select Party Name"
+                      placeholder={PaymentType === 0 ? "" : "Select Party Name"}
                       size="small"
-                      margin="none"
                       fullWidth
                     />
                   )}
-                />
+                /> */}
+
+               <Autocomplete
+  options={accountOptions}
+  value={accountOptions.find((o) => o.value === PartyId) || null}
+  onChange={(e, newValue) => {
+    const id = newValue ? newValue.value : null;
+    setPartyid(id);
+
+    if (id) {
+      fetchPartyInfo(id); // 🔥 now defined
+    } else {
+      setPartyInfo(null);
+    }
+  }}
+  getOptionLabel={(option) => option.label}
+  renderInput={(params) => (
+    <TextField
+      {...params}
+      placeholder="Select Party Name"
+      size="small"
+      fullWidth
+    />
+  )}
+/>
               </Box>
 
-              <Box flex={2}>
-                <Typography fontWeight="bold" variant="body2">
-                  Bank Name
-                </Typography>
-                <Autocomplete
-                  options={accountOptions}
-                  value={
-                    accountOptions.find((option) => option.value === BankId) ||
-                    null
-                  }
-                  onChange={(event, newValue) =>
-                    setBankId(newValue ? newValue.value : null)
-                  }
-                  getOptionLabel={(option) => option.label} // Display only label in dropdown
-                  renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      placeholder="Select Bank Name"
-                      size="small"
-                      margin="none"
-                      fullWidth
-                    />
-                  )}
-                />
-              </Box>
+              {(isBank || isMBB) && (
+                <Box flex={2}>
+                  <Typography fontWeight="bold" variant="body2">
+                    Bank Name
+                  </Typography>
+                  <Autocomplete
+                    options={accountOptions}
+                    value={
+                      accountOptions.find(
+                        (option) => option.value === BankId,
+                      ) || null
+                    }
+                    onChange={(event, newValue) =>{
+                                          setSelectedAccount(newValue || null);
+                                                                setBankId(newValue ? newValue.value : null)
 
-              <Box flex={2}>
+
+                    }
+
+                    }
+                    getOptionLabel={(option) => option.label} // Display only label in dropdown
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        placeholder="Select Bank Name"
+                        size="small"
+                        margin="none"
+                        fullWidth
+                      />
+                    )}
+                  />
+                </Box>
+              )}
+
+              <Box flex={1}>
                 <Typography fontWeight="bold" variant="body2">
                   Amount
                 </Typography>
@@ -932,48 +1092,50 @@ function Receiptvoucher() {
                 />
               </Box>
             </Box>
-
-            <Box sx={{ display: "flex", gap: 1 }} mt={2} component="fieldset">
-              <Box>
-                <Typography variant="body2" fontWeight="bold">
-                  Cheque/DD/NEFT
-                </Typography>
-                <FormControl size="small" margin="none">
-                  <RadioGroup
-                    value={ChequeorDDType}
-                    onChange={(e) => setChequeorDDType(e.target.value)}
-                    row>
-                    <FormControlLabel
-                      value="cheque"
-                      control={<Radio />}
-                      label="Cheque"
-                      size="small"
-                    />
-                    <FormControlLabel
-                      value="dd"
-                      control={<Radio />}
-                      label="DD"
-                      size="small"
-                    />
-                    <FormControlLabel
-                      value="neft"
-                      control={<Radio />}
-                      label="NEFT"
-                      size="small"
-                    />
-                  </RadioGroup>
-                </FormControl>
-              </Box>
-
-              <Box
-                sx={{ display: "flex", alignItems: "center", gap: 1 }}
-                ml={2}>
-                {/* Bank Name */}
-                <Box flex={2}>
-                  <Typography fontWeight="bold" variant="body2">
-                    Bank Name
+            {isBank && (
+              <Box sx={{ display: "flex", gap: 1 }} mt={2} component="fieldset">
+                <Box>
+                  <Typography variant="body2" fontWeight="bold">
+                    Cheque/NEFT
                   </Typography>
-                  {/* <Autocomplete
+                  <FormControl size="small" margin="none">
+                    <RadioGroup
+                      value={ChequeorDDType}
+                      onChange={(e) => setChequeorDDType(e.target.value)}
+                      row>
+                      <FormControlLabel
+                        value="cheque"
+                        control={<Radio />}
+                        label="Cheque"
+                        size="small"
+                      />
+
+                      <FormControlLabel
+                        value="neft"
+                        control={<Radio />}
+                        label="NEFT"
+                        size="small"
+                      />
+
+                      <FormControlLabel
+                        value="upi"
+                        control={<Radio />}
+                        label="UPI"
+                        size="small"
+                      />
+                    </RadioGroup>
+                  </FormControl>
+                </Box>
+
+                <Box
+                  sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                  ml={2}>
+                  {/* Bank Name */}
+                  <Box flex={2}>
+                    <Typography fontWeight="bold" variant="body2">
+                      Bank Name
+                    </Typography>
+                    {/* <Autocomplete
                     options={accountOptions}
                     value={
                       accountOptions.find(
@@ -994,67 +1156,68 @@ function Receiptvoucher() {
                       />
                     )}
                   /> */}
-                  <TextField
-                    value={ChequeorDDBankName}
-                    onChange={(e) => setChequeBankName(e.target.value)}
-                    placeholder="Enter Bank Name"
-                    size="small"
-                    margin="none"
-                    fullWidth
-                  />
-                </Box>
-
-                {/* Cheque or DD No */}
-                <Box flex={2}>
-                  <Typography fontWeight="bold" variant="body2">
-                    {ChequeorDDType === "cheque"
-                      ? "Cheque No"
-                      : ChequeorDDType === "dd"
-                      ? "DD No"
-                      : "Transaction ID / UTR No"}
-                  </Typography>
-                  <TextField
-                    value={ChequeNo}
-                    onChange={(e) => setChequeNo(e.target.value)}
-                    size="small"
-                    margin="none"
-                    placeholder={
-                      ChequeorDDType === "cheque"
-                        ? "Enter Cheque No"
-                        : ChequeorDDType === "dd"
-                        ? "Enter DD No"
-                        : "Enter Transaction ID / UTR No"
-                    }
-                    fullWidth
-                  />
-                </Box>
-
-                <Box flex={2}>
-                  <Typography fontWeight="bold" variant="body2">
-                    {ChequeorDDType === "cheque"
-                      ? "Cheque Date"
-                      : ChequeorDDType === "dd"
-                      ? "DD Date"
-                      : "Transaction Date"}
-                  </Typography>
-                  <LocalizationProvider dateAdapter={AdapterDayjs}>
-                    <DatePicker
-                      value={chequesafeDate}
-                      onChange={handleDateChange2}
-                      format="DD-MM-YYYY"
-                      slotProps={{
-                        textField: {
-                          size: "small",
-                          fullWidth: true,
-                          error: !!chequedateerror,
-                          helperText: chequedateerror,
-                        },
-                      }}
+                    <TextField
+                      value={BankName}
+                      onChange={(e) => setBankName(e.target.value)}
+                      placeholder="Enter Bank Name"
+                      size="small"
+                      margin="none"
+                      fullWidth
                     />
-                  </LocalizationProvider>
+                  </Box>
+
+                  {/* Cheque or DD No */}
+                  <Box flex={2}>
+                    <Typography fontWeight="bold" variant="body2">
+                      {ChequeorDDType === "cheque"
+                        ? "Cheque No"
+                        : ChequeorDDType === "upi"
+                          ? "UPI Id"
+                          : "Transaction ID / UTR No"}
+                    </Typography>
+                    <TextField
+                      value={ChequeNo}
+                      onChange={(e) => setChequeNo(e.target.value)}
+                      size="small"
+                      margin="none"
+                      placeholder={
+                        ChequeorDDType === "cheque"
+                          ? "Enter Cheque No"
+                          : ChequeorDDType === "dd"
+                            ? "Enter DD No"
+                            : "Enter Transaction ID / UTR No"
+                      }
+                      fullWidth
+                    />
+                  </Box>
+
+                  <Box flex={2}>
+                    <Typography fontWeight="bold" variant="body2">
+                      {ChequeorDDType === "cheque"
+                        ? "Cheque Date"
+                        : ChequeorDDType === "dd"
+                          ? "DD Date"
+                          : "Transaction Date"}
+                    </Typography>
+                    <LocalizationProvider dateAdapter={AdapterDayjs}>
+                      <DatePicker
+                        value={chequesafeDate}
+                        onChange={handleDateChange2}
+                        format="DD-MM-YYYY"
+                        slotProps={{
+                          textField: {
+                            size: "small",
+                            fullWidth: true,
+                            error: !!chequedateerror,
+                            helperText: chequedateerror,
+                          },
+                        }}
+                      />
+                    </LocalizationProvider>
+                  </Box>
                 </Box>
               </Box>
-            </Box>
+            )}
 
             <Box sx={{ display: "flex", alignItems: "center", gap: 2 }} mt={3}>
               <Box flex={2}>
@@ -1062,15 +1225,19 @@ function Receiptvoucher() {
                   Towards
                 </Typography>
                 <Autocomplete
-                  options={accountOptions}
+                  options={TOWARDS_OPTIONS}
                   value={
-                    accountOptions.find((option) => option.value === Towards) ||
-                    null
+                    TOWARDS_OPTIONS.find(
+                      (option) => option.value === Towards,
+                    ) || null
                   }
                   onChange={(event, newValue) =>
                     setTowards(newValue ? newValue.value : null)
                   }
                   getOptionLabel={(option) => option.label}
+                  isOptionEqualToValue={(option, value) =>
+                    option.value === value.value
+                  }
                   renderInput={(params) => (
                     <TextField
                       {...params}
@@ -1118,8 +1285,92 @@ function Receiptvoucher() {
                 </LocalizationProvider>
               </Box>
             </Box>
+
+            {/* 🔹 Canvassor – smaller width */}
+            <Box sx={{ display: "flex", gap: 2 }} mt={3}>
+              <Box flex={4}>
+                <Typography fontWeight="bold" variant="body2">
+                  Canvassor?
+                </Typography>
+                <TextField
+                  value={CanvassorName}
+                  onChange={(e) => setCanvassorName(e.target.value)}
+                  size="small"
+                  margin="none"
+                  placeholder="Enter Canvassor Name"
+                  small
+                  style={{ width: "400px", marginTop: "5" }}
+                />
+              </Box>
+            </Box>
+
+
+
           </Box>
 
+
+
+{/* Ensure the box shows as soon as a PartyId is selected */}
+{PartyId && (
+  <Box
+    sx={{
+      m: 1,
+      width: "500px",
+      p: 1,
+      backgroundColor: "#336699",
+      color: "white",
+      borderRadius: 1,
+      border: "1px solid #003366",
+      minHeight: "140px", // Ensures box has a consistent size
+      display: "flex",
+      flexDirection: "column",
+      justifyContent: "center"
+    }}
+  >
+    {partyInfo ? (
+      <>
+        {/* Case 1: Party Info exists - Show Name */}
+        <Typography fontWeight="bold" variant="body1">
+          {partyInfo.AccountName || "Account Name Not Available"} ({PartyId})
+        </Typography>
+
+        {/* Check for any address lines */}
+        {(partyInfo.Address1 || partyInfo.Address2 || partyInfo.Address3) ? (
+          <Box sx={{ mt: 0.5 }}>
+            {partyInfo.Address1 && <Typography variant="caption" display="block">{partyInfo.Address1}</Typography>}
+            {partyInfo.Address2 && <Typography variant="caption" display="block">{partyInfo.Address2}</Typography>}
+            {partyInfo.Address3 && <Typography variant="caption" display="block">{partyInfo.Address3}</Typography>}
+          </Box>
+        ) : (
+          <Typography variant="caption" sx={{ fontStyle: "italic", mt: 1, display: "block", color: "#FFD700" }}>
+            ⚠️ No address info available
+          </Typography>
+        )}
+
+        {partyInfo.MobileNo && (
+          <Typography variant="caption" display="block" mt={0.2}>
+            Mobile: {partyInfo.MobileNo}
+          </Typography>
+        )}
+
+        <Box sx={{ mt: 0.3, pt: 1, borderTop: "1px solid rgba(255,255,255,0.3)" }}>
+          <Typography fontWeight="bold">
+            Bal. = {partyInfo.Balance || "0.00"} Dr
+          </Typography>
+        </Box>
+      </>
+    ) : (
+      /* Case 2: partyInfo is null or undefined (Still fetching or not found) */
+      <Box sx={{ textAlign: "center" }}>
+         <Typography variant="body2" sx={{ fontStyle: "bold" }}>
+          Party details not Available
+         </Typography>
+      </Box>
+    )}
+  </Box>
+)}
+
+ 
           <Box
             display={"flex"}
             alignItems={"center"}

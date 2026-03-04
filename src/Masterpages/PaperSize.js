@@ -18,7 +18,7 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { RiDeleteBin5Line } from "react-icons/ri";
 import { Tooltip } from "@mui/material";
-
+import { TextField, Autocomplete } from "@mui/material";
 function PaperSize() {
   const [userId, setUserId] = useState("");
   const [yearid, setYearId] = useState("");
@@ -45,10 +45,15 @@ function PaperSize() {
   const [papersize, setPapersize] = useState("");
   const [millname, setMillname] = useState([]);
   const [unit, setUnit] = useState("");
+  const unitOptions = [
+    { label: "REAM", value: "REAM" },
+    { label: "PAPER", value: "PAPER" },
+  ];
+
   const [multiplefactor, setMultiplefactor] = useState("");
   const [opstock, setOpstock] = useState("");
   const [STRSize_Code, setSTRSize_Code] = useState("");
-  const [SizeCode, setSizeCode] = useState("");
+  const [OpeningStock, setOpeningStock] = useState("");
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingIndex, setEditingIndex] = useState(-1);
@@ -86,7 +91,7 @@ function PaperSize() {
   const fetchPaperSizes = async () => {
     try {
       const response = await axios.get(
-        "https://publication.microtechsolutions.net.in/php/PaperSizeget.php"
+        "https://publication.microtechsolutions.net.in/php/PaperSizeget.php",
       );
       setPapersizes(response.data);
     } catch (error) {
@@ -105,7 +110,7 @@ function PaperSize() {
     setMillname("");
     setMultiplefactor("");
     setSTRSize_Code("");
-    setSizeCode("");
+    setOpeningStock("");
 
     setIsModalOpen(false);
     setErrors({});
@@ -114,6 +119,7 @@ function PaperSize() {
   const handleNewClick = () => {
     resetForm();
     setIsModalOpen(true);
+    setIsEditing(false);
     setEditingIndex(-1);
   };
 
@@ -125,7 +131,7 @@ function PaperSize() {
     setMultiplefactor(paper.MultipleFactor);
     setOpstock(paper.OpeningStock);
     setSTRSize_Code(paper.STRSize_Code);
-    setSizeCode(paper.SizeCode);
+    setOpeningStock(paper.OpeningStock);
     setEditingIndex(row.index);
     setId(paper.Id);
     setIsEditing(true);
@@ -154,7 +160,7 @@ function PaperSize() {
 
     fetch(
       "https://publication.microtechsolutions.net.in/php/Papersizedelete.php",
-      requestOptions
+      requestOptions,
     )
       .then((response) => response.text())
       .then((result) => console.log(result))
@@ -175,11 +181,6 @@ function PaperSize() {
 
     if (!papersize) {
       formErrors.papersize = "Paper Size Name is required.";
-      isValid = false;
-    }
-
-    if (!millname) {
-      formErrors.millname = "Mill Name is required.";
       isValid = false;
     }
 
@@ -220,10 +221,9 @@ function PaperSize() {
       PaperSizeName: papersize,
       MillName: millname,
       Unit: unit,
-      OpeningStock: 0,
+      OpeningStock: OpeningStock,
       MultipleFactor: multiplefactor,
       STRSize_Code: STRSize_Code,
-      SizeCode: SizeCode,
       CreatedBy: userId,
     };
 
@@ -322,7 +322,7 @@ function PaperSize() {
         ),
       },
     ],
-    [papersizes]
+    [papersizes],
   );
 
   const table = useMaterialReactTable({
@@ -378,9 +378,7 @@ function PaperSize() {
 
             <form className="papersize-form">
               <div>
-                <label className="papersize-label">
-                  Paper Size <b className="required">*</b>
-                </label>
+                <label className="papersize-label">Paper Size</label>
                 <div>
                   <Tooltip
                     title={
@@ -411,9 +409,7 @@ function PaperSize() {
               </div>
 
               <div>
-                <label className="papersize-label">
-                  Mill Name <b className="required">*</b>
-                </label>
+                <label className="papersize-label">Mill Name</label>
                 <div>
                   <Tooltip
                     title={
@@ -435,17 +431,15 @@ function PaperSize() {
                       placeholder="Enter mill name"
                     />
                   </Tooltip>
-                  <div>
+                  {/* <div>
                     {errors.millname && (
                       <b className="error-text">{errors.millname}</b>
                     )}
-                  </div>
+                  </div> */}
                 </div>
               </div>
               <div>
-                <label className="papersize-label">
-                  Unit <b className="required">*</b>
-                </label>
+                <label className="papersize-label">Unit</label>
                 <div>
                   <Tooltip
                     title={
@@ -454,18 +448,28 @@ function PaperSize() {
                       </span>
                     }
                     arrow>
-                    <select
-                      id="unit"
-                      name="unit"
-                      value={unit}
-                      onChange={(e) => setUnit(e.target.value)}
-                      ref={unitRef}
-                      onKeyDown={(e) => handleKeyDown(e, opstockRef)}
-                      className="papersize-control">
-                      <option value="">Select unit</option>
-                      <option value="REAM">REAM</option>
-                      <option value="Paper">Paper</option>
-                    </select>
+                    <Autocomplete
+                      options={unitOptions}
+                      value={
+                        unitOptions.find((opt) => opt.value === unit) || null
+                      }
+                      onChange={(event, newValue) =>
+                        setUnit(newValue ? newValue.value : "")
+                      }
+                      getOptionLabel={(option) => option.label}
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          placeholder="Select unit"
+                          size="small"
+                          margin="none"
+                          fullWidth
+                          inputRef={unitRef}
+                          onKeyDown={(e) => handleKeyDown(e, opstockRef)}
+                        />
+                      )}
+                      sx={{ mt: 1.25, mb: 0.625, width: 270 }} // Equivalent to 10px and 5px
+                    />
                   </Tooltip>
 
                   <div>
@@ -473,44 +477,9 @@ function PaperSize() {
                   </div>
                 </div>
               </div>
-              {/* <div>
-                <label className="papersize-label">
-                  Opening stock <b className="required">*</b>
-                </label>
-                <div>
-                  <input
-                    type="number"
-                    id="opstock"
-                    name="opstock"
-                    value={opstock}
-                    onChange={(e) => {
-                      const value = e.target.value;
-
-                      // Regex to validate decimal numbers with at most 18 digits total and 2 decimal places
-                      const regex = /^\d{0,18}(\.\d{0,2})?$/;
-
-                      // Check if the value matches the regex
-                      if (value === "" || regex.test(value)) {
-                        setOpstock(value);
-                      }
-                    }}
-                    ref={opstockRef}
-                    onKeyDown={(e) => handleKeyDown(e, multfactorRef)}
-                    className="papersize-control"
-                    placeholder="Enter op stock"
-                  />
-                  <div>
-                    {errors.opstock && (
-                      <b className="error-text">{errors.opstock}</b>
-                    )}
-                  </div>
-                </div>
-              </div> */}
 
               <div>
-                <label className="papersize-label">
-                  Multiple Factor <b className="required">*</b>
-                </label>
+                <label className="papersize-label">Multiple Factor</label>
 
                 <div>
                   <input
@@ -533,9 +502,7 @@ function PaperSize() {
               </div>
 
               <div>
-                <label className="papersize-label">
-                  STRSIZE_Code <b className="required">*</b>
-                </label>
+                <label className="papersize-label">STRSIZE_Code</label>
 
                 <div>
                   <Tooltip
@@ -566,25 +533,21 @@ function PaperSize() {
               </div>
 
               <div>
-                <label className="papersize-label">
-                  Size Code <b className="required">*</b>
-                </label>
+                <label className="papersize-label">Opening Stock</label>
 
                 <div>
                   <input
                     type="number"
-                    id="SizeCode"
-                    name="SizeCode"
-                    value={SizeCode}
-                    onChange={(e) => setSizeCode(e.target.value)}
-                    ref={sizecodeRef}
-                    onKeyDown={(e) => handleKeyDown(e, saveRef)}
+                    id="OpeningStock"
+                    name="OpeningStock"
+                    value={OpeningStock}
+                    onChange={(e) => setOpeningStock(e.target.value)}
                     className="papersize-control"
-                    placeholder="Enter Size Code"
+                    placeholder="Enter Opening Stock"
                   />
                   <div>
-                    {errors.SizeCode && (
-                      <b className="error-text">{errors.SizeCode}</b>
+                    {errors.OpeningStock && (
+                      <b className="error-text">{errors.OpeningStock}</b>
                     )}
                   </div>
                 </div>

@@ -46,10 +46,18 @@
     height: 250px;
     overflow-y: auto;
     overflow-x: auto;
-    width: 100%;
+    /* width: 100%; */
     border-collapse: collapse;
     background-color: #ffffff;
   }
+
+    .debitnote-table thead th {
+      position: sticky;
+      top: 0;
+      padding: 10px;
+      background: #f4f4f4;
+      z-index: 1;
+    }
   
   .debitnote-table table {
     width: 100%;
@@ -60,7 +68,7 @@
   }
   
   .debitnote-table th, .debitnote-table td {
-    padding: 12px;
+    /* padding: 12px; */
     text-align: left;
     border-bottom: 1px solid #ddd;
   }
@@ -71,24 +79,14 @@
   }
   
   .debitnote-table input {
-    width: 100%;
-    padding: 8px;
+    /* width: 100%;
+    padding: 8px; */
     box-sizing: border-box;
     border: 1px solid #ccc;
     border-radius: 4px;
   }
   
-  .debitnote-table tr:nth-child(even) {
-    background-color: #f9f9f9;
-  }
   
-  .debitnote-table tr:hover {
-    background-color: #f1f1f1;
-  }
-  
-  .debitnote-table-container {
-    overflow-x: auto;
-  }
   
   
   

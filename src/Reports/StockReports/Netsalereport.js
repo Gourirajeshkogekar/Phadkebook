@@ -241,6 +241,7 @@ const Netsalereport = () => {
               </Typography>
               <DatePicker
                 value={fromdate}
+                format="DD-MM-YYYY"
                 onChange={(newValue) => setFromDate(newValue)}
                 slotProps={{ textField: { size: "small", fullWidth: true } }}
               />
@@ -251,6 +252,7 @@ const Netsalereport = () => {
               </Typography>
               <DatePicker
                 value={todate}
+                format="DD-MM-YYYY"
                 onChange={(newValue) => setToDate(newValue)}
                 slotProps={{ textField: { size: "small", fullWidth: true } }}
               />
