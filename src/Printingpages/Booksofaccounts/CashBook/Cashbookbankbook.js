@@ -1,4 +1,4 @@
-import React, { useState,useRef } from "react";
+import React, { useState,useRef, useEffect } from "react";
 import {
   Box,
   Paper,
@@ -7,7 +7,7 @@ import {
   FormControlLabel,
   Button,
   Stack,
-  Grid
+  Grid, Autocomplete, TextField, CircularProgress
 } from "@mui/material";
 import PrintIcon from "@mui/icons-material/Print";
 import CloseIcon from "@mui/icons-material/Close";
@@ -51,7 +51,29 @@ export default function BankBookCashBook() {
   =============================== */
  const reportRef = useRef(null);
    const [printing, setPrinting] = useState(false);
- 
+   const [selectedBook, setSelectedBook] = useState(null);
+ const [loadingAccounts, setLoadingAccounts] = useState(true);
+const [accountOptions, setAccountOptions] = useState([]); // API Data
+
+
+
+
+   // --- Fetch Accounts from API ---
+  useEffect(() => {
+    fetch("https://publication.microtechsolutions.net.in/php/Accountget.php")
+      .then((res) => res.json())
+      .then((data) => {
+        // You might want to filter for specific types (e.g., TypeCode 'B' often means Bank/Cash)
+        // or simply show all accounts as per your screenshot logic.
+        setAccountOptions(data || []);
+        setLoadingAccounts(false);
+      })
+      .catch((err) => {
+        console.error("Error fetching accounts:", err);
+        setLoadingAccounts(false);
+      });
+  }, []);
+
  const handlePrint = async () => {
     setPrinting(true);
     // Give the DOM a moment to ensure the hidden report is ready
@@ -117,16 +139,46 @@ export default function BankBookCashBook() {
             </Grid>
           </Paper>
 
+       {/* FIXED: Autocomplete now uses fetched accountOptions */}
           <Paper sx={{ p: 3, mb: 3 }}>
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={printDaily}
-                  onChange={(e) => setPrintDaily(e.target.checked)}
+            <Typography fontWeight={600} mb={2}>Cash/Bank Book</Typography>
+            <Autocomplete
+              size="small"
+              options={accountOptions}
+              loading={loadingAccounts}
+              // FIXED: Changed .label to .AccountName to match your API
+              getOptionLabel={(option) => option.AccountName || ""}
+              value={selectedBook}
+              onChange={(event, newValue) => setSelectedBook(newValue)}
+              renderInput={(params) => (
+                <TextField 
+                  {...params} 
+                  // label="Select Account" 
+                  placeholder="Search book..." 
+                  InputProps={{
+                    ...params.InputProps,
+                    endAdornment: (
+                      <>
+                        {loadingAccounts ? <CircularProgress color="inherit" size={20} /> : null}
+                        {params.InputProps.endAdornment}
+                      </>
+                    ),
+                  }}
                 />
-              }
-              label="Print Daily Totals"
+              )}
             />
+            
+            <Box mt={2}>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={printDaily}
+                    onChange={(e) => setPrintDaily(e.target.checked)}
+                  />
+                }
+                label="Print Daily Totals?"
+              />
+            </Box>
           </Paper>
 
           <Stack direction="row" spacing={2} justifyContent="center">
