@@ -142,6 +142,12 @@ export const menuItems = [
       },
 
       {
+        title: "Book Group",
+        path: "/masters/bookgroup",
+        icon: <FaBook />,
+      },
+
+      {
         title: "Standard",
         path: "/masters/standard",
         icon: <FaStar />,
@@ -233,11 +239,7 @@ export const menuItems = [
         icon: <FaUserFriends />,
       },
 
-      // {
-      //   title: "Book Group",
-      //   path: "/masters/bookgroup",
-      //   icon: <FaBook />,
-      // },
+      
       // {
       //   title: "Book Medium",
       //   path: "/masters/bookmedium",
@@ -935,6 +937,11 @@ export const menuItems = [
       {
         title: "User Rights",
         path: "/settings/userrights",
+        icon: <FaUserShield />,
+      },
+       {
+        title: "Company Rights",
+        path: "/settings/companyrights",
         icon: <FaUserShield />,
       },
 

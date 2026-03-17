@@ -49,6 +49,9 @@ function Commission() {
   const [EndCopy, setEndCopy] = useState("");
   const [CommissionPercentage, setCommissionPercentage] = useState("");
   const [categories, setCategories] = useState([]);
+    const [partyCategories, setPartycategories] = useState([]);
+    const [PartyCategory, setPartyCategory] = useState("");
+  
   const [books, setBooks] = useState([]);
   const [bookgroups, setBookgroups] = useState([]);
   const [standards, setStandards] = useState([]);
@@ -149,25 +152,20 @@ function Commission() {
     }
   };
 
-  const fetchPartycategories = async () => {
-    try {
-      const response = await axios.get(
-        "https://publication.microtechsolutions.net.in/php/Costcenterget.php"
-      );
-
-      console.log("Party Category API:", response.data); // ← check keys here
-
-      const partycatOptions = response.data.map((p) => ({
-        value: p.Id || p.CostCenterId, // fallback fix
-        label: p.CostcenterName || p.CostCenterName, // fallback fix
-      }));
-
-      setCategories(partycatOptions);
-    } catch (error) {
-      console.error("Error fetching Party categories:", error);
-    }
-  };
-
+   const fetchPartycategories = async () => {
+      try {
+        const response = await axios.get(
+          "https://publication.microtechsolutions.net.in/php/PartyCategoryget.php",
+        );
+        const partyOptions = response.data.map((partycat) => ({
+          value: partycat.Id,
+          label: partycat.PartyCategory,
+        }));
+        setPartycategories(partyOptions);
+      } catch (error) {
+        // toast.error("Error fetching party ids:", error);
+      }
+    };
   const resetForm = () => {
     setTypecode("");
     setBookorGroupid("");
@@ -175,6 +173,7 @@ function Commission() {
     setCostCenterId("");
     setStartCopy("");
     setEndCopy("");
+    setPartyCategory("")
     setCommissionPercentage("");
     setIsEditing(false); // Reset isEditing to false
     setId(""); // Clear the id
@@ -412,7 +411,7 @@ function Commission() {
               <div>
                 <label className="commission-label">
                   {" "}
-                  Type Code<b className="required">*</b>
+                  Type Code
                 </label>
                 <div>
                   <label>
@@ -453,7 +452,7 @@ function Commission() {
                   {" "}
                   <div>
                     <label className="commission-label">
-                      Book or Group Id<b className="required">*</b>
+                      Book or Group Id
                     </label>
                     {TypeCode === "B" ? (
                       <Select
@@ -513,37 +512,31 @@ function Commission() {
                   </div>
                   <div>
                     <label className="commission-label">
-                      Party Category<b className="required">*</b>
+                      Party Category
                     </label>
                     <div>
                       <Select
-                        id="CostCenterId"
-                        name="CostCenterId"
-                        value={
-                          categories.find(
-                            (option) => option.value === CostCenterId
-                          ) || null
-                        }
-                        onChange={(option) => setCostCenterId(option.value)}
-                        ref={profcatidRef}
-                        onKeyDown={(e) => handleKeyDown(e, stdidRef)}
-                        options={categories}
-                        styles={{
-                          control: (base) => ({
-                            ...base,
-                            width: "300px",
-                            marginTop: "10px",
-                            borderRadius: "4px",
-                            border: "1px solid rgb(223, 222, 222)",
-                            marginBottom: "5px",
-                          }),
-                          menu: (base) => ({
-                            ...base,
-                            zIndex: 100,
-                          }),
-                        }}
-                        placeholder="Party category"
-                      />
+                                                  id="PartyCategory"
+                                                  name="PartyCategory"
+                                                  value={partyCategories.find(
+                                                    (option) => option.value === PartyCategory,
+                                                  )}
+                                                  onChange={(option) =>
+                                                    setPartyCategory(option.value)
+                                                  }
+                                                  options={partyCategories}
+                                                  styles={{
+                                                    control: (base) => ({
+                                                      ...base,
+                                                      width: "250px",
+                                                      marginTop: "10px",
+                                                      borderRadius: "4px",
+                                                      border: "1px solid rgb(223, 222, 222)",
+                                                      marginBottom: "5px",
+                                                    }),
+                                                  }}
+                                                  placeholder="Select Id"
+                                                />
                     </div>
                   </div>{" "}
                 </div>
@@ -552,7 +545,7 @@ function Commission() {
                 <div className="othercom-rows">
                   <div>
                     <label className="commission-label">
-                      Standard Id<b className="required">*</b>
+                      Standard Id
                     </label>
                     <div>
                       <Select
@@ -591,7 +584,7 @@ function Commission() {
 
                   <div>
                     <label className="commission-label">
-                      Start Copy<b className="required">*</b>
+                      Start Copy
                     </label>
                     <div>
                       <input
@@ -607,14 +600,14 @@ function Commission() {
                       />
                     </div>
 
-                    {errors.StartCopy && (
+                    {/* {errors.StartCopy && (
                       <b className="error-text">{errors.StartCopy}</b>
-                    )}
+                    )} */}
                   </div>
 
                   <div>
                     <label className="commission-label">
-                      End Copy<b className="required">*</b>
+                      End Copy
                     </label>
                     <div>
                       <input
@@ -629,16 +622,16 @@ function Commission() {
                         placeholder="Enter End Copy"
                       />{" "}
                     </div>
-                    <div>
+                    {/* <div>
                       {errors.EndCopy && (
                         <b className="error-text">{errors.EndCopy}</b>
                       )}
-                    </div>
+                    </div> */}
                   </div>
 
                   <div>
                     <label className="commission-label">
-                      Commission %<b className="required">*</b>
+                      Commission %
                     </label>
                     <div>
                       <input
@@ -656,11 +649,11 @@ function Commission() {
                       />
                     </div>
 
-                    {errors.CommissionPercentage && (
+                    {/* {errors.CommissionPercentage && (
                       <b className="error-text">
                         {errors.CommissionPercentage}
                       </b>
-                    )}
+                    )} */}
                   </div>
                 </div>
               </form>

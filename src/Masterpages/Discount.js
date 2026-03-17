@@ -186,7 +186,7 @@ function Discount() {
 
   const handleSubmit = async (e) => {
     e.preventDefault(); // Prevent the default form submission
-    if (!validateForm()) return;
+    // if (!validateForm()) return;
 
     // Find the selected CommissionType and BookName
     const selectedCommission = commissionOptions.find(
@@ -363,11 +363,11 @@ function Discount() {
                     placeholder="Select Comm id"
                   />
 
-                  <div>
+                  {/* <div>
                     {errors.CommissionId && (
                       <b className="error-text">{errors.CommissionId}</b>
                     )}
-                  </div>
+                  </div> */}
                 </div>
               </div>
               <div>
@@ -396,11 +396,11 @@ function Discount() {
                     placeholder="Select Book id"
                   />
 
-                  <div>
+                  {/* <div>
                     {errors.BookId && (
                       <b className="error-text">{errors.BookId}</b>
                     )}
-                  </div>
+                  </div> */}
                 </div>{" "}
               </div>
             </form>

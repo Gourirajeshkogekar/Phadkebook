@@ -11,9 +11,9 @@
 }
 
 .paymentvouchertable-container {
-  height: 300px;
-  overflow-y: auto;
-  overflow-x: auto;
+  height: 350px;
+   overflow-y: auto;
+  overflow-x: scroll;
 }
 
 .paymentvouchertable-master {

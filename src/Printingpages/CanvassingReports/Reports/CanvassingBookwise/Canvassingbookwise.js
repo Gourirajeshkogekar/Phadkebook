@@ -20,22 +20,40 @@ const Canvassingbookwise = () => {
   const filters = location.state?.filters;
   const isPrintMode = location.state?.printMode;
   const componentRef = useRef();
+  const [printing, setPrinting] = useState(false)
 
-  useEffect(() => {
+ useEffect(() => {
     if (isPrintMode && filters) {
       setLoading(true);
 
-      // 1. Construct GET URL with fromDate and toDate params
-      const baseUrl = 'https://publication.microtechsolutions.net.in/php/get/getCanvassingBookwise.php';
-      const queryParams = new URLSearchParams({
-        fromDate: filters.startdate,
-        toDate: filters.enddate
-      }).toString();
+      // Helper to join array IDs into a comma-separated string
+      const joinIds = (arr) => (Array.isArray(arr) ? arr.join(",") : "");
+
+    
+      
+      const params = new URLSearchParams({
+        fromdate: filters?.period?.startdate || filters?.startdate || "",
+        todate: filters?.period?.enddate || filters?.enddate || "",
+        // Use the plural keys from state (areas, cities, etc.) joined by commas
+        areaId: joinIds(filters?.areas),
+        cityId: joinIds(filters?.cities),
+        collegeId: joinIds(filters?.colleges),
+        canvassorId: joinIds(filters?.canvassors),
+        accountId: joinIds(filters?.accounts),
+        standardId: joinIds(filters?.standards),
+        bookId: joinIds(filters?.selectedBooks),
+        bookGroupId: joinIds(filters?.bookGroups),
+        publicationId: joinIds(filters?.publications)
+      });
+
+
+        const baseUrl = 'https://publication.microtechsolutions.net.in/php/get/getCanvassingBookwise.php';
+
+      const queryParams = new URLSearchParams(params).toString();
 
       fetch(`${baseUrl}?${queryParams}`)
         .then((res) => res.json())
         .then((json) => {
-          // 2. Save the whole JSON object (it contains success, totalCopies, and data)
           setReportData(json);
           setLoading(false);
         })
@@ -48,24 +66,138 @@ const Canvassingbookwise = () => {
 
   if (!isPrintMode) return null;
 
-  const handlePrint = async () => {
-    if (!componentRef.current) return;
-    try {
-      setLoading(true);
-      const canvas = await html2canvas(componentRef.current, { scale: 2, useCORS: true });
-      const imgData = canvas.toDataURL("image/png");
-      const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const imgProps = pdf.getImageProperties(imgData);
-      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-      pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
-      window.open(pdf.output("bloburl"), "_blank");
-      setLoading(false);
-    } catch (error) {
-      console.error("PDF Generation Error:", error);
-      setLoading(false);
+
+
+
+  
+//   const handlePrint = async () => {
+//   setPrinting(true);
+
+//   try {
+//     const element = componentRef.current;
+//     if (!element) return;
+
+//     // 1. Capture the canvas
+//     const canvas = await html2canvas(element, {
+//       scale: 2, // Keeps quality high
+//       useCORS: true,
+//       logging: false,
+//     });
+
+//     const imgData = canvas.toDataURL("image/png");
+//     const pdf = new jsPDF("p", "mm", "a4");
+
+//     const pdfWidth = 210;
+//     const pdfHeight = 297;
+//     // Calculate how high the image should be to maintain aspect ratio
+//     const imgHeight = (canvas.height * pdfWidth) / canvas.width;
+
+//     let heightLeft = imgHeight;
+//     let position = 0;
+
+//     // 2. Add the first page
+//     pdf.addImage(imgData, "PNG", 0, position, pdfWidth, imgHeight);
+//     heightLeft -= pdfHeight;
+
+//     // 3. Loop through remaining height and add new pages
+//     while (heightLeft > 0) {
+//       position = heightLeft - imgHeight; // This slides the image up
+//       pdf.addPage();
+//       pdf.addImage(imgData, "PNG", 0, position, pdfWidth, imgHeight);
+//       heightLeft -= pdfHeight;
+//     }
+
+//     // REMOVED: The extra pdf.addImage call that was causing the "contraction"
+    
+//     window.open(pdf.output("bloburl"), "_blank");
+//   } catch (error) {
+//     console.error("PDF Generation Error:", error);
+//   }
+
+//   setPrinting(false);
+// };
+
+
+const handlePrint = async () => {
+  setPrinting(true);
+
+  try {
+    const element = componentRef.current;
+    if (!element) return;
+
+    const canvas = await html2canvas(element, {
+      scale: 2,
+      useCORS: true,
+      logging: false,
+    });
+
+    const imgData = canvas.toDataURL("image/png");
+    const pdf = new jsPDF("p", "mm", "a4");
+
+    const pdfWidth = 210;
+    const pdfHeight = 297;
+    const imgHeight = (canvas.height * pdfWidth) / canvas.width;
+
+    let heightLeft = imgHeight;
+    let position = 0;
+
+    const title = "Phadke Prakashan, Kolhapur.";
+    const subTitle = "Canvassing Book Wise Report";
+    const dateRange = `Period: From ${filters?.period?.startdate || ""} to ${filters?.period?.enddate || ""}`;
+
+    // 1. Add the first page
+    pdf.addImage(imgData, "PNG", 0, position, pdfWidth, imgHeight);
+    heightLeft -= pdfHeight;
+
+    // 2. Loop for subsequent pages
+    while (heightLeft > 0) {
+      position = heightLeft - imgHeight; 
+      pdf.addPage();
+      
+      pdf.addImage(imgData, "PNG", 0, position, pdfWidth, imgHeight);
+
+      // --- STAMP REPEATING HEADER (White Background Box) ---
+      pdf.setFillColor(255, 255, 255);
+      pdf.rect(0, 0, pdfWidth, 40, 'F'); 
+
+      // Main Titles
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(11);
+      pdf.text(title, pdfWidth / 2, 10, { align: "center" });
+      
+      pdf.setFontSize(9);
+      pdf.text(subTitle, pdfWidth / 2, 16, { align: "center" });
+      
+      pdf.setFontSize(8);
+      pdf.text(dateRange, pdfWidth / 2, 21, { align: "center" });
+
+      // --- DRAW COLUMN HEADERS ---
+      pdf.setFontSize(8.5); // Matches your 14px screen font better in PDF scale
+      pdf.setLineWidth(0.4);
+      
+      // Top line of header
+      pdf.line(10, 26, 200, 26); 
+      
+      // Column Labels (Adjusted for Bookwise Report)
+      // Standard margins: Left 10mm, Right 200mm
+      pdf.text("Book Code", 12, 31);
+      pdf.text("Book Name", 42, 31);
+      pdf.text("Total Copies", 198, 31, { align: "right" });
+
+      // Bottom line of header
+      pdf.line(10, 34, 200, 34); 
+
+      heightLeft -= pdfHeight;
     }
-  };
+
+    window.open(pdf.output("bloburl"), "_blank");
+  } catch (error) {
+    console.error("PDF Generation Error:", error);
+  }
+
+  setPrinting(false);
+};
+
 
   const handleBack = () => { navigate(-1); };
 
@@ -86,6 +218,16 @@ const Canvassingbookwise = () => {
         </Button>
       </Stack>
 
+
+      {/* The Loading Overlay/Message */}
+    {printing && (
+      <div className="loading-overlay" style={{color:'green', fontWeight:'bold', fontSize:'17px'}}>
+        <p>Please wait, your report is being generated. This may take a few seconds...</p>
+      </div>
+    )}
+
+
+
       {/* REPORT CONTENT */}
       <Box ref={componentRef} sx={{ p: 4, mx: 'auto', maxWidth: '1000px', bgcolor: 'white' }}>
         
@@ -93,9 +235,10 @@ const Canvassingbookwise = () => {
         <Box sx={{ mb: 2, textAlign: 'center' }}>
           <Typography variant="h6" fontWeight="bold">Phadke Prakashan, Kolhapur.</Typography>
           <Typography variant="subtitle2" fontWeight="bold">Canvassing Book Wise Report</Typography>
-          <Typography variant="caption" sx={{ display: 'block' }}>
-            Period: From {filters?.startdate || "---"} to {filters?.enddate || "---"}
-          </Typography>
+          <Typography variant="caption" sx={{ display: 'block', fontWeight:'bold' }}>
+            Period:
+From {filters?.period?.startdate  } 
+to {filters?.period?.enddate  }           </Typography>
         </Box>
         
         {loading ? (
@@ -106,7 +249,7 @@ const Canvassingbookwise = () => {
         ) : (
           <TableContainer>
             <Table size="small" sx={{ 
-              '& .MuiTableCell-root': { border: 'none', fontFamily: 'serif', fontSize: '0.85rem', padding: '6px 8px' } 
+              '& .MuiTableCell-root': { border: 'none', fontFamily: 'serif', fontSize: '14px', padding: '6px 8px' } 
             }}>
               <TableHead>
                 <TableRow sx={{ borderTop: '2pt solid black', borderBottom: '2pt solid black' }}>
@@ -132,7 +275,9 @@ const Canvassingbookwise = () => {
                         {item.BookCode}
                       </TableCell>
                       <TableCell sx={{ fontWeight: isGrandTotal ? 'bold' : 'normal' }}>
-                        {item["Name of Book"] || "---"}
+                        {(item.BookNameMarathi && item.BookNameMarathi !== "N/A") 
+    ? item.BookNameMarathi 
+    : (item["Name of Book"] || item.BookName || "---")}
                       </TableCell>
                       <TableCell align="right" sx={{ fontWeight: isGrandTotal ? 'bold' : 'normal' }}>
                         {item.Total}

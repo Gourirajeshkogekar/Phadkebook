@@ -17,6 +17,7 @@ const Canvassingareawisesummary = () => {
   
   const [reportData, setReportData] = useState([]);
   const [loading, setLoading] = useState(false);
+const [printing, setPrinting] = useState(false)
 
   // Fallback filters if coming from direct navigation
   const filters = location.state?.filters || { startdate: '2025-04-01', enddate: '2026-03-31' };
@@ -25,7 +26,28 @@ const Canvassingareawisesummary = () => {
   useEffect(() => {
     if (isPrintMode) {
       setLoading(true);
-      const url = `https://publication.microtechsolutions.net.in/php/get/getCanvassingAreawiseSummary.php?fromdate=${filters.startdate}&todate=${filters.enddate}`;
+
+
+       // Helper to join array IDs into a comma-separated string
+      const joinIds = (arr) => (Array.isArray(arr) ? arr.join(",") : "");
+
+       const params = new URLSearchParams({
+        fromdate: filters?.period?.startdate || filters?.startdate || "",
+        todate: filters?.period?.enddate || filters?.enddate || "",
+        // Use the plural keys from state (areas, cities, etc.) joined by commas
+        areaId: joinIds(filters?.areas),
+        cityId: joinIds(filters?.cities),
+        collegeId: joinIds(filters?.colleges),
+        canvassorId: joinIds(filters?.canvassors),
+        accountId: joinIds(filters?.accounts),
+        standardId: joinIds(filters?.standards),
+        bookId: joinIds(filters?.selectedBooks),
+        bookGroupId: joinIds(filters?.bookGroups),
+        publicationId: joinIds(filters?.publications)
+      });
+
+
+      const url = `https://publication.microtechsolutions.net.in/php/get/getCanvassingAreawiseSummary.php?${params.toString()}`;
       
       fetch(url)
         .then((res) => res.json())
@@ -72,15 +94,89 @@ const Canvassingareawisesummary = () => {
   }, [isPrintMode, filters]);
 
   const handlePrint = async () => {
-    if (!componentRef.current) return;
-    const canvas = await html2canvas(componentRef.current, { scale: 2, useCORS: true });
-    const imgData = canvas.toDataURL("image/png");
-    const pdf = new jsPDF("p", "mm", "a4");
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-    pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
-    pdf.save(`Summary_Report_${filters.startdate}.pdf`);
+    setPrinting(true);
+  
+    try {
+      const element = componentRef.current;
+      if (!element) return;
+  
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+      });
+  
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF("p", "mm", "a4");
+  
+      const pdfWidth = 210;
+      const pdfHeight = 297;
+      const imgHeight = (canvas.height * pdfWidth) / canvas.width;
+  
+      let heightLeft = imgHeight;
+      let position = 0;
+  
+      // --- Header Data Constants ---
+      const title = "Phadke Prakashan, Kolhapur.";
+      const subTitle = "Canvassing Areawise Summary";
+      const dateRange = `Period: From ${filters?.period?.startdate || filters?.startdate || ""} to ${filters?.period?.enddate || filters?.enddate || ""}`;
+  
+      // 1. Add the first page
+      pdf.addImage(imgData, "PNG", 0, position, pdfWidth, imgHeight);
+      heightLeft -= pdfHeight;
+  
+      // 2. Loop for subsequent pages
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight; 
+        pdf.addPage();
+        
+        // Draw the image slice for the new page
+        pdf.addImage(imgData, "PNG", 0, position, pdfWidth, imgHeight);
+  
+        // --- STAMP REPEATING HEADER (White Box to cover old content) ---
+        pdf.setFillColor(255, 255, 255);
+        pdf.rect(0, 0, pdfWidth, 42, 'F'); 
+  
+        // Header Titles
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(11);
+        pdf.text(title, pdfWidth / 2, 10, { align: "center" });
+        
+        pdf.setFontSize(9);
+        pdf.text(subTitle, pdfWidth / 2, 16, { align: "center" });
+        
+        pdf.setFontSize(8);
+        pdf.text(dateRange, pdfWidth / 2, 21, { align: "center" });
+  
+        // --- DRAW COLUMN HEADERS ---
+        pdf.setFontSize(8.5); 
+        pdf.setLineWidth(0.4);
+        
+        // Top line of header
+        pdf.line(15, 26, 195, 26); 
+        
+        // Column Labels (Matching your TableHead)
+        // x=17 (Book Code), x=45 (Book Name), x=195 (Copies - Right Aligned)
+        pdf.text("Book Code", 17, 32);
+        pdf.text("Book Name", 45, 32);
+                pdf.text("Standard", 90, 32);
+
+        pdf.text("Copies", 193, 32, { align: "right" });
+  
+        // Bottom line of header
+        pdf.line(15, 35, 195, 35); 
+  
+        heightLeft -= pdfHeight;
+      }
+  
+      window.open(pdf.output("bloburl"), "_blank");
+    } catch (error) {
+      console.error("PDF Generation Error:", error);
+    }
+  
+    setPrinting(false);
   };
+  
 
   if (!isPrintMode) return null;
 
@@ -116,7 +212,8 @@ const Canvassingareawisesummary = () => {
         <Box sx={{ mb: 2, textAlign: 'center' }}>
           <Typography variant="h6" sx={{ fontWeight: 'bold', fontFamily: 'serif' }}>Phadke Prakashan, Kolhapur.</Typography>
           <Typography variant="subtitle2" fontWeight="bold">Canvassing Areawise Summary</Typography>
-          <Typography variant="caption">From {filters.startdate} to {filters.enddate}</Typography>
+          <Typography variant="caption">            Period: From {filters?.period?.startdate || filters?.startdate} to {filters?.period?.enddate || filters?.enddate}
+</Typography>
         </Box>
         
         {loading ? (

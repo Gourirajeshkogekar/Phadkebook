@@ -1,2 +1,6 @@
-export const notoDevanagariFont =
-  "AAEAAAALAIAAAwAwT1MvMg8SBZkAAAC8AAAAYGNtYXAWMws4AAA..."; // base64 string continues
+import { jsPDF } from "jspdf";
+var font = "AAEAAA... (long string)";
+jsPDF.API.events.push(['addFonts', function () {
+  this.addFileToVFS('NotoSansDevanagari-Regular.ttf', font);
+  this.addFont('NotoSansDevanagari-Regular.ttf', 'NotoSansDevanagari', 'normal');
+}]);

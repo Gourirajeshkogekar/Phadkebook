@@ -236,7 +236,7 @@ function Saleschallanprint() {
             justifyContent: "center",
             overflow: "hidden",
             wordWrap: "break-word",
-            marginLeft: "23mm",
+            marginLeft: "20mm",
             marginRight: "15mm",
             marginTop: "13mm",
           }}>
@@ -327,7 +327,7 @@ function Saleschallanprint() {
               width: "173mm",
               marginRight: "5mm",
               minHeight: "71mm",
-              marginLeft: "23mm",
+              marginLeft: "20mm",
               marginTop: "12mm",
               // marginTop:'3mm'
               // border: "1px solid black",

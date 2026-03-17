@@ -230,15 +230,7 @@ function BankReconciliation() {
       return;
     }
 
-    // const today = dayjs();
-    // const minDate = today.subtract(3, "day");
-    // const maxDate = today.add(2, "day");
-
-    // if (newValue.isBefore(minDate) || newValue.isAfter(maxDate)) {
-    //   setDateError("You can select only 2 days before or after today");
-    // } else {
-    //   setDateError("");
-    // }
+    
     setDateError("");
     setStartsafedate(dayjs(newValue));
   };
@@ -412,13 +404,16 @@ const handleReport = () => {
     return;
   }
 
-  
+  const queryParams = new URLSearchParams({
+    StartDate: dayjs(startsafedate).isValid() ? dayjs(startsafedate).format("YYYY-MM-DD") : "",
+    EndDate: dayjs(endsafedate).isValid() ? dayjs(endsafedate).format("YYYY-MM-DD") : "",
+    AccountId: BankId,
+    StatusFilter: selectedOption || "",
+    BankRecoStartDate: dayjs(bankrecosafedate).isValid() ? dayjs(bankrecosafedate).format("YYYY-MM-DD") : ""
+  }).toString();
 
-   
-
-  navigate("/transaction/bankreconciliation/bankrecoreport" );
+  navigate(`/transaction/bankreconciliation/bankrecoreport?${queryParams}`);
 };
-
 
   const handleAddRow = () => {
   setRows([
@@ -651,16 +646,16 @@ const handleReport = () => {
       Id: detail.Id, // Include the detail Id in the mapped row for tracking
     }));
 
-    const startdate = convertDateForInput(bankreconcil.Startdate?.date);
-    const enddate = convertDateForInput(bankreconcil.Enddate?.date);
-    const recostartingdate = convertDateForInput(
+    const sdate = convertDateForInput(bankreconcil.Startdate?.date);
+    const edate = convertDateForInput(bankreconcil.Enddate?.date);
+    const recosdate = convertDateForInput(
       bankreconcil.Bank_Reco_starting_dt?.date,
     );
 
     // Set the form fields
     setBankId(bankreconcil.BankId);
-    setStartdate(startdate);
-    setEnddate(enddate);
+   setStartsafedate(sdate ? dayjs(sdate) : null);
+setEndsafedate(edate ? dayjs(edate) : null);
     setSelectedOption(bankreconcil.Options);
     setOpbalperledger(bankreconcil.Op_bal_ledge);
     setOpbalperpassbook(bankreconcil.Op_bal_passbook);
@@ -671,7 +666,7 @@ const handleReport = () => {
     // setTtl_debit(bankreconcil.Ttl_debit);
     // setTtl_credit(bankreconcil.Ttl_credit);
 
-    setBankrecostartingDate(recostartingdate);
+setBankrecostartingdate(recosdate ? dayjs(recosdate) : null);
 
     console.log(bankreconcil, "bankre concil");
     console.log(bankreconcilDetails, "bank reconcil detail");
@@ -931,6 +926,9 @@ Passing_dt: row.Passing_dt || "",
       },
     },
   });
+
+
+  
 
   return (
     <div className="bankreconcil-container">

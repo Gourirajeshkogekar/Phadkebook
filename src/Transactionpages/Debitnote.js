@@ -626,11 +626,7 @@ function Debitnote() {
         Cell: ({ row }) => row.index + 1,
       },
 
-      {
-        accessorKey: "VoucherType",
-        header: "Voucher Type",
-        size: 50,
-      },
+    
       {
         accessorKey: "VoucherNo",
         header: "Voucher No",
@@ -646,6 +642,19 @@ function Debitnote() {
           return <span>{date}</span>;
         },
       },
+
+         {
+      accessorKey: "AccountName", // Matches your JSON key exactly
+      header: "Account Name",
+      size: 150,
+    },
+    {
+      accessorKey: "Amount", // Matches your JSON key exactly
+      header: "Amount",
+      size: 80,
+      // Optional: Formats the string "100.00" to look like currency
+      Cell: ({ cell }) => parseFloat(cell.getValue() || 0).toFixed(2),
+    },
 
       {
         accessorKey: "actions",

@@ -273,6 +273,9 @@ const Ledger = () => {
     viewType === "AC" ? fetchAccounts() : fetchGroups();
   }, [viewType]);
 
+
+  
+
   const fetchAccounts = async () => {
     try {
       const res = await axios.get(

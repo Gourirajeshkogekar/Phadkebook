@@ -242,6 +242,7 @@ import Netsalecanvassing from "./Printingpages/CanvassingReports/Reports/NetSale
  import PartywisePaperwisePaperOutward from "./Printingpages/BookPriningOrder/Reports/PartywisePaperwisePaperOutward";
 import Debitnoteregister from "./Printingpages/Booksofaccounts/DebitNoteRegister/Debitnoteregister";
 import SummarisedLedgerPrint from "./Printingpages/Ledger/SummarisedLedgerPrint";
+import CompanyRights from "./Settingpages/CompanyRights";
 
 
 
@@ -819,6 +820,8 @@ function App() {
             />
             <Route path="/settings/companymaster" element={<Company />} />
             <Route path="/settings/userrights" element={<Userrights />} />
+                        <Route path="/settings/companyrights" element={<CompanyRights />} />
+
             <Route path="/settings/splitdata" element={<Splitdata />} />
             <Route
               path="/settings/backup-currentcompany"

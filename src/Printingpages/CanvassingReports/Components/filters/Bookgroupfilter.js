@@ -13,16 +13,12 @@ const BookGroupFilter = ({ filters, setFilters }) => {
   const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(true);
   
-  // Ensure we fall back to an empty array if undefined
+
   const selectedIds = filters.bookGroups || [];
 
 
-  // useEffect(() => {
-  //     setFilters(prev => ({
-  //       ...prev,
-  //       bookGroups: []  
-  //     }));
-  //   }, [setFilters]); 
+ 
+  
 
   useEffect(() => {
     fetch('https://publication.microtechsolutions.net.in/php/BookGroupget.php')
@@ -61,8 +57,7 @@ const nextSelected = e.target.checked ? groups.map((g) => g.BookGroupName) : [];
 
   return (
     <Box sx={{ border: '1px solid #ccc', p: 1, borderRadius: 1 }}>
-      {/* Select All Header */}
-              <Typography variant="subtitle1" textAlign='center' fontWeight={600} gutterBottom>
+               <Typography variant="subtitle1" textAlign='center' fontWeight={600} gutterBottom>
             BookGroup Filter
                 </Typography> 
       <FormControlLabel

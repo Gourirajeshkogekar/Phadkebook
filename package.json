@@ -38,7 +38,7 @@
     "react-scripts": "^5.0.1",
     "react-select": "^5.10.2",
     "react-table": "^7.8.0",
-    "react-to-print": "^3.0.5",
+    "react-to-print": "^3.3.0",
     "react-toastify": "^10.0.5",
     "react-transliterate": "^1.1.9",
     "uuid": "^13.0.0",

@@ -55,34 +55,66 @@ const [reportRows, setReportRows] = useState([]);
   }, []);
 
   const handlePrint = async () => {
-    if (!reportRef.current) return;
+    // 1. Validation
+    if (!accountGroup) {
+      alert("Please select an Account Group first");
+      return;
+    }
+
     setPrinting(true);
 
     try {
- 
-      // Small delay to allow the hidden component to render the dynamic data
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
-      const element = reportRef.current;
-      const canvas = await html2canvas(element, {
-        scale: 2,
-        useCORS: true,
-        logging: false,
+      // 2. Fetch Data from API
+      // We use URLSearchParams to ensure the boolean and strings are formatted correctly
+      const queryParams = new URLSearchParams({
+        fromdate: startDate,
+        todate: endDate,
+        excelOutput: excelOutput, // string "true" or "false"
+        showSummary: showSummary === "yes" ? "Yes" : "No",
+        salesToCanvassors: salesToCanvassors,
+        accountGroup: accountGroup // Or accountGroupId if your API requires the ID
       });
 
-      const imgData = canvas.toDataURL("image/png");
-      const pdf = new jsPDF("p", "mm", "a4");
-      
-      // A4 dimensions: 210mm x 297mm
-      pdf.addImage(imgData, "PNG", 0, 0, 210, 297);
-      window.open(pdf.output("bloburl"), "_blank");
+      const response = await fetch(
+        `https://publication.microtechsolutions.net.in/php/get/getSalesRegisterSummary.php?${queryParams}`
+      );
+      const result = await response.json();
+
+      if (result.status === "success") {
+        // 3. Update state so the hidden Print component renders the rows
+        setReportRows(result.data || []);
+
+        // 4. Wait for React to re-render the hidden component with new data
+        await new Promise((resolve) => setTimeout(resolve, 800));
+
+        // 5. Generate PDF from the ref
+        if (reportRef.current) {
+          const element = reportRef.current;
+          const canvas = await html2canvas(element, {
+            scale: 2,
+            useCORS: true,
+            logging: false,
+          });
+
+          const imgData = canvas.toDataURL("image/png");
+          const pdf = new jsPDF("p", "mm", "a4");
+          const imgProps = pdf.getImageProperties(imgData);
+          const pdfWidth = pdf.internal.pageSize.getWidth();
+          const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+          pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+          window.open(pdf.output("bloburl"), "_blank");
+        }
+      } else {
+        alert("API Error: " + (result.message || "Failed to fetch data"));
+      }
     } catch (error) {
-      console.error("PDF Generation Error:", error);
+      console.error("Integration Error:", error);
+      alert("System error: Could not connect to the reporting server.");
     } finally {
       setPrinting(false);
     }
   };
-
   const handleClose = () => navigate(-1);
 
   return (
@@ -194,7 +226,7 @@ const [reportRows, setReportRows] = useState([]);
       <Box sx={{ position: "absolute", top: "-10000px", left: "-10000px",  }}>
         <div ref={reportRef} style={{ width: "210mm" }}>
           <SalesregsummaryPrint 
-            state={{ startDate, endDate, accountGroup, showSummary, salesToCanvassors }} 
+            state={{ startDate, endDate, accountGroup, showSummary, salesToCanvassors,rows: reportRows   }} 
           />
         </div>
       </Box>

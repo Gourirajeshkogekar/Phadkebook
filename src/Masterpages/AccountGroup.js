@@ -626,11 +626,11 @@ function AccountGroup() {
                 <Grid>
                   <input
                     type="text"
-                    value={AccountGroupName}
-                    onChange={(e) => setAccountGroupName(e.target.value)}
+                    value={GroupName}
+                    onChange={(e) => setGroupName(e.target.value)}
                     className="accountgroup-control"
                     style={{ width: "250px" }}
-                    placeholder="Enter Account group name"
+                    placeholder="Enter group name"
                   />
                 </Grid>
               </Grid>

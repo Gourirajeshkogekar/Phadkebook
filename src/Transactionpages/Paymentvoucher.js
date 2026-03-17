@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from "react";
 import "./Paymentvoucher.css";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { Button, TextField, Modal, setRef } from "@mui/material";
+import { Button, TextField, Modal } from "@mui/material";
 import {
   MaterialReactTable,
   useMaterialReactTable,
@@ -82,7 +82,7 @@ function Paymentvoucher() {
       toast.error("Year is not set.");
     }
 
-    fetchPayments();
+    fetchVouchers();
   }, []);
 
   const [anchorEl, setAnchorEl] = useState(null);
@@ -255,7 +255,7 @@ function Paymentvoucher() {
     setTotalCredit(credit);
   }, [rows]);
 
-  const fetchPayments = async () => {
+    const fetchPayments = async () => {
     try {
       const response = await axios.get(
         "https://publication.microtechsolutions.net.in/php/Vouchertypeget.php?VoucherType=PY",
@@ -305,7 +305,35 @@ function Paymentvoucher() {
     } catch (error) {
       toast.error("Error fetching Accounts:", error);
     }
+
+    
   };
+
+  const [bankOptions, setBankOptions] = useState([])
+
+  useEffect(() => {
+  const fetchBanks = async () => {
+    try {
+      const response = await axios.get(
+        "https://publication.microtechsolutions.net.in/php/get/getbycolm.php?Table=Account&Colname=GroupId&Colvalue=10"
+      );
+      
+      // Map the API data to the format MUI Autocomplete needs
+      const formattedData = response.data.map((item) => ({
+        label: item.AccountName,
+        value: item.Id,
+        // You can keep the whole item if you need it later
+        raw: item 
+      }));
+
+      setBankOptions(formattedData);
+    } catch (error) {
+      console.error("Error fetching bank accounts:", error);
+    }
+  };
+
+  fetchBanks();
+}, []);
 
 const [partyDetails, setPartyDetails] = useState(null);
  const fetchPartyDetails = async (accountId) => {
@@ -486,6 +514,8 @@ const [partyDetails, setPartyDetails] = useState(null);
       console.log("Editing item with ID:", currentRow.original.Id);
       setIdwiseData(currentRow.original.Id);
     }
+
+    
     setIsLoading(true);
     console.log(currentRow, "row");
     const paymentheader = payments[currentRow.index];
@@ -535,26 +565,26 @@ const [partyDetails, setPartyDetails] = useState(null);
         id: uuidv4(), // ✅ frontend-only id
         dbId: detail.Id, // ✅ backend id (important for update)
 
-        VoucherId: detail.VoucherId,
-        AccountId: detail.AccountId,
+        VoucherId: detail?.VoucherId,
+        AccountId: detail?.AccountId,
         AccountName: acc ? acc.label : "",
-        Amount: detail.Amount,
-        DOrC: detail.DOrC,
-        Narration: detail.Narration,
-        type: detail.DOrC === "C" ? "BANK" : "PARTY",
+        Amount: detail?.Amount,
+        DOrC: detail?.DOrC,
+        Narration: detail?.Narration,
+        type: detail?.DOrC === "C" ? "BANK" : "PARTY",
 
-        IsOldCheque: detail.IsOldCheque === 1,
-        AccountPayeeCheque: detail.AccountPayeeCheque === 1,
+        IsOldCheque: detail?.IsOldCheque === 1,
+        AccountPayeeCheque: detail?.AccountPayeeCheque === 1,
 
-        CostCenterId: detail.CostCenterId,
-        ChequeNo: detail.ChequeNo,
-        ChequeAmount: detail.ChequeAmount,
-        ChequeDate: detail.ChequeDate
-          ? convertDateForInput(detail.ChequeDate.date)
+        CostCenterId: detail?.CostCenterId,
+        ChequeNo: detail?.ChequeNo,
+        ChequeAmount: detail?.ChequeAmount,
+        ChequeDate: detail?.ChequeDate
+          ? convertDateForInput(detail?.ChequeDate.date)
           : "",
-        MICRCode: detail.MICRCode,
-        BankName: detail.BankName,
-        BankBranch: detail.BankBranch,
+        MICRCode: detail?.MICRCode,
+        BankName: detail?.BankName,
+        BankBranch: detail?.BankBranch,
       };
     });
 
@@ -567,8 +597,8 @@ const [partyDetails, setPartyDetails] = useState(null);
       setAccountpayeecheque(chequeRow.AccountPayeeCheque === true);
     }
     if (bankRow) {
-      setBankAccountId(bankRow.AccountId);
-      setRowNarration(partyRow.Narration);
+      setBankAccountId(bankRow?.AccountId);
+      setRowNarration(partyRow?.Narration);
     }
 
     if (partyRow) {
@@ -577,11 +607,11 @@ const [partyDetails, setPartyDetails] = useState(null);
       setRowNarration(partyRow?.Narration);
     }
 
-    setVoucherNo(paymentheader.VoucherNo);
+    setVoucherNo(paymentheader?.VoucherNo);
     setVouchersafedate(dayjs(voucherdate));
     setchequesafeDate(dayjs(chequeDate));
-    setChequeNo(paymentheader.ChequeNo);
-    setPaymentType(Number(paymentheader.PaymentType));
+    setChequeNo(paymentheader?.ChequeNo);
+    setPaymentType(Number(paymentheader?.PaymentType));
     console.log(paymentheader, "payment header");
     console.log(paymentdetail, "payment detail");
     console.log(mappedRows, "mapped rows");
@@ -646,7 +676,8 @@ const [partyDetails, setPartyDetails] = useState(null);
         console.log(result);
         toast.success("Payment Voucher Deleted Successfully"); // Show success toast
         setIsDeleteDialogOpen(false); // Close delete dialog
-        fetchPayments(); // Refresh vouchers list
+        fetchVouchers(); // Refresh vouchers list
+        fetchPayments()
       })
       .catch((error) => {
         console.error("Error:", error);
@@ -683,6 +714,7 @@ const [partyDetails, setPartyDetails] = useState(null);
 
   const [chequesafeDate, setchequesafeDate] = useState(dayjs());
   const [chequedateerror, setChequedateerror] = useState(false);
+
   const handleDateChange2 = (newValue) => {
     if (!newValue || !dayjs(newValue).isValid()) {
       setChequedateerror("Invalid date");
@@ -883,69 +915,159 @@ const [partyDetails, setPartyDetails] = useState(null);
   const [TotalDebit, setTotalDebit] = useState(0);
   const [TotalCredit, setTotalCredit] = useState(0);
 
-  const addRow = () => {
-    if (!partyAccountId || !rowAmount || !bankAccountId) return;
 
-    const partyAcc = accountOptions.find((a) => a.value === partyAccountId);
-
-    setRows((prev) => {
-      let partyRows = prev.filter((r) => r.type === "PARTY");
-
-      // EDIT MODE
-      if (editingRowId) {
-        partyRows = partyRows.map((r) =>
-          r.id === editingRowId
-            ? {
-                ...r,
-                AccountId: partyAccountId,
-                AccountName: partyAcc.label,
-                Amount: Number(rowAmount),
-                DOrC: "D",
-                Narration: rowNarration,
-              }
-            : r,
-        );
-      }
-      // ADD MODE
-      else {
-        partyRows.push({
-          id: uuidv4(),
-          AccountId: partyAccountId,
-          AccountName: partyAcc.label,
-          Amount: Number(rowAmount),
-          DOrC: "D",
-          Narration: rowNarration,
-          type: "PARTY",
-        });
-      }
-
-      // 🔥 Recalculate BANK row
-      const totalPartyAmount = partyRows.reduce(
-        (sum, r) => sum + Number(r.Amount),
-        0,
+useEffect(() => {
+  if (bankAccountId && rows.length > 0) {
+    const bankAcc = accountOptions.find((a) => a.value === bankAccountId);
+    if (bankAcc) {
+      setRows((prev) =>
+        prev.map((r) =>
+          r.type === "BANK"
+            ? { ...r, AccountId: bankAccountId, AccountName: bankAcc.label }
+            : r
+        )
       );
+    }
+  }
+}, [bankAccountId]);
 
-      const bankAcc = accountOptions.find((a) => a.value === bankAccountId);
+//   const addRow = () => {
+//   // 1. Validation: Ensure we have a party, an amount, and the header bank account selected
+//   if (!partyAccountId || !rowAmount || !bankAccountId) {
+//     toast.error("Please select an Account, Amount, and Cash/Bank A/c first.");
+//     return;
+//   }
 
-      const bankRow = {
-        id: "BANK",
-        AccountId: bankAccountId,
-        AccountName: bankAcc.label,
-        Amount: totalPartyAmount,
-        DOrC: "C",
-        Narration: "Payment",
-        type: "BANK",
-      };
+//   const partyAcc = accountOptions.find((a) => a.value === partyAccountId);
 
-      return [...partyRows, bankRow];
+//   setRows((prev) => {
+//     // 2. Keep all existing "PARTY" rows
+//     let currentPartyRows = prev.filter((r) => r.type === "PARTY");
+
+//     if (editingRowId) {
+//       // 3. If editing, find that specific row and update it
+//       currentPartyRows = currentPartyRows.map((r) =>
+//         r.id === editingRowId
+//           ? {
+//               ...r,
+//               AccountId: partyAccountId,
+//               AccountName: partyAcc.label,
+//               Amount: Number(rowAmount),
+//               DOrC: "D",
+//               Narration: rowNarration,
+//             }
+//           : r
+//       );
+//     } else {
+//       // 4. If adding, push the new row into the array (allowing multiple rows)
+//       currentPartyRows.push({
+//         id: uuidv4(),
+//         AccountId: partyAccountId,
+//         AccountName: partyAcc.label,
+//         Amount: Number(rowAmount),
+//         DOrC: "D",
+//         Narration: rowNarration,
+//         type: "PARTY",
+//       });
+//     }
+
+//     // 5. Recalculate the single "BANK" row based on the sum of ALL party rows
+//     const totalPartyAmount = currentPartyRows.reduce(
+//       (sum, r) => sum + Number(r.Amount),
+//       0
+//     );
+
+//     const bankAcc = accountOptions.find((a) => a.value === bankAccountId);
+
+//     const updatedBankRow = {
+//       id: "BANK", // Keep ID constant so it overwrites the old bank row
+//       AccountId: bankAccountId,
+//       AccountName: bankAcc.label,
+//       Amount: totalPartyAmount,
+//       DOrC: "C",
+//       Narration: "Payment",
+//       type: "BANK",
+//     };
+
+//     // 6. Return the list of all parties + the updated single bank row
+//     return [...currentPartyRows, updatedBankRow];
+//   });
+
+//   // 7. Reset the row form fields for the next entry
+//   setEditingRowId(null);
+//   setPartyAccountId(null);
+//   setRowAmount("");
+//   setRowNarration("");
+// };
+
+const addRow = () => {
+  // 1. Validation
+  if (!partyAccountId || !rowAmount || !bankAccountId) {
+    toast.error("Please select an Account, Amount, and Cash/Bank A/c first.");
+    return;
+  }
+
+  const partyAcc = accountOptions.find((a) => a.value === partyAccountId);
+
+ setRows((prev) => {
+  // 1. Get all existing party rows, excluding any old bank rows
+  let currentPartyRows = prev.filter((r) => r.type === "PARTY");
+
+  if (editingRowId) {
+    // Update existing party row
+    currentPartyRows = currentPartyRows.map((r) =>
+      r.id === editingRowId
+        ? {
+            ...r,
+            AccountId: partyAccountId,
+            AccountName: partyAcc.label,
+            Amount: Number(rowAmount),
+            DOrC: "D",
+            Narration: rowNarration,
+          }
+        : r
+    );
+  } else {
+    // Add new party row
+    currentPartyRows.push({
+      id: uuidv4(),
+      AccountId: partyAccountId,
+      AccountName: partyAcc.label,
+      Amount: Number(rowAmount),
+      DOrC: "D",
+      Narration: rowNarration,
+      type: "PARTY",
     });
+  }
 
-    // reset form
-    setEditingRowId(null);
-    setPartyAccountId(null);
-    setRowAmount("");
-    setRowNarration("");
+  // 2. Calculate sum of all party rows
+  const totalPartyAmount = currentPartyRows.reduce(
+    (sum, r) => sum + Number(r.Amount),
+    0
+  );
+
+  const bankAcc = accountOptions.find((a) => a.value === bankAccountId);
+
+  const updatedBankRow = {
+    id: "BANK",
+    AccountId: bankAccountId,
+    AccountName: bankAcc.label,
+    Amount: totalPartyAmount,
+    DOrC: "C",
+    Narration: "Payment",
+    type: "BANK",
   };
+
+  // 3. CRITICAL: Assemble array with Bank at index 0
+  return [updatedBankRow, ...currentPartyRows];
+});
+
+  // 7. Reset form
+  setEditingRowId(null);
+  setPartyAccountId(null);
+  setRowAmount("");
+  setRowNarration("");
+};
 
   const deleteRow = async (rowId) => {
     setRows((prev) => {
@@ -1016,36 +1138,46 @@ const [partyDetails, setPartyDetails] = useState(null);
       {
         accessorKey: "SrNo",
         header: "Sr.No",
-        size: 50,
+        size: 10,
         Cell: ({ row }) => row.index + 1,
       },
 
-      // {
-      //   accessorKey: "AccountName",
-      //   header: "Account Name",
-      //   size: 50,
-      // },
+   
+
+      
 
       {
         accessorKey: "VoucherNo",
-        header: "Voucher No",
-        size: 50,
+        header: "V No",
+        size: 70,
       },
       {
         accessorKey: "VoucherDate.date",
         header: "Voucher Date",
-        size: 50,
+        size: 100,
         Cell: ({ cell }) => {
-          // Using moment.js to format the date
-          const date = dayjs(cell.getValue()).format("DD-MM-YYYY");
+           const date = dayjs(cell.getValue()).format("DD-MM-YYYY");
           return <span>{date}</span>;
         },
       },
 
+         {
+      accessorKey: "AccountName", // Matches your JSON key exactly
+      header: "Account Name",
+      size: 150,
+    },
+    {
+      accessorKey: "Amount", // Matches your JSON key exactly
+      header: "Amount",
+      size: 80,
+      // Optional: Formats the string "100.00" to look like currency
+      Cell: ({ cell }) => parseFloat(cell.getValue() || 0).toFixed(2),
+    },
+
       {
         accessorKey: "actions",
         header: "Actions",
-        size: 150,
+        size: 80,
         Cell: ({ row }) => (
           <div>
             <IconButton
@@ -1060,17 +1192,33 @@ const [partyDetails, setPartyDetails] = useState(null);
     [payments],
   );
 
-  const table = useMaterialReactTable({
-    columns,
-    data: payments,
-    muiTableHeadCellProps: {
-      style: {
-        backgroundColor: "#E9ECEF", // Replace with your desired color
-        color: "black",
-        fontSize: "16px",
-      },
+ const table = useMaterialReactTable({
+  columns,
+  data: payments,
+  enableColumnResizing: true, // Optional: let users resize columns
+  layoutMode: 'grid',         // CRITICAL: Helps manage column widths
+  initialState: {
+  columnPinning: { right: ['actions'] }, // 'actions' is the accessorKey
+},
+  displayColumnDefOptions: {
+    'mrt-row-actions': {
+      size: 50, // Force specific size for actions
     },
-  });
+  },
+  muiTableContainerProps: {
+    sx: {
+      width: '100%',
+      overflowX: 'auto', // Ensures the internal container scrolls
+    },
+  },
+  muiTableHeadCellProps: {
+    style: {
+      backgroundColor: "#E9ECEF",
+      color: "black",
+      fontSize: "16px",
+    },
+  },
+});
 
   return (
     <div className="paymentvoucher-container">
@@ -1119,7 +1267,7 @@ const [partyDetails, setPartyDetails] = useState(null);
           }}>
           <Box
             sx={{
-              padding: 2,
+              padding: 1,
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
@@ -1166,9 +1314,9 @@ const [partyDetails, setPartyDetails] = useState(null);
                   Cash/Bank A/c
                 </Typography>
                 <Autocomplete
-                  options={accountOptions}
+                  options={bankOptions}
                   value={
-                    accountOptions.find((o) => o.value === bankAccountId) ||
+                    bankOptions.find((o) => o.value === bankAccountId) ||
                     null
                   }
                   onChange={(e, newValue) => {
@@ -1401,8 +1549,8 @@ const [partyDetails, setPartyDetails] = useState(null);
 
           {/* Table */}
           <Paper elevation={2}>
-            <TableContainer sx={{ maxHeight: 300 }}>
-              <Table stickyHeader size="small">
+<TableContainer sx={{ maxHeight: 200, overflowY: 'auto' }}>
+                <Table stickyHeader size="small">
                 <TableHead>
                   <TableRow>
                     <TableCell>Sr.No</TableCell>

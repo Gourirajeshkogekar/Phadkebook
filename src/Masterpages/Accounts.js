@@ -214,23 +214,16 @@ function Accounts() {
     fetchFooterForNew();
   }, []);
 
-  useEffect(() => {
-    fetchAccounts();
-    console.log("this function is called");
-  }, [pageIndex]); // Fetch data when page changes
+   const [pagination, setPagination] = useState({
+  pageIndex: 0, // MRT uses 0-based indexing
+  pageSize: 10,
+});
 
-  // const fetchSalesFooterinfo = async () => {
-  //   try {
-  //     const response = await axios.get(
-  //       `https://publication.microtechsolutions.net.in/php/get/getAccountMasterSalesInfo.php`
-  //     );
-  //     setFooterRows(response.data);
+useEffect(() => {
+  fetchAccounts();
+}, [pagination.pageIndex, pagination.pageSize]); // Listen for changes here
 
-  //     console.log(response.data, "sales footer info");
-  //   } catch (error) {
-  //     // toast.error("Error fetching footer info:", error);
-  //   }
-  // };
+  
 
   const fetchFooterForNew = async () => {
     try {
@@ -259,19 +252,29 @@ function Accounts() {
     }
   };
 
-  const fetchAccounts = async () => {
-    try {
-      const response = await axios.get(
-        `https://publication.microtechsolutions.net.in/php/get/gettblpage.php?Table=Account&PageNo=${pageIndex}`,
-      );
-      setAccounts(response.data.data);
-      setTotalPages(response.data.total_pages);
+  
 
-      console.log(response.data);
-    } catch (error) {
-      // toast.error("Error fetching accounts:", error);
-    }
-  };
+ const fetchAccounts = async () => {
+  try {
+    // MRT uses 0-based indexing (0, 1, 2...), but your API likely uses 1-based (1, 2, 3...)
+    // So we use pagination.pageIndex + 1
+    const currentPage = pagination.pageIndex + 1;
+    const pageSize = pagination.pageSize;
+
+    const response = await axios.get(
+      `https://publication.microtechsolutions.net.in/php/get/gettblpage.php?Table=Account&PageNo=${currentPage}&Limit=${pageSize}`
+    );
+
+    setAccounts(response.data.data);
+    
+    // Total pages is used to calculate rowCount in the table config
+    setTotalPages(response.data.total_pages); 
+
+    console.log("Fetched Data:", response.data);
+  } catch (error) {
+    console.error("Error fetching accounts:", error);
+  }
+};
 
   const fetchAddresses = async () => {
     try {
@@ -474,8 +477,15 @@ function Accounts() {
     setIsSystem(account.IsSystem);
     setDepriciation(account.Depriciation);
 
-    const address = addresses.find((addr) => addr.AccountId === account.Id);
-    console.log(address, "adddress");
+    console.log("Current addresses type:", typeof addresses);
+console.log("Current addresses value:", addresses);
+
+const address = (addresses && addresses.find) 
+  ? addresses.find((addr) => addr.AccountId === account.Id) 
+  : null;
+  
+    // const address = addresses.find((addr) => addr.AccountId === account.Id);
+    // console.log(address, "adddress");
 
     // If address is not found, set default values for address fields
     if (address) {
@@ -1014,10 +1024,19 @@ function Accounts() {
     [accounts, addresses],
   );
 
+ 
+
   const table = useMaterialReactTable({
     columns,
-    data: accounts,
-    enablePagination: false, // Turn off frontend pagination
+ data: accounts,
+  enablePagination: true,
+  manualPagination: true, 
+  onPaginationChange: setPagination,
+  // This calculates the total items based on pages
+  rowCount: totalPages * pagination.pageSize, 
+  state: {
+    pagination, 
+  },
 
     muiTableHeadCellProps: {
       style: {
@@ -1050,7 +1069,7 @@ function Accounts() {
             <MaterialReactTable table={table} />
           </div>
           {/* Pagination Controls */}
-          <div
+          {/* <div
             style={{
               display: "flex",
               alignItems: "center",
@@ -1083,7 +1102,7 @@ function Accounts() {
               Next ▶
             </Button>{" "}
             Total Pages : {totalPages}
-          </div>
+          </div> */}
         </div>
 
         {isModalOpen && (
@@ -1503,10 +1522,10 @@ function Accounts() {
                       </div>
                     </div> */}
 
-                    <div
+                  <div
                       className="acccheckbox-grid"
                       style={{ marginTop: "30px" }}>
-                      <div className="acccheckbox-item">
+                       {/*  <div className="acccheckbox-item">
                         <label className="account-label">Is Subsidiary</label>
                         <input
                           type="checkbox"
@@ -1515,9 +1534,7 @@ function Accounts() {
                           ref={subsidiartRef}
                           onKeyDown={(e) => handleKeyDown(e, tdsappRef)}
                         />
-                        {/* {errors.IsSubsidiary && (
-                          <b className="error-text">{errors.IsSubsidiary}</b>
-                        )} */}
+                     
                       </div>
 
                       <div className="acccheckbox-item">
@@ -1529,10 +1546,8 @@ function Accounts() {
                           ref={fbtRef}
                           onKeyDown={(e) => handleKeyDown(e, freezeRef)}
                         />
-                        {/* {errors.IsFBT && (
-                          <b className="error-text">{errors.IsFBT}</b>
-                        )} */}
-                      </div>
+                     
+                      </div> */}
 
                       <div className="acccheckbox-item">
                         <label className="account-label">Is Freeze</label>
@@ -1548,7 +1563,7 @@ function Accounts() {
                         )} */}
                       </div>
 
-                      <div className="acccheckbox-item">
+                      <div className="acccheckbox-item" style={{display:'none'}}>
                         <label className="account-label">Is System</label>
                         <input
                           type="checkbox"
@@ -1801,29 +1816,28 @@ function Accounts() {
                         <label className="account-label">
                           Country{/* <b className="required">*</b> */}
                         </label>
-                        <div>
-                          <Select
-                            id="CountryId"
-                            name="CountryId"
-                            value={countryOptions.find(
-                              (option) => option.value === CountryId,
-                            )}
-                            onChange={(option) => setCountryId(option.value)}
-                            ref={countryRef}
-                            onKeyDown={(e) => handleKeyDown(e, stateRef)}
-                            options={countryOptions}
-                            placeholder="Select country"
-                            styles={{
-                              control: (base) => ({
-                                ...base,
-                                width: "170px",
-                                marginTop: "10px",
-                                borderRadius: "4px",
-                                border: "1px solid rgb(223, 222, 222)",
-                                marginBottom: "5px",
-                              }),
-                            }}
-                          />
+                      <div>
+  <Select
+    id="CountryId"
+    name="CountryId"
+    // Added safety: if find() returns undefined, use null
+    value={countryOptions.find((option) => option.value === CountryId) || null}
+    onChange={(option) => setCountryId(option ? option.value : null)}
+    ref={countryRef}
+    onKeyDown={(e) => handleKeyDown(e, stateRef)}
+    options={countryOptions}
+    placeholder="Select country"
+    styles={{
+      control: (base) => ({
+        ...base,
+        width: "170px",
+        marginTop: "10px",
+        borderRadius: "4px",
+        border: "1px solid rgb(223, 222, 222)",
+        marginBottom: "5px",
+      }),
+    }}
+  />
 
                           {/* <div>
                             {errors.CountryId && (

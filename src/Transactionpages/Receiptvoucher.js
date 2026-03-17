@@ -285,6 +285,34 @@ function Receiptvoucher() {
       console.error("Error fetching Accounts:", error);
     }
   };
+const [bankOptions, setBankOptions] = useState([])
+
+  useEffect(() => {
+  const fetchBanks = async () => {
+    try {
+      const response = await axios.get(
+        "https://publication.microtechsolutions.net.in/php/get/getbycolm.php?Table=Account&Colname=GroupId&Colvalue=10"
+      );
+      
+      // Map the API data to the format MUI Autocomplete needs
+      const formattedData = response.data.map((item) => ({
+        label: item.AccountName,
+        value: item.Id,
+        // You can keep the whole item if you need it later
+        raw: item 
+      }));
+
+      setBankOptions(formattedData);
+    } catch (error) {
+      console.error("Error fetching bank accounts:", error);
+    }
+  };
+
+  fetchBanks();
+}, []);
+
+
+
 useEffect(() => {
     
     fetchCities();
@@ -790,11 +818,6 @@ const fetchCities = async () => {
         Cell: ({ row }) => row.index + 1,
       },
 
-      {
-        accessorKey: "VoucherType",
-        header: "Voucher Type",
-        size: 50,
-      },
 
       {
         accessorKey: "VoucherNo",
@@ -810,6 +833,20 @@ const fetchCities = async () => {
           return <span>{date}</span>;
         },
       },
+
+      
+        {
+      accessorKey: "AccountName", // Matches your JSON key exactly
+      header: "Account Name",
+      size: 150,
+    },
+    {
+      accessorKey: "Amount", // Matches your JSON key exactly
+      header: "Amount",
+      size: 80,
+      // Optional: Formats the string "100.00" to look like currency
+      Cell: ({ cell }) => parseFloat(cell.getValue() || 0).toFixed(2),
+    },
       {
         accessorKey: "actions",
         header: "Actions",
@@ -998,26 +1035,7 @@ const fetchCities = async () => {
                 <Typography fontWeight="bold" variant="body2">
                   Party Name
                 </Typography>
-                {/* <Autocomplete
-                  options={accountOptions}
-                  value={
-                    accountOptions.find((o) => o.value === PartyId) || null
-                  }
-                  onChange={(e, newValue) =>
-                    setPartyid(newValue ? newValue.value : null)
-                  }
-                  getOptionLabel={(option) => option.label}
-                  // disabled={PaymentType === 0}
-                  renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      placeholder={PaymentType === 0 ? "" : "Select Party Name"}
-                      size="small"
-                      fullWidth
-                    />
-                  )}
-                /> */}
-
+               
                <Autocomplete
   options={accountOptions}
   value={accountOptions.find((o) => o.value === PartyId) || null}
@@ -1049,9 +1067,9 @@ const fetchCities = async () => {
                     Bank Name
                   </Typography>
                   <Autocomplete
-                    options={accountOptions}
+                    options={bankOptions}
                     value={
-                      accountOptions.find(
+                      bankOptions.find(
                         (option) => option.value === BankId,
                       ) || null
                     }

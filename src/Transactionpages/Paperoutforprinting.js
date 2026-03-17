@@ -538,8 +538,8 @@ function Paperoutforprinting() {
       TimeOfRemoval: formattedTime,
       VehicleNo: VehicleNo,
       NameOfDriver: NameOfDriver,
-      PartyStock: PartyStock,
-      GodownStock: GodownStock,
+      // PartyStock: PartyStock,
+      // GodownStock: GodownStock,
       CreatedBy: !isEditing ? userId : undefined,
       UpdatedBy: isEditing ? userId : undefined,
     };
@@ -566,7 +566,7 @@ console.log(paperOutwardId, 'PaperoutId')
           Unit: row.Unit, // ✅ FIX HERE
           Papers: parseInt(row.Papers, 10),
           CurrentStock: parseInt(row.CurrentStock, 10),
-          partyStock: parseInt(row.PartyStock, 10),
+          PartyStock: parseInt(row.PartyStock, 10),
           SubName: row.SubName,
           BookCode: row.BookCode,
           BookPages:row.BookPages,

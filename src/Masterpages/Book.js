@@ -198,13 +198,13 @@ function Book() {
   const saveRef = useRef(null);
 
   const [printOrders, setPrintOrders] = useState([
-    {
-      PrintType: "",
-      PrintDate: dayjs().format("YYYY-MM-DD"),
-      PrintOrder: "",
-      Edition: "",
-    },
-  ]);
+  {
+    PrintType: "", // Good to set a default here too!
+    PrintDate: dayjs().format("YYYY-MM-DD"), 
+    PrintOrder: "",
+    Edition: "",
+  },
+]);
 
   const [royaltyList, setRoyaltyList] = useState([
     {
@@ -214,24 +214,33 @@ function Book() {
   ]);
 
   // ADD NEW ROW
-  const handleAddPrintOrder = () => {
-    setPrintOrders([
-      ...printOrders,
-      {
-        PrintType: "",
-        PrintDate: dayjs().format("YYYY-MM-DD"),
-        PrintOrder: "",
-        Edition: "",
-      },
-    ]);
-  };
+const handleAddPrintOrder = () => {
+  setPrintOrders([
+    ...printOrders,
+    {
+      PrintType: "",
+      PrintDate: dayjs().format("YYYY-MM-DD"),
+      PrintOrder: "",
+      Edition: "",
+    }
+  ]);
+};
 
   // DELETE LAST ROW
-  const handleDeletePrintOrder = () => {
-    if (printOrders.length > 1) {
-      setPrintOrders(printOrders.slice(0, -1));
-    }
-  };
+ const handleDeletePrintOrder = (index) => {
+  if (printOrders.length > 1) {
+    const updated = printOrders.filter((_, i) => i !== index);
+    setPrintOrders(updated);
+  } else {
+    // If it's the last row, just reset it instead of removing it
+    setPrintOrders([{
+      PrintType: "",
+      PrintDate: dayjs().format("YYYY-MM-DD"),
+      PrintOrder: "",
+      Edition: "",
+    }]);
+  }
+};
 
   const totalPrintOrder = printOrders.reduce(
     (sum, row) => sum + Number(row.PrintOrder || 0),
@@ -242,6 +251,23 @@ function Book() {
     (sum, row) => sum + Number(row.percent || 0),
     0
   );
+
+
+  const handlePagesChange = (e) => {
+  const pages = e.target.value;
+  setBookPages(pages);
+
+  if (pages) {
+    // Calculate forms: pages divided by 16
+    const calculatedForms = parseFloat(pages) / 16;
+    
+    // Update the BookForms state
+    // .toFixed(2) ensures it looks like 1.25 or 1.50
+    setBookForms(calculatedForms.toFixed(2));
+  } else {
+    setBookForms("");
+  }
+};
 
   const handleAddRoyalty = () => {
     setRoyaltyList([
@@ -340,15 +366,16 @@ function Book() {
       console.log("Filtered Book", bookId, "prints:", bookPrints);
 
       if (bookPrints.length === 0) {
-        setPrintOrders([
-          {
-            Id: null,
-            PrintType: "",
-            PrintDate: dayjs().format("YYYY-MM-DD"),
-            PrintOrder: "",
-            Edition: "",
-          },
-        ]);
+      // Inside fetchPrintorders catch block and "if bookPrints.length === 0"
+setPrintOrders([
+  {
+    Id: null,
+    PrintType: "",
+    PrintDate: dayjs().format("YYYY-MM-DD"), // Change "" to this
+    PrintOrder: "",
+    Edition: "",
+  },
+]);
         return;
       }
 
@@ -586,7 +613,17 @@ function Book() {
 
   const handleNewClick = () => {
     resetForm();
-    setIsModalOpen(true);
+
+    // Explicitly set the default row with today's date
+  setPrintOrders([
+    {
+      PrintType: "",
+      PrintDate: dayjs().format("YYYY-MM-DD"), 
+      PrintOrder: "",
+      Edition: "",
+    },
+  ]);
+     setIsModalOpen(true);
     setIsEditing(false);
     setEditingIndex(-1);
   };
@@ -1446,7 +1483,7 @@ function Book() {
                         id="BookPages"
                         name="BookPages"
                         value={BookPages}
-                        onChange={(e) => setBookPages(e.target.value)}
+onChange={handlePagesChange} // Using the new handler here
                         ref={bookpagesRef}
                         onKeyDown={(e) => handleKeyDown(e, bookformsRef)}
                         className="masterbook-control"
@@ -1502,7 +1539,7 @@ function Book() {
                       />
                     </div>
                   </div>
-                  <div>
+                  <div style={{display:"none"}}>
                     <label className="book-label">Title Press</label>{" "}
                     <div>
                       <Select
@@ -1667,28 +1704,44 @@ function Book() {
                       <tbody>
                         {printOrders.map((row, index) => (
                           <TableRow key={index}>
-                            <TableCell>
-                              <TextField
-                                value={row.PrintType}
-                                onChange={(e) => {
-                                  const updated = [...printOrders];
-                                  updated[index].PrintType = e.target.value;
-                                  setPrintOrders(updated);
-                                }}
-                              />
-                            </TableCell>
+                          <TableCell sx={{ padding: '8px' }}>
+  <TextField
+    select
+    size="small"
+    variant="standard"
+    fullWidth
+    value={row.PrintType || ""}
+    onChange={(e) => {
+      const updated = [...printOrders];
+      updated[index].PrintType = e.target.value;
+      setPrintOrders(updated);
+    }}
+    SelectProps={{
+      native: true, // Use native select for better mobile/speed performance
+    }}
+  >
 
-                            <TableCell>
-                              <TextField
-                                type="date"
-                                value={row.PrintDate}
-                                onChange={(e) => {
-                                  const updated = [...printOrders];
-                                  updated[index].PrintDate = e.target.value;
-                                  setPrintOrders(updated);
-                                }}
-                              />
-                            </TableCell>
+         <option value="">Select</option>
+
+     <option value="NEW">NEW</option>
+    <option value="REPRINT">REPRINT</option>
+  </TextField>
+</TableCell>
+
+                          <TableCell>
+  <TextField
+    type="date"
+    size="small"
+    variant="standard"
+    value={row.PrintDate} // Ensure this matches the key in your object
+    onChange={(e) => {
+      const updated = [...printOrders];
+      updated[index].PrintDate = e.target.value;
+      setPrintOrders(updated);
+    }}
+    InputLabelProps={{ shrink: true }} // Required for date types to show the value properly
+  />
+</TableCell>
 
                             <TableCell>
                               <TextField
@@ -1698,6 +1751,7 @@ function Book() {
                                   updated[index].PrintOrder = e.target.value;
                                   setPrintOrders(updated);
                                 }}
+                                style={{width:'50px'}}
                               />
                             </TableCell>
 
@@ -1710,6 +1764,9 @@ function Book() {
                                   updated[index].Edition = e.target.value;
                                   setPrintOrders(updated);
                                 }}
+
+                                                                style={{width:'50px'}}
+
                               />
                             </TableCell>
                             <TableCell>
@@ -1756,97 +1813,116 @@ function Book() {
                   </div>
                 </div>
 
-                <div className="royalty-box">
-                  <h3 className="section-title">Royalty</h3>
+               <div className="royalty-box" style={{ 
+  border: '1px solid #e0e0e0', 
+  borderRadius: '8px', 
+  padding: '16px', 
+  backgroundColor: '#fff',
+  marginTop: '20px'
+}}>
+  <h3 className="section-title" style={{ fontSize: '1rem', fontWeight: '600', marginBottom: '12px', color: '#333' }}>
+    Royalty Details
+  </h3>
 
-                  <table className="royaltybook-table">
-                    <thead>
-                      <tr>
-                        <th>Author</th>
-                        <th>Royalty %</th>
-                        <th>Actions</th>
-                      </tr>
-                    </thead>
+  <table className="royaltybook-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+    <thead>
+      <tr style={{ backgroundColor: '#f8f9fa', textAlign: 'left' }}>
+        <th style={{ padding: '10px', fontSize: '0.85rem', color: '#666', width: '60%' }}>Author Name</th>
+        <th style={{ padding: '10px', fontSize: '0.85rem', color: '#666', width: '20%' }}>Royalty %</th>
+        <th style={{ padding: '10px', fontSize: '0.85rem', color: '#666', width: '20%', textAlign: 'center' }}>Actions</th>
+      </tr>
+    </thead>
 
-                    <tbody>
-                      {royaltyList.map((row, index) => (
-                        <TableRow key={index}>
-                          <TableCell>
-                            <Select
-                              options={authorOptions}
-                              value={
-                                authorOptions.find(
-                                  (opt) => opt.value === row.author
-                                ) || null
-                              }
-                              sx={{ width: "800px", padding: "5px" }}
-                              onChange={(selected) => {
-                                const updated = [...royaltyList];
-                                updated[index].author = selected.value;
-                                setRoyaltyList(updated);
-                              }}
-                            />
-                          </TableCell>
+    <tbody>
+      {royaltyList.map((row, index) => (
+        <tr key={index} style={{ borderBottom: '1px solid #eee' }}>
+          <td style={{ padding: '8px 5px' }}>
+            <Autocomplete
+              size="small"
+              options={authorOptions}
+              value={authorOptions.find((opt) => opt.value === row.author) || null}
+              onChange={(event, newValue) => {
+                const updated = [...royaltyList];
+                updated[index].author = newValue ? newValue.value : "";
+                setRoyaltyList(updated);
+              }}
+              renderInput={(params) => (
+                <TextField 
+                  {...params} 
+                  variant="standard" 
+                  placeholder="Search Author..." 
+                  fullWidth
+                />
+              )}
+            />
+          </td>
 
-                          <TableCell>
-                            <TextField
-                              value={row.percent}
-                              onChange={(e) => {
-                                const updated = [...royaltyList];
-                                updated[index].percent = e.target.value;
-                                setRoyaltyList(updated);
-                              }}
-                              sx={{ width: "100px" }}
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <div className="book-btn-container">
-                              <IconButton
-                                onClick={handleAddRoyalty}
-                                sx={{
-                                  color: "#0a60bd",
-                                  border: "1px solid #e0e0e0",
-                                  borderRadius: "50%",
-                                  width: 32,
-                                  height: 32,
-                                }}>
-                                <AddCircleRoundedIcon fontSize="small" />
-                              </IconButton>
+          <td style={{ padding: '8px 5px' }}>
+            <TextField
+              variant="standard"
+              size="small"
+              type="number"
+              value={row.percent}
+              onChange={(e) => {
+                const updated = [...royaltyList];
+                updated[index].percent = e.target.value;
+                setRoyaltyList(updated);
+              }}
+              inputProps={{ style: { textAlign: 'center' } }}
+              sx={{ width: "80px" }}
+            />
+          </td>
 
-                              <IconButton
-                                onClick={handleDeleteRoyalty}
-                                sx={{
-                                  color: "#e53935",
-                                  border: "1px solid #e0e0e0",
-                                  borderRadius: "50%",
-                                  width: 32,
-                                  height: 32,
-                                  ml: 0.5,
-                                }}>
-                                <DeleteRoundedIcon fontSize="small" />
-                              </IconButton>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </tbody>
-                  </table>
+          <td style={{ padding: '8px 5px', textAlign: 'center' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '8px' }}>
+              <IconButton
+                onClick={handleAddRoyalty}
+                size="small"
+                sx={{ color: "#1976d2", bgcolor: '#e3f2fd', '&:hover': { bgcolor: '#bbdefb' } }}
+              >
+                <AddCircleRoundedIcon fontSize="small" />
+              </IconButton>
 
-                  <div className="print-footer">
-                    <Typography
-                      style={{ className: "total-box" }}
-                      color={totalRoyalty > 15 ? "error" : "green"}>
-                      <span className="total-label">
-                        Total Royalty :&nbsp;&nbsp;
-                      </span>
-                      <input
-                        className="total-box"
-                        value={totalRoyalty.toFixed(2)}
-                        readOnly
-                      />
-                    </Typography>
-                  </div>
-                </div>
+              <IconButton
+                onClick={() => handleDeleteRoyalty(index)}
+                size="small"
+                sx={{ color: "#d32f2f", bgcolor: '#ffebee', '&:hover': { bgcolor: '#ffcdd2' } }}
+              >
+                <DeleteRoundedIcon fontSize="small" />
+              </IconButton>
+            </div>
+          </td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+
+ <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '15px', alignItems: 'center', gap: '15px' }}>
+  
+  {/* The Warning Message */}
+  {totalRoyalty > 15 && (
+    <Typography sx={{ color: '#d32f2f', fontSize: '0.85rem', fontWeight: '500', display: 'flex', alignItems: 'center' }}>
+      ⚠️ Warning: Total Royalty exceeds 15%
+    </Typography>
+  )}
+
+  <div style={{ display: 'flex', alignItems: 'center' }}>
+    <Typography sx={{ fontSize: '0.9rem', fontWeight: 'bold', mr: 2 }}>
+      Total Royalty:
+    </Typography>
+    <div style={{ 
+      padding: '4px 12px', 
+      borderRadius: '4px', 
+      backgroundColor: totalRoyalty > 15 ? '#fdeded' : '#edf7ed',
+      color: totalRoyalty > 15 ? '#d32f2f' : '#2e7d32',
+      fontWeight: 'bold',
+      border: `1px solid ${totalRoyalty > 15 ? '#d32f2f' : '#2e7d32'}`
+    }}>
+      {totalRoyalty.toFixed(2)} %
+    </div>
+  </div>
+</div>
+</div>
               </div>
               <div
                 className="book-btn-container"

@@ -247,7 +247,7 @@ function Salesinvoiceprint() {
                 width: "130mm",
                 overflow: "hidden",
                 wordWrap: "break-word",
-                marginLeft: "11mm",
+                marginLeft: "11mm",padding:'2px',
                 marginTop: "5mm",
               }}>
               <h6
@@ -297,7 +297,7 @@ function Salesinvoiceprint() {
                   fontSize: "15px",
                   whiteSpace: "nowrap",
                   // marginTop: "14px",
-                  marginTop: "8mm",
+                  marginTop: "9mm",
                   marginRight: "40mm",
                 }}>
                 <strong> Credit Memo No: </strong> {invoiceData[0]?.InvoiceNo}
@@ -376,10 +376,10 @@ function Salesinvoiceprint() {
               <span style={{ marginLeft: "26mm" }}>
                 {invoiceData[0]?.Bundles}
               </span>
-              <span style={{ marginLeft: "40mm" }}>
+              <span style={{ marginLeft: "38mm" }}>
                 {invoiceData[0]?.Weight}
               </span>
-              <span style={{ marginLeft: "25mm" }}>
+              <span style={{ marginLeft: "23mm" }}>
                 {invoiceData[0]?.Freight}
               </span>
             </div>
@@ -387,7 +387,7 @@ function Salesinvoiceprint() {
             {/* Row 3 - 1 value */}
             <div style={{ marginTop: "4px" }}>
               <span style={{ marginLeft: "43mm" }}>
-                {invoiceData[0]?.ReceiptSendThrough.substring(0, 10)}
+                {invoiceData[0]?.ReceiptSendThrough?.substring(0, 10)}
               </span>
             </div>
           </div>
@@ -470,7 +470,7 @@ function Salesinvoiceprint() {
                       {item.Copies}
                     </td>
                     <td
-                      align="right"
+                      align="center"
                       style={{
                         width: "15mm",
                         //  border: "1px solid black"
@@ -524,10 +524,10 @@ function Salesinvoiceprint() {
           {/* Totals Section - Now using divs instead of table */}
           <div
             style={{
-              width: "223mm",
+              width: "223mm",height:"31mm",
               display: "flex",
               flexDirection: "column",
-              // border: "1px solid black",
+              border: "1px solid green",
             }}>
             {/* Row 1 - Total Copies and Total Discount Amount */}
             <div
@@ -540,7 +540,7 @@ function Salesinvoiceprint() {
               <div
                 style={{
                   width: "120mm",
-                  // border: "1px solid black",
+                  border: "1px solid black",
                 }}></div>{" "}
               {/* Empty space to align Total Copies */}
               <div
@@ -548,8 +548,8 @@ function Salesinvoiceprint() {
                   width: "10mm",
                   textAlign: "center",
                   marginLeft: "11mm",
-                  marginTop: "1mm",
-                  height: "3mm",
+                  marginTop: "2mm",
+                  // height: "3mm",
                   // border: "1px solid black",
                 }}>
                 {totalCopies}
@@ -614,14 +614,10 @@ function Salesinvoiceprint() {
                 justifyContent: "flex-end",
                 fontWeight: "bold",
                 fontSize: "14px",
-                marginTop: "5mm",
+                marginTop: "3mm",
                 marginRight: "10mm",
               }}>
-              {/* <div
-                style={{
-                  width: "10mm",
-                  marginTop: "2mm",
-                }}></div> */}
+            
               <div style={{ textAlign: "right" }}>
                 {(
                   Number(totalAmount) +

@@ -28,79 +28,168 @@ const Canvassinglisting = () => {
   };
 
 useEffect(() => {
-  if (isPrintMode) {
-    setLoading(true);
+    if (isPrintMode) {
+      setLoading(true);
 
-    // Helper: Converts [1, 2, 3] to "1,2,3" for the API
-    const joinIds = (arr) => (Array.isArray(arr) ? arr.join(",") : "");
 
-    const params = {
-      // Accessing startdate/enddate from the 'period' sub-object in your state
-      fromdate: filters?.period?.startdate || "2025-04-01",
-      todate: filters?.period?.enddate || "2026-03-31",
-      areaId: joinIds(filters?.areas),
-      cityId: joinIds(filters?.cities),
-      publicationId: joinIds(filters?.publications),
-      collegeId: joinIds(filters?.colleges),
-      canvassorId: joinIds(filters?.canvassors),
-      standardId: joinIds(filters?.standards),
-      bookGroupId: joinIds(filters?.bookgroups),
-      bookId: joinIds(filters?.books),
-    };
+             const joinIds = (arr) => (Array.isArray(arr) ? arr.join(",") : (arr || ""));
 
-    const queryString = new URLSearchParams(params).toString();
-    const url = `https://publication.microtechsolutions.net.in/php/get/getCanvassingListing.php?${queryString}`;
-
-    fetch(url)
-      .then((res) => res.json())
-      .then((data) => {
-        if (Array.isArray(data)) {
-          const groupedData = data.reduce((acc, item) => {
-            const canvassorName = item.Canvassor || "General";
-            if (!acc[canvassorName]) {
-              acc[canvassorName] = { party_name: canvassorName, details: [] };
-            }
-            acc[canvassorName].details.push({
-              standard: item.Standard || "",
-              book_name: (item.BookName || item.BookNameMarathi ) || "",
-              college_name: item["Name of College"] || "",
-              professor: item["Name of Professor"] || "",
-              date: item.Date,
-              challan: item.Chln,
-              copies: item.Copies,
-              feeding_date: item["Feeding Date"],
-              entry: item.Entry,
-            });
-            return acc;
-          }, {});
-          setReportData(Object.values(groupedData));
-        } else {
-          setReportData([]);
-        }
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error("Fetch Error:", err);
-        setLoading(false);
+ const params = new URLSearchParams({
+        fromdate: filters?.period?.startdate || filters?.startdate || "",
+        todate: filters?.period?.enddate || filters?.enddate || "",
+        // Use the plural keys from state (areas, cities, etc.) joined by commas
+        areaId: joinIds(filters?.areas),
+        cityId: joinIds(filters?.cities),
+        collegeId: joinIds(filters?.colleges),
+        canvassorId: joinIds(filters?.canvassors),
+        accountId: joinIds(filters?.accounts),
+        standardId: joinIds(filters?.standards),
+        bookId: joinIds(filters?.selectedBooks),
+        bookGroupId: joinIds(filters?.bookGroups),
+        publicationId: joinIds(filters?.publications)
       });
+
+      const url = `https://publication.microtechsolutions.net.in/php/get/getCanvassingListing.php?${params.toString()}`;
+
+      fetch(url)
+        .then((res) => res.json())
+       .then((json) => {
+  // Check if response is the array you provided or wrapped in a data property
+  const rawData = Array.isArray(json) ? json : (json.data || []);
+
+  if (rawData.length > 0) {
+    const grouped = rawData.reduce((acc, item) => {
+      // Accessing the key with spaces from your JSON
+      const collegeName = item["Name of College"] || "UNKNOWN COLLEGE";
+      if (!acc[collegeName]) {
+        acc[collegeName] = { college: collegeName, details: [] };
+      }
+      acc[collegeName].details.push(item);
+      return acc;
+    }, {});
+    setReportData(Object.values(grouped));
+  } else {
+    setReportData([]);
   }
-}, [isPrintMode, filters]);
+  setLoading(false);
+})
+        .catch((err) => {
+          console.error("Fetch Error:", err);
+          setLoading(false);
+        });
+    }
+  }, [isPrintMode, filters]);
  
 
+const [printing, setPrinting] = useState(false)
 
-  const handlePrint = async () => {
-    if (!componentRef.current) return;
-    const canvas = await html2canvas(componentRef.current, { scale: 2, useCORS: true });
-    const imgData = canvas.toDataURL("image/png");
-    const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-    const imgProps = pdf.getImageProperties(imgData);
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-    pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+   
+
+ 
+const handlePrint = async () => {
+  setPrinting(true);
+
+  try {
+    const element = componentRef.current;
+    if (!element) return;
+
+    const canvas = await html2canvas(element, {
+      scale: 2,
+      useCORS: true,
+      logging: false,
+    });
+
+    
+
+
+
+
+    // ... after html2canvas ...
+const imgData = canvas.toDataURL("image/png");
+const pdf = new jsPDF("p", "mm", "a4");
+
+ 
+
+ 
+    const pdfWidth = 210;
+    const pdfHeight = 297;
+    const imgHeight = (canvas.height * pdfWidth) / canvas.width;
+
+    let heightLeft = imgHeight;
+    let position = 0;
+
+    const title = "Phadke Prakashan, Kolhapur.";
+    const subTitle = "Canvassing Listing";
+    const dateRange = `From ${filters?.period?.startdate || ""} to ${filters?.period?.enddate || ""}`;
+
+    // 1. Add the first page
+    pdf.addImage(imgData, "PNG", 0, position, pdfWidth, imgHeight);
+    heightLeft -= pdfHeight;
+
+    // 2. Loop for subsequent pages
+    while (heightLeft > 0) {
+      position = heightLeft - imgHeight; 
+      pdf.addPage();
+      
+      pdf.addImage(imgData, "PNG", 0, position, pdfWidth, imgHeight);
+
+      // --- STAMP REPEATING HEADER ---
+      pdf.setFillColor(255, 255, 255);
+      pdf.rect(0, 0, pdfWidth, 38, 'F'); 
+
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(11);
+      pdf.text(title, pdfWidth / 2, 10, { align: "center" });
+      
+      pdf.setFontSize(9);
+      pdf.text(subTitle, pdfWidth / 2, 15, { align: "center" });
+      
+      pdf.setFontSize(8);
+      pdf.text(dateRange, pdfWidth / 2, 19, { align: "center" });
+
+      // --- DRAW COLUMN HEADERS ---
+// pdf.setFont("helvetica", "normal"); // Changing from 'bold' to 'normal'
+pdf.setFontSize(6);     
+      pdf.setLineWidth(0.3);
+      pdf.line(10, 24, 200, 24); 
+      
+      // /**
+      //  * CALCULATION LOGIC (Starting from 10mm left padding):
+      //  * Standard: 10% (~19mm) -> Starts @ 11
+      //  * Book Name: 20% (~38mm) -> Starts @ 30
+      //  * College: 20% (~38mm) -> Starts @ 68
+      //  * Professor: 15% (~28mm) -> Starts @ 106
+      //  * Date: 10% (~19mm) -> Starts @ 135
+      //  * Chln: 8% (~15mm) -> Starts @ 154
+      //  * Copies: 7% (~13mm) -> Starts @ 172 (Center @ 178)
+      //  * Feeding: 10% (~19mm) -> Starts @ 185 (Center @ 194)
+      //  */
+      
+      pdf.text("Standard", 8, 28);
+      pdf.text("Book Name", 27, 28);
+      pdf.text("Name Of College", 64, 28);
+      pdf.text("Name Of Professor", 102, 28, );
+      pdf.text("Date", 130, 28);
+      pdf.text("Chln.", 150, 28);
+      pdf.text("Copies", 170, 28, { align: "center" });
+      pdf.text("Feeding Dt.", 185, 28, { align: "center" });
+            pdf.text("Entry", 199, 28, { align: "center" });
+
+
+      pdf.line(10, 30, 200, 30); 
+
+      heightLeft -= pdfHeight;
+    }
+
     window.open(pdf.output("bloburl"), "_blank");
-  };
+  } catch (error) {
+    console.error("PDF Generation Error:", error);
+  }
 
-  const handleBack = () => { navigate(-1); };
+  setPrinting(false);
+};
+
+const handleBack = () => { navigate(-1); };
 
   if (!isPrintMode) return null;
 
@@ -112,27 +201,36 @@ useEffect(() => {
         <Button variant="contained" startIcon={<PrintIcon />} onClick={handlePrint}>Print to PDF</Button>
       </Stack>
 
+
+      
+{/* The Loading Overlay/Message */}
+    {printing && (
+      <div className="loading-overlay" style={{color:'green', fontWeight:'bold', fontSize:'17px'}}>
+        <p>Please wait, your report is being generated. This may take a few seconds...</p>
+      </div>
+    )}
+
       <Box ref={componentRef} sx={{ p: '10mm', bgcolor: 'white' }}>
         <Box sx={{ mb: 2, textAlign: 'center' }}>
           <Typography variant="h6" fontWeight="bold">Phadke Prakashan, Kolhapur.</Typography>
           <Typography variant="subtitle2" fontWeight="bold">Canvassing Listing</Typography>
-          <Typography variant="caption" sx={{ display: 'block' }}>
-            From {filters?.startdate || "01-04-2025"} to {filters?.enddate || "31-03-2026"}
-          </Typography>
+          <Typography variant="caption" sx={{ display: 'block',fontWeight:'bold' }}>
+From {filters?.period?.startdate  } 
+to {filters?.period?.enddate  }          </Typography>
         </Box>
         
         {loading ? (
           <Box sx={{ textAlign: 'center', mt: 5 }}><CircularProgress /></Box>
         ) : (
           <TableContainer>
-            <Table size="small" sx={{ '& .MuiTableCell-root': { border: 'none', fontFamily: 'serif', fontSize: '11px', padding: '4px 2px' } }}>
+            <Table size="small" sx={{ '& .MuiTableCell-root': { border: 'none', fontFamily: 'serif', fontSize: '12px', padding: '4px 2px' } }}>
               <TableHead>
                 <TableRow sx={{ borderTop: '1.5pt solid black', borderBottom: '1.5pt solid black' }}>
                   <TableCell sx={{ fontWeight: 'bold', width: '10%' }}>Standard</TableCell>
                 <TableCell sx={{ fontWeight: 'bold', width: '20%' }}>Book Name</TableCell>
 
                   <TableCell sx={{ fontWeight: 'bold', width: '20%' }}>Name Of College  </TableCell>
-                  <TableCell sx={{ fontWeight: 'bold', width: '15%' }}>Name Of Professor</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold', width: '15%', textAlign:'center' }}>Name Of Professor</TableCell>
                   <TableCell sx={{ fontWeight: 'bold', width: '10%' }}>Date</TableCell>
                   <TableCell sx={{ fontWeight: 'bold', width: '8%' }}>Chln.</TableCell>
                   <TableCell sx={{ fontWeight: 'bold', textAlign: 'center', width: '7%' }}>Copies</TableCell>
@@ -140,77 +238,56 @@ useEffect(() => {
                   <TableCell sx={{ fontWeight: 'bold', textAlign: 'center', width: '10%' }}>Entry</TableCell>
                 </TableRow>
               </TableHead>
-              <TableBody>
-                {reportData.map((group, gIdx) => (
-                  <React.Fragment key={gIdx}>
-                    <TableRow>
-                      <TableCell colSpan={7} sx={{ textAlign: 'center', fontWeight: 'bold', pt: 2, pb: 1, fontSize: '12px', borderBottom: '0.5pt solid #eee' }}>
-                        {group.party_name.toUpperCase()}
-                      </TableCell>
-                    </TableRow>
+             <TableBody>
+  {reportData.map((group, gIdx) => (
+    <React.Fragment key={gIdx}>
+      <TableRow>
+        <TableCell colSpan={9} sx={{ textAlign: 'center', pt: 3, pb: 1 }}>
+          <Typography sx={{ borderBottom: '1px solid black', display: 'inline-block', textTransform: 'uppercase', fontWeight: 'bold' }}>
+            {group.college}
+          </Typography>
+        </TableCell>
+      </TableRow>
 
-                  {group.details.map((row, rIdx) => (
-  <TableRow key={rIdx} sx={{ verticalAlign: 'top' }}>
-    
-    {/* 1. Standard Column (B.Com II) */}
-    <TableCell sx={{ width: '10%', fontWeight: 'bold' }}>
-      {row.standard}
-    </TableCell>
-
-    {/* 2. Book & College Name (Stacked) */}
-    <TableCell sx={{ width:  '20%' }}>
-   
-        <Typography sx={{ fontSize: '11px', fontWeight: 500 }}>
-          {row.book_name}
-        </Typography> </TableCell>
-        <TableCell sx={{width:'20%'}}>
-        <Typography sx={{ fontSize: '10px',    fontWeight:500}}>
-          {row.college_name}
-        </Typography></TableCell>
-    
-   
-
-    {/* 3. Professor Name */}
-    <TableCell sx={{ width: '15%' }}>
-      {row.professor}
-    </TableCell>
-
-    {/* 4. Date */}
-    <TableCell sx={{ width: '10%' }}>
-      {formatDate(row.date)}
-    </TableCell>
-
-    {/* 5. Challan */}
-    <TableCell sx={{ width: '8%' }}>
-      {row.challan}
-    </TableCell>
-
-    {/* 6. Copies (With the underline seen in screenshot) */}
-    <TableCell align="center" sx={{ width: '7%' }}>
-      <Box sx={{ 
-        borderBottom: '1px solid black', 
-        display: 'inline-block', 
-        minWidth: '20px',
-        textAlign: 'center' 
-      }}>
-        {row.copies}
-      </Box>
-    </TableCell>
-
-    {/* 7. Feeding Date */}
-    <TableCell align="center" sx={{ width: '10%' }}>
-      {formatDate(row.feeding_date)}
-    </TableCell>
-
-    {/* 8. Entry */}
-    <TableCell align="center" sx={{ width: '7%' }}>
-      {row.entry}
-    </TableCell>
-
-  </TableRow>
-))}                  </React.Fragment>
-                ))}
-              </TableBody>
+      {group.details.map((row, rIdx) => (
+        <TableRow key={rIdx} sx={{ verticalAlign: 'top' }}>
+          {/* 1. Standard */}
+          <TableCell sx={{ width: '10%', fontWeight: 'bold' }}>{row["Standard"]}</TableCell>
+          
+          {/* 2. Book Name Logic (Handling the 'N/A' case from your JSON) */}
+          <TableCell sx={{ width: '20%' }}>
+            {row["BookName"] !== "N/A" ? row["BookName"] : row["BookNameMarathi"]}
+          </TableCell>
+          
+          {/* 3. College Name */}
+          <TableCell sx={{ width: '20%' }}>{row["Name of College"]}</TableCell>
+          
+          {/* 4. Professor Name */}
+          <TableCell sx={{ width: '15%' }}>{row["Name of Professor"]}</TableCell>
+          
+          {/* 5. Date */}
+          <TableCell sx={{ width: '10%' }}>{formatDate(row["Date"])}</TableCell>
+          
+          {/* 6. Chln */}
+          <TableCell sx={{ width: '8%' }}>{row["Chln"]}</TableCell>
+          
+          {/* 7. Copies */}
+          <TableCell align="center" sx={{ width: '7%' }}>
+            <Box sx={{ borderBottom: '1px solid black', display: 'inline-block', minWidth: '20px' }}>
+              {row["Copies"]}
+            </Box>
+          </TableCell>
+          
+          {/* 8. Feeding Date */}
+          <TableCell align="center" sx={{ width: '10%' }}>{formatDate(row["Feeding Date"])}</TableCell>
+          
+          {/* 9. Entry */}
+          <TableCell align="center" sx={{ width: '7%' }}>{row["Entry"]}</TableCell>
+        </TableRow>
+      ))}
+    </React.Fragment>
+  ))}
+</TableBody>
             </Table>
           </TableContainer>
         )}

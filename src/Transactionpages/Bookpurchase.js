@@ -559,7 +559,7 @@ function Bookpurchase() {
       BookCode: detail.BookCode,
       BookId: detail.BookId,
       Copies: detail.Copies,
-      Rate: detail.Rate,
+      Rate: detail.Price,
       DiscountPercentage: detail.DiscountPercentage,
       DiscountAmount: detail.DiscountAmount,
       Amount: detail.Amount,
