@@ -46,8 +46,36 @@ const College = () => {
 
     fetchColleges();
   }, []);
-  const [pageIndex, setPageIndex] = useState(1);
+
+const [pageIndex, setPageIndex] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [activeCompany, setActiveCompany] = useState(null);
+    
+   useEffect(() => {
+      const selected = localStorage.getItem("SelectedCompany");
+      if (selected) {
+        try {
+          const parsedCompany = JSON.parse(selected);
+          setActiveCompany(parsedCompany);
+          
+          // Load data immediately
+          fetchColleges()
+         fetchAllCities();
+    fetchStates();
+    fetchAreas();
+    fetchCollegegroups();
+        } catch (e) {
+          console.error("Error parsing company data", e);
+        }
+      }
+    }, [pageIndex]); 
+
+
+
+       
+
+
+  
 
   const [CollegeName, setCollegeName] = useState("");
   const [CollegeCode, setCollegeCode] = useState("");
@@ -108,34 +136,16 @@ const College = () => {
     }
   };
 
-  useEffect(() => {
-    fetchAllCities();
-    fetchStates();
-    fetchAreas();
-    fetchCollegegroups();
-  }, []);
 
-  // const fetchColleges = async () => {
-  //   setLoading(true); // Set loading to true when fetching data
-  //   try {
-  //     const response = await axios.get("https://publication.microtechsolutions.net.in/php/Collegeget.php");
-  //     setColleges(response.data);
-  //   } catch (error) {
-  //     // toast.error("Error fetching colleges:", error);
-  //   } finally {
-  //     setLoading(false); // Set loading to false after data is fetched
-  //   }
-  // };
 
-  useEffect(() => {
-    fetchColleges();
-    console.log("this function is called");
-  }, [pageIndex]); // Fetch data when page changes
+  
+
+ 
 
   const fetchColleges = async () => {
     try {
       const response = await axios.get(
-        `https://publication.microtechsolutions.net.in/php/get/gettblpage.php?Table=College&PageNo=${pageIndex}`,
+        `https://publication.microtechsolutions.net.in/php/get/gettblpage.php?Table=College&PageNo=${pageIndex}`
       );
       // setSellschallans(response.data);
       console.log(response.data, "response of College");
@@ -244,6 +254,7 @@ const College = () => {
 
     const urlencoded = new URLSearchParams();
     urlencoded.append("Id", deleteId);
+    urlencoded.append("CompanyId", activeCompany.Id);
 
     const requestOptions = {
       method: "POST",
@@ -365,6 +376,7 @@ const College = () => {
       FaxNo: 123456,
       EmailId: EmailId,
       CreatedBy: userId,
+      CompanyId : activeCompany.Id
     };
 
     // Determine the URL based on whether we're editing or adding
@@ -376,6 +388,7 @@ const College = () => {
     if (isEditing) {
       data.Id = id;
       data.UpdatedBy = userId;
+      data.CompanyId = activeCompany.Id
     }
 
     try {
@@ -493,30 +506,7 @@ const College = () => {
       <div className="college-container">
         <h1>College Master</h1>
 
-        {/* {loading ? (
-    <div className="loadingcollege-container">
-      <CircularProgress /> 
-      <p>Loading Colleges... Please wait.</p>
-    </div>
-  ) : (
-    <div className="collegetable-container">
-      <div className="collegetable1-container">
-        <Button
-          onClick={handleNewClick}
-          style={{ color: "#FFFF", fontWeight: "700", background:'#0a60bd', width:'15%' }}
-        >
-          New
-        </Button>
-        <div className="colltable-container">
-          <MaterialReactTable table={table} />
-
-        </div>
-
-        
-      </div>
-    </div>
-  )} */}
-
+      
         <div className="collegetable-container">
           <div className="collegetable1-container">
             <Button

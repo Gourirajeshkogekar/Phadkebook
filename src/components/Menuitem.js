@@ -110,12 +110,14 @@ export const menuItems = [
     title: "Masters",
     path: "/masters",
     icon: <FaGraduationCap />,
+    //  allowedCompanies: [1,4],
 
     submenus: [
       {
         title: "Accounts",
         path: "/masters/accounts",
         icon: <FaUsers />,
+       
       },
       {
         title: "Account Group",
@@ -166,7 +168,7 @@ export const menuItems = [
 
       {
         title: "Discount",
-        path: "/masters/discount",
+        path: "/masters/commission",
         icon: <FaPercentage />,
       },
 
@@ -297,6 +299,7 @@ export const menuItems = [
     title: "Transactions",
     path: "/transaction",
     icon: <FaExchangeAlt />,
+    //  allowedCompanies: [3],
 
     submenus: [
       {
@@ -420,6 +423,7 @@ export const menuItems = [
     title: "Printing",
     path: "/printing",
     icon: <FaPrint />,
+    //  allowedCompanies: [1,3,5],
 
     submenus: [
       {
@@ -964,163 +968,163 @@ export const menuItems = [
     allowedCompanies: ["PP", "PBH"], // only these companies
   },
 
-  {
-    title: "Reports",
-    icon: <AssessmentIcon />,
-    path: "/reports",
+  // {
+  //   title: "Reports",
+  //   icon: <AssessmentIcon />,
+  //   path: "/reports",
 
-    submenus: [
-      {
-        title: "Ledger",
-        path: "/reports/ledgerreport",
-        icon: <AccountBalanceIcon />,
-        type: "single",
-      },
-      {
-        title: "Purchase Register",
-        path: "/reports/purchaseregisterreport",
-        icon: <ReceiptIcon />,
-        type: "single",
-      },
+  //   submenus: [
+  //     {
+  //       title: "Ledger",
+  //       path: "/reports/ledgerreport",
+  //       icon: <AccountBalanceIcon />,
+  //       type: "single",
+  //     },
+  //     {
+  //       title: "Purchase Register",
+  //       path: "/reports/purchaseregisterreport",
+  //       icon: <ReceiptIcon />,
+  //       type: "single",
+  //     },
 
-      {
-        title: "Cash flow Monthwise",
-        path: "/reports/cashflowmonthwisereport",
-        icon: <MonetizationOnIcon />,
-        type: "single",
-      },
+  //     {
+  //       title: "Cash flow Monthwise",
+  //       path: "/reports/cashflowmonthwisereport",
+  //       icon: <MonetizationOnIcon />,
+  //       type: "single",
+  //     },
 
-      {
-        title: "Purchase Monthwise",
-        path: "/reports/purchasemonthwisereport",
-        icon: <CalendarMonthIcon />,
-        type: "single",
-      },
+  //     {
+  //       title: "Purchase Monthwise",
+  //       path: "/reports/purchasemonthwisereport",
+  //       icon: <CalendarMonthIcon />,
+  //       type: "single",
+  //     },
 
-      {
-        title: "Purchase Register Summary",
-        path: "/reports/purchaseregsummaryreport",
-        icon: <AssessmentIcon />,
-        type: "single",
-      },
+  //     {
+  //       title: "Purchase Register Summary",
+  //       path: "/reports/purchaseregsummaryreport",
+  //       icon: <AssessmentIcon />,
+  //       type: "single",
+  //     },
 
-      {
-        title: "Sales Return Register",
-        path: "/reports/salesreturnregisterreport",
-        icon: <UndoIcon />,
-        type: "single",
-      },
+  //     {
+  //       title: "Sales Return Register",
+  //       path: "/reports/salesreturnregisterreport",
+  //       icon: <UndoIcon />,
+  //       type: "single",
+  //     },
 
-      {
-        title: "TDS Register",
-        path: "/reports/tdsregisterreport",
-        icon: <GavelIcon />,
-        type: "single",
-      },
+  //     {
+  //       title: "TDS Register",
+  //       path: "/reports/tdsregisterreport",
+  //       icon: <GavelIcon />,
+  //       type: "single",
+  //     },
 
-      {
-        title: "Stock Reports",
-        path: "/reports/stockreports",
-        icon: <InventoryIcon />,
-        type: "group",
+  //     {
+  //       title: "Stock Reports",
+  //       path: "/reports/stockreports",
+  //       icon: <InventoryIcon />,
+  //       type: "group",
 
-        submenus: [
-          {
-            title: "Book Details",
-            path: "/reports/stockreports/bookdetails",
-            icon: <MenuBookIcon />,
-          },
-          {
-            title: "Net Sale",
-            path: "/reports/stockreports/netsale",
-            icon: <MdAttachMoney />,
-          },
-          {
-            title: "Net Sale Summary",
-            path: "/reports/stockreports/netsalesummaryreport",
-            icon: <SummarizeIcon />,
-          },
-          {
-            title: "Sales Bookwise Partywise",
-            path: "/reports/stockreports/salesbookwisepartywise",
-            icon: <BarChartIcon />,
-          },
-          {
-            title: "Stock Book",
-            path: "/reports/stockreports/stockbookreport",
-            icon: <MenuBookIcon />,
-          },
-          {
-            title: "Stock Day Book",
-            path: "/reports/stockreports/stockdaybookreport",
-            icon: <EventNoteIcon />,
-          },
-          {
-            title: "Stock Statement",
-            path: "/reports/stockreports/stockstatementreport",
-            icon: <ReceiptLongIcon />,
-          },
-          {
-            title: "Stock Statement Details",
-            path: "/reports/stockreports/stockstmtdetailsreport",
-            icon: <DescriptionIcon />,
-          },
-        ],
-      },
-      {
-        title: "Paper Reports",
-        path: "/reports/paperreports",
-        icon: <InventoryIcon />,
-        type: "group",
+  //       submenus: [
+  //         {
+  //           title: "Book Details",
+  //           path: "/reports/stockreports/bookdetails",
+  //           icon: <MenuBookIcon />,
+  //         },
+  //         {
+  //           title: "Net Sale",
+  //           path: "/reports/stockreports/netsale",
+  //           icon: <MdAttachMoney />,
+  //         },
+  //         {
+  //           title: "Net Sale Summary",
+  //           path: "/reports/stockreports/netsalesummaryreport",
+  //           icon: <SummarizeIcon />,
+  //         },
+  //         {
+  //           title: "Sales Bookwise Partywise",
+  //           path: "/reports/stockreports/salesbookwisepartywise",
+  //           icon: <BarChartIcon />,
+  //         },
+  //         {
+  //           title: "Stock Book",
+  //           path: "/reports/stockreports/stockbookreport",
+  //           icon: <MenuBookIcon />,
+  //         },
+  //         {
+  //           title: "Stock Day Book",
+  //           path: "/reports/stockreports/stockdaybookreport",
+  //           icon: <EventNoteIcon />,
+  //         },
+  //         {
+  //           title: "Stock Statement",
+  //           path: "/reports/stockreports/stockstatementreport",
+  //           icon: <ReceiptLongIcon />,
+  //         },
+  //         {
+  //           title: "Stock Statement Details",
+  //           path: "/reports/stockreports/stockstmtdetailsreport",
+  //           icon: <DescriptionIcon />,
+  //         },
+  //       ],
+  //     },
+  //     {
+  //       title: "Paper Reports",
+  //       path: "/reports/paperreports",
+  //       icon: <InventoryIcon />,
+  //       type: "group",
 
-        submenus: [
-          {
-            title: "Paper Outward Paperwise Report",
-            path: "/reports/paperreports/paperoutwardpaperwise",
-            icon: <MenuBookIcon />,
-          },
-          {
-            title: "Paper Outward Partywise Report",
-            path: "/reports/paperreports/paperoutwardpartywise",
-            icon: <MenuBookIcon />,
-          },
-          {
-            title: "Godown Wise Paper Report",
-            path: "/reports/paperreports/godownwisepaper",
-            icon: <MenuBookIcon />,
-          },
-          {
-            title: "Book print order Report",
-            path: "/reports/paperreports/bookprintorder",
-            icon: <MenuBookIcon />,
-          },
-          {
-            title: "Book print Order Summary Report",
-            path: "/reports/paperreports/bookprintordersummary",
-            icon: <MenuBookIcon />,
-          },
-        ],
-      },
+  //       submenus: [
+  //         {
+  //           title: "Paper Outward Paperwise Report",
+  //           path: "/reports/paperreports/paperoutwardpaperwise",
+  //           icon: <MenuBookIcon />,
+  //         },
+  //         {
+  //           title: "Paper Outward Partywise Report",
+  //           path: "/reports/paperreports/paperoutwardpartywise",
+  //           icon: <MenuBookIcon />,
+  //         },
+  //         {
+  //           title: "Godown Wise Paper Report",
+  //           path: "/reports/paperreports/godownwisepaper",
+  //           icon: <MenuBookIcon />,
+  //         },
+  //         {
+  //           title: "Book print order Report",
+  //           path: "/reports/paperreports/bookprintorder",
+  //           icon: <MenuBookIcon />,
+  //         },
+  //         {
+  //           title: "Book print Order Summary Report",
+  //           path: "/reports/paperreports/bookprintordersummary",
+  //           icon: <MenuBookIcon />,
+  //         },
+  //       ],
+  //     },
 
-      {
-        title: "Royalty Reports",
-        path: "/reports/royaltyreports",
-        icon: <InventoryIcon />,
-        type: "group",
+  //     {
+  //       title: "Royalty Reports",
+  //       path: "/reports/royaltyreports",
+  //       icon: <InventoryIcon />,
+  //       type: "group",
 
-        submenus: [
-          {
-            title: "Royalty Statement Summary",
-            path: "/reports/royaltyreports/royaltystmtsummary",
-            icon: <MenuBookIcon />,
-          },
-          {
-            title: "Royalty Stock Author",
-            path: "/reports/royaltyreports/royaltystockauth",
-            icon: <MdAttachMoney />,
-          },
-        ],
-      },
-    ],
-  },
+  //       submenus: [
+  //         {
+  //           title: "Royalty Statement Summary",
+  //           path: "/reports/royaltyreports/royaltystmtsummary",
+  //           icon: <MenuBookIcon />,
+  //         },
+  //         {
+  //           title: "Royalty Stock Author",
+  //           path: "/reports/royaltyreports/royaltystockauth",
+  //           icon: <MdAttachMoney />,
+  //         },
+  //       ],
+  //     },
+  //   ],
+  // },
 ];

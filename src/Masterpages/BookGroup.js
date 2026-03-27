@@ -45,6 +45,48 @@ function BookGroup() {
     fetchBookgroups();
   }, []);
 
+  const [activeCompany, setActiveCompany] = useState(null);
+    
+   useEffect(() => {
+      const selected = localStorage.getItem("SelectedCompany");
+      if (selected) {
+        try {
+          const parsedCompany = JSON.parse(selected);
+          setActiveCompany(parsedCompany);
+          
+          // Load data immediately
+        
+    fetchBookgroups();
+   
+        } catch (e) {
+          console.error("Error parsing company data", e);
+        }
+      }
+    }, []); 
+
+
+
+  
+
+const fetchBookgroups = async () => {
+  try {
+    const response = await axios.get(
+      `https://publication.microtechsolutions.net.in/php/BookGroupget.php`
+    );
+
+     
+    if (response.data && response.data.data) {
+      setBookgroups(response.data.data); 
+    } else {
+      setBookgroups([]);  
+    }
+  } catch (error) {
+    console.error("Error fetching book groups:", error);
+    // toast.error("Failed to load book groups");
+  }
+};
+
+
   // State variables
   const [BookGroupName, setBookGroupName] = useState("");
   const [BookGroupCode, setBookGroupCode] = useState("");
@@ -70,21 +112,9 @@ function BookGroup() {
       }
     }
   };
-  // Fetch book groups data
-  useEffect(() => {
-    fetchBookgroups();
-  }, []);
+  
 
-  const fetchBookgroups = async () => {
-    try {
-      const response = await axios.get(
-        "https://publication.microtechsolutions.net.in/php/BookGroupget.php"
-      );
-      setBookgroups(response.data);
-    } catch (error) {
-      // toast.error("Error fetching book groups:", error);
-    }
-  };
+  
 
   const resetForm = () => {
     setBookGroupName("");
@@ -132,6 +162,8 @@ function BookGroup() {
 
     const urlencoded = new URLSearchParams();
     urlencoded.append("Id", deleteId);
+        urlencoded.append("CompanyId", activeCompany.Id);
+
 
     const requestOptions = {
       method: "POST",
@@ -183,6 +215,7 @@ function BookGroup() {
       BookGroupCode: BookGroupCode,
       Royalty: Royalty,
       CreatedBy: userId,
+      CompanyId: activeCompany.Id
     };
     const url = isEditing
       ? "https://publication.microtechsolutions.net.in/php/BookGroupupdate.php"
@@ -191,6 +224,8 @@ function BookGroup() {
     if (isEditing) {
       data.Id = id;
       data.UpdatedBy = userId;
+ data.CompanyId = activeCompany.Id;
+
     }
 
     try {
@@ -323,7 +358,7 @@ function BookGroup() {
             <form className="bookgroup-form">
               <div>
                 <label className="bookgroup-label">
-                  Book Group Name<b className="required">*</b>
+                  Book Group Name 
                 </label>
                 <div>
                   <Tooltip
@@ -356,7 +391,7 @@ function BookGroup() {
 
               <div>
                 <label className="bookgroup-label">
-                  Book Group Code<b className="required">*</b>
+                  Book Group Code 
                 </label>
                 <div>
                   <input

@@ -41,6 +41,26 @@ function University() {
 
     fetchUniversities();
   }, []);
+
+
+  const [activeCompany, setActiveCompany] = useState(null);
+      
+     useEffect(() => {
+        const selected = localStorage.getItem("SelectedCompany");
+        if (selected) {
+          try {
+            const parsedCompany = JSON.parse(selected);
+            setActiveCompany(parsedCompany);
+            
+            // Load data immediately
+           fetchUniversities()
+          } catch (e) {
+            console.error("Error parsing company data", e);
+          }
+        }
+      }, []); 
+
+
   const [UniversityName, setUniversityName] = useState("");
   const [UniversityCode, setUniversityCode] = useState("");
   const [universities, setUniversities] = useState([]);
@@ -68,17 +88,19 @@ function University() {
     }
   };
 
-  useEffect(() => {
-    fetchUniversities();
-  }, []);
+ 
 
   const fetchUniversities = async () => {
     try {
       const response = await axios.get(
-        "https://publication.microtechsolutions.net.in/php/Universityget.php"
+        `https://publication.microtechsolutions.net.in/php/Universityget.php `
       );
 
-      setUniversities(response.data);
+     if (response.data && response.data.data) {
+      setUniversities(response.data.data);
+    } else {
+    setUniversities([])
+    }
     } catch (error) {
       // toast.error("Error fetching Universities:", error);
     }
@@ -117,6 +139,8 @@ function University() {
 
     const urlencoded = new URLSearchParams();
     urlencoded.append("Id", deleteId);
+        urlencoded.append("CompanyId", activeCompany.Id);
+
 
     const requestOptions = {
       method: "POST",
@@ -169,6 +193,7 @@ function University() {
       UniversityName: UniversityName,
       UniversityCode: UniversityCode,
       CreatedBy: userId,
+      CompanyId: activeCompany.Id
     };
 
     const url = isEditing
@@ -178,6 +203,7 @@ function University() {
     if (isEditing) {
       data.Id = id;
       data.UpdatedBy = userId;
+      data.CompanyId = activeCompany.Id;
     }
 
     try {

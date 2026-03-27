@@ -42,6 +42,29 @@ function PaperSize() {
 
     fetchPaperSizes();
   }, []);
+
+
+
+  const [activeCompany, setActiveCompany] = useState(null);
+             
+            useEffect(() => {
+               const selected = localStorage.getItem("SelectedCompany");
+               if (selected) {
+                 try {
+                   const parsedCompany = JSON.parse(selected);
+                   setActiveCompany(parsedCompany);
+                   
+                   // Load data immediately
+    fetchPaperSizes();
+    
+                   } catch (e) {
+                   console.error("Error parsing company data", e);
+                 }
+               }
+             }, []); 
+   
+
+
   const [papersize, setPapersize] = useState("");
   const [millname, setMillname] = useState([]);
   const [unit, setUnit] = useState("");
@@ -91,17 +114,15 @@ function PaperSize() {
   const fetchPaperSizes = async () => {
     try {
       const response = await axios.get(
-        "https://publication.microtechsolutions.net.in/php/PaperSizeget.php",
+        `https://publication.microtechsolutions.net.in/php/PaperSizeget.php`,
       );
-      setPapersizes(response.data);
+      setPapersizes(response.data.data);
     } catch (error) {
       // toast.error("Error fetching papersizes:", error);
     }
   };
 
-  useEffect(() => {
-    fetchPaperSizes();
-  }, []);
+  
 
   const resetForm = () => {
     setPapersize("");
@@ -225,6 +246,7 @@ function PaperSize() {
       MultipleFactor: multiplefactor,
       STRSize_Code: STRSize_Code,
       CreatedBy: userId,
+      CompanyId: activeCompany.Id,
     };
 
     const url = isEditing
@@ -234,6 +256,7 @@ function PaperSize() {
     if (isEditing) {
       data.Id = id;
       data.UpdatedBy = userId;
+      data.CompanyId = activeCompany.Id;
     }
 
     try {

@@ -41,6 +41,31 @@ function Commission() {
 
     fetchCommissions();
   }, []);
+
+
+  const [activeCompany, setActiveCompany] = useState(null);
+      
+     useEffect(() => {
+        const selected = localStorage.getItem("SelectedCompany");
+        if (selected) {
+          try {
+            const parsedCompany = JSON.parse(selected);
+            setActiveCompany(parsedCompany);
+            
+            // Load data immediately
+ fetchCommissions();
+    fetchStandards();
+    fetchBookgroups();
+    fetchBooks();
+    fetchPartycategories();
+            } catch (e) {
+            console.error("Error parsing company data", e);
+          }
+        }
+      }, []); 
+
+
+  
   const [TypeCode, setTypecode] = useState("");
   const [BookOrGroupId, setBookorGroupid] = useState("");
   const [StandardId, setStandardId] = useState("");
@@ -86,31 +111,31 @@ function Commission() {
     }
   };
 
-  const fetchCommissions = async () => {
-    try {
-      const response = await axios.get(
-        "https://publication.microtechsolutions.net.in/php/Commissionget.php"
-      );
-      setCommissions(response.data);
-    } catch (error) {
-      // toast.error("Error fetching commissions:", error);
+ const fetchCommissions = async () => {
+  try {
+    const response = await axios.get(
+      "https://publication.microtechsolutions.net.in/php/Commissionget.php"
+    );
+    
+    // Change this line:
+    if (response.data && response.data.status === "success") {
+      setCommissions(response.data.data); // Access the .data array inside the response
+    } else {
+      setCommissions([]);
     }
-  };
+  } catch (error) {
+    console.error("Error fetching commissions:", error);
+  }
+};
 
-  useEffect(() => {
-    fetchCommissions();
-    fetchStandards();
-    fetchBookgroups();
-    fetchBooks();
-    fetchPartycategories();
-  }, []);
+  
 
   const fetchStandards = async () => {
     try {
       const response = await axios.get(
         "https://publication.microtechsolutions.net.in/php/Standardget.php"
       );
-      const bookstandardOptions = response.data.map((std) => ({
+      const bookstandardOptions = response.data.data.map((std) => ({
         value: std.Id,
         label: std.StandardName,
       }));
@@ -126,7 +151,7 @@ function Commission() {
         "https://publication.microtechsolutions.net.in/php/Bookget.php"
       );
       setBooks(
-        response.data.map((book) => ({
+      response.data.data.map((book)=>({
           value: book.Id,
           label: book.BookNameMarathi || book.BookName,
         }))
@@ -142,7 +167,7 @@ function Commission() {
         "https://publication.microtechsolutions.net.in/php/Bookgroupget.php"
       );
       setBookgroups(
-        response.data.map((std) => ({
+        response.data.data.map((std) => ({
           value: std.Id,
           label: std.BookGroupName,
         }))
@@ -157,7 +182,7 @@ function Commission() {
         const response = await axios.get(
           "https://publication.microtechsolutions.net.in/php/PartyCategoryget.php",
         );
-        const partyOptions = response.data.map((partycat) => ({
+        const partyOptions = response.data.data.map((partycat) => ({
           value: partycat.Id,
           label: partycat.PartyCategory,
         }));
@@ -216,6 +241,8 @@ function Commission() {
 
     const urlencoded = new URLSearchParams();
     urlencoded.append("Id", deleteId);
+        urlencoded.append("CompanyId", activeCompany.Id);
+
 
     const requestOptions = {
       method: "POST",
@@ -274,6 +301,7 @@ function Commission() {
       EndCopy: EndCopy,
       CommissionPercentage: CommissionPercentage,
       CreatedBy: userId,
+      CompanyId: activeCompany.Id
     };
 
     const url = isEditing
@@ -283,6 +311,7 @@ function Commission() {
     if (isEditing) {
       data.Id = id;
       data.UpdatedBy = userId;
+      data.CompanyId = activeCompany.Id;
     }
 
     try {
@@ -475,7 +504,7 @@ function Commission() {
                             marginBottom: "5px",
                           }),
                           menu: (base) => ({
-                            ...base,
+                            ...base, width: "600px",
                             zIndex: 100,
                           }),
                         }}
@@ -534,6 +563,11 @@ function Commission() {
                                                       border: "1px solid rgb(223, 222, 222)",
                                                       marginBottom: "5px",
                                                     }),
+
+                                                     menu: (base) => ({
+                            ...base,   width: "250px",
+                            zIndex: 100,
+                          }),
                                                   }}
                                                   placeholder="Select Id"
                                                 />
@@ -573,7 +607,7 @@ function Commission() {
                             marginBottom: "5px",
                           }),
                           menu: (base) => ({
-                            ...base,
+                            ...base,    width: "170px",
                             zIndex: 100,
                           }),
                         }}

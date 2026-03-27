@@ -306,7 +306,7 @@ function Salesreturncreditnote() {
   const fetchSalereturncreditdetails = async () => {
     try {
       const response = await axios.get(
-        "https://publication.microtechsolutions.net.in/php/get/gettable.php?Table=SalesReturnCreditnoteDetail"
+        "https://publication.microtechsolutions.net.in/php/get/gettable.php?Table=SalesReturnCreditNoteDetail"
       );
       console.log(
         response.data,
@@ -697,15 +697,17 @@ function Salesreturncreditnote() {
     const salesreturncredit = salesreturncredits[currentRow.index];
 
     console.log(salesreturncredit, "sales return credit note");
-    // Filter purchase details to match the selected PurchaseId
-    const salesreturncreditdetail = salesreturncreditdetails.filter(
-      (detail) => detail.SalesReturnCreditNoteId === salesreturncredit.Id
-    );
+     // const salesreturncreditdetail = salesreturncreditdetails.filter(
+    //   (detail) => detail.SalesReturnCreditNoteId === salesreturncredit.Id
+    // );
+
+    // This safely handles cases where salesreturncreditdetails is null or undefined
+const salesreturncreditdetail = (Array.isArray(salesreturncreditdetails) ? salesreturncreditdetails : [])
+  .filter((detail) => detail.SalesReturnCreditNoteId === salesreturncredit.Id);
 
     console.log(salesreturncreditdetail, "details of salesreturn credit ");
 
-    // Convert date strings to DD-MM-YYYY format
-    const convertDateForInput = (dateStr) => {
+     const convertDateForInput = (dateStr) => {
       if (typeof dateStr === "string" && dateStr.includes("-")) {
         const [year, month, day] = dateStr.split(" ")[0].split("-");
         return `${year}-${month}-${day}`;

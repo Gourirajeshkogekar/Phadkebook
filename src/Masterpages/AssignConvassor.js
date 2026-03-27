@@ -45,6 +45,28 @@ function Assignconvassor() {
     fetchConvassors();
   }, []);
 
+
+   const [activeCompany, setActiveCompany] = useState(null);
+        
+       useEffect(() => {
+          const selected = localStorage.getItem("SelectedCompany");
+          if (selected) {
+            try {
+              const parsedCompany = JSON.parse(selected);
+              setActiveCompany(parsedCompany);
+              
+              // Load data immediately
+ fetchConvassors();
+    fetchAssignconvassors();
+    fetchAllCities();
+    fetchStates();
+    fetchAreas();            } catch (e) {
+              console.error("Error parsing company data", e);
+            }
+          }
+        }, []); 
+
+             
   const [AreaId, setAreadId] = useState("");
   const [IsAssigned, setIsAssigned] = useState(false);
   const [canvassors, setCanvassors] = useState([]);
@@ -110,7 +132,7 @@ function Assignconvassor() {
   const loadEditAreas = async (CityId, CanvassorId, AssignId) => {
     try {
       const res = await axios.get(
-        "https://publication.microtechsolutions.net.in/php/get/getAssignCanvassor.php",
+        `https://publication.microtechsolutions.net.in/php/get/getAssignCanvassor.php`,
         { params: { CityId, CanvassorId } }
       );
 
@@ -161,7 +183,8 @@ function Assignconvassor() {
     loadEditAreas(mode.CityId, mode.CanvassorId, mode.Id);
   };
 
-  // const handleOkClick = async () => {
+  // const handleOkClick = async
+  //  () => {
   //   if (!CityId || !CanvassorId) {
   //     toast.error("Please select City and Canvassor");
   //     return;
@@ -335,30 +358,28 @@ function Assignconvassor() {
     }
   };
 
-  const fetchAssignconvassors = async () => {
-    try {
-      const res = await axios.get(
-        "https://publication.microtechsolutions.net.in/php/get/getAssignCanvassor.php"
-      );
+ const fetchAssignconvassors = async () => {
+  try {
+    const res = await axios.get(
+      `https://publication.microtechsolutions.net.in/php/get/getAssignCanvassor.php`
+    );
 
-      const activeAssignments = (res.data.Assignments || [])
-        .filter((item) => Number(item.Active) === 1)
-        .map((item) => {
-          const canvassor = res.data.Canvassors.find(
-            (c) => c.Name === item.CanvassorName
-          );
+    // 1. Access the Assignments array from the response
+    const assignmentsFromApi = res.data.Assignments || [];
 
-          return {
-            ...item,
-            CanvassorId: canvassor ? canvassor.Id : null,
-          };
-        });
+    // 2. Map the data (Removing the .filter if "Active" isn't strictly required or present)
+    const formattedAssignments = assignmentsFromApi.map((item) => ({
+      ...item,
+      // Ensure IsAssigned is a number for your column logic (getValue() === 1)
+      IsAssigned: 1 
+    }));
 
-      setAssignCanvassors(activeAssignments);
-    } catch (err) {
-      toast.error("Failed to load assignments");
-    }
-  };
+    setAssignCanvassors(formattedAssignments);
+  } catch (err) {
+    console.error("Failed to load assignments", err);
+    toast.error("Failed to load table data");
+  }
+};
 
   const fetchStates = async () => {
     try {
@@ -406,13 +427,7 @@ function Assignconvassor() {
     }
   };
 
-  useEffect(() => {
-    fetchConvassors();
-    fetchAssignconvassors();
-    fetchAllCities();
-    fetchStates();
-    fetchAreas();
-  }, []);
+ 
 
   const validateForm = () => {
     let formErrors = {};
@@ -509,14 +524,20 @@ function Assignconvassor() {
         body.append("CityId", row.CityId);
         body.append("AreaId", row.AreaId);
         body.append("IsAssigned", 1);
+                body.append("CompanyId", activeCompany.Id);
+
 
         if (isEditing) {
           // 🔁 UPDATE CASE
           body.append("UpdatedBy", userId);
-          body.append("Id", row.AssignId); // IMPORTANT: assignment primary key
+          body.append("Id", row.AssignId);
+                    body.append("CompanyId", activeCompany.Id);
+
         } else {
           // ✅ SAVE CASE
-          body.append("CreatedBy", userId);
+          body.append("CreatedBy", userId);                  
+            body.append("CompanyId", activeCompany.Id);
+
         }
 
         await axios.post(url, body, {
@@ -557,7 +578,7 @@ function Assignconvassor() {
       },
       {
         accessorKey: "IsAssigned",
-        header: "Convassor Assigned",
+        header: "Canvassor Assigned",
         size: 50,
         Cell: ({ cell }) => <span>{cell.getValue() === 1 ? "Yes" : "No"}</span>,
       },

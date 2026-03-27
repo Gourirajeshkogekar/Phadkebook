@@ -9,6 +9,14 @@ import {
 import { ArrowBack } from "@mui/icons-material";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
+import "jspdf-autotable";
+import autoTable from "jspdf-autotable";
+
+
+import { toast } from "react-toastify";
+import axios from "axios";
+
+
 
 const SummarisedLedgerPrint = () => {
   const location = useLocation();
@@ -20,52 +28,105 @@ const SummarisedLedgerPrint = () => {
   const toDate = query.get("todate");
 
   const [ledgerData, setLedgerData] = useState([]);
+const [reportSummary, setReportSummary] = useState(null);
+ useEffect(() => {
+  const fetchLedgerData = async () => {
+    const ids = query.get("ids") || query.get("AccountId");
+    try {
+      const response = await axios.get(
+        `https://publication.microtechsolutions.net.in/php/ledgerreport.php?fromdate=${fromDate}&todate=${toDate}&AccountId=${ids}&GroupId=&TrType=`
+      );
 
-  // 🔹 Mock structured data (group wise)
-  useEffect(() => {
-    const mockData = [
-      {
-        title: "BOOKS PURCHASE",
-        rows: [
-          { code: "IA", name: "Inward Challan", amount: 430161.00 },
-          { code: "OC", name: "Sales Challan", amount: 1260.00 },
-          { code: "PU", name: "Book Purchase", amount: 9272199.00 }
-        ],
-        balance: { amount: 10969215.00, type: "Dr" }
-      },
-      {
-        title: "FREIGHT A/C",
-        rows: [
-          { code: "CN", name: "Credit Note", amount: 250.00 },
-          { code: "DN", name: "Debit Note", amount: -614.00 }
-        ],
-        balance: { amount: 364.00, type: "Cr" }
-      },
-      {
-        title: "PURCHASE RETURN",
-        rows: [
-          { code: "PN", name: "Purchase Return - Debit Note", amount: -791828.00 }
-        ],
-        balance: { amount: 791828.00, type: "Cr" }
+      if (response.data && response.data.transactions) {
+        // Group the flat transactions by GroupName
+        const grouped = response.data.transactions.reduce((acc, curr) => {
+          const groupName = curr.GroupName;
+          if (!acc[groupName]) {
+            acc[groupName] = { title: groupName, rows: [], balance: { amount: 0, type: "" } };
+          }
+          
+          acc[groupName].rows.push({
+            code: curr.Date, // Using Date as the 'code' column
+            name: `${curr.AccountName} - ${curr.Particulars}`,
+            amount: parseFloat(curr.Amount.replace(/,/g, ""))
+          });
+
+          // Update balance for the group (extracting numeric part and Dr/Cr)
+          const balParts = curr.Balance.split(" ");
+          acc[groupName].balance.amount = balParts[0];
+          acc[groupName].balance.type = balParts[1];
+
+          return acc;
+        }, {});
+
+        setLedgerData(Object.values(grouped));
+        setReportSummary(response.data.summary);
       }
-    ];
-
-    setLedgerData(mockData);
-  }, []);
-
-  const handlePrint = async () => {
-    const element = reportRef.current;
-    const canvas = await html2canvas(element, { scale: 2 });
-    const imgData = canvas.toDataURL("image/png");
-
-    const pdf = new jsPDF("p", "mm", "a4");
-    const width = pdf.internal.pageSize.getWidth();
-    const height = pdf.internal.pageSize.getHeight();
-
-    pdf.addImage(imgData, "PNG", 0, 0, width, height);
-    window.open(pdf.output("bloburl"), "_blank");
+    } catch (error) {
+      console.error("Error fetching ledger data:", error);
+      toast.error("Failed to load ledger data");
+    }
   };
 
+  fetchLedgerData();
+}, [location.search]);
+
+ const handlePrint = () => {
+  const doc = jsPDF(); // Note: No 'new' is fine if using the imported default
+  const pageWidth = doc.internal.pageSize.getWidth();
+
+  // Header
+  doc.setFontSize(16);
+  doc.setFont("helvetica", "bold");
+  doc.text("PHADKE BOOK HOUSE", pageWidth / 2, 15, { align: "center" });
+  doc.setFontSize(10);
+  doc.text(`Summarised Ledger: ${fromDate} to ${toDate}`, pageWidth / 2, 22, { align: "center" });
+
+  let finalY = 30;
+
+  ledgerData.forEach((section) => {
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "bold");
+    doc.text(section.title, 14, finalY);
+
+    const rows = section.rows.map(r => [
+      r.code, 
+      r.name, 
+      r.amount.toLocaleString("en-IN", { minimumFractionDigits: 2 })
+    ]);
+
+    // CALLING AS A FUNCTION TO AVOID "NOT A FUNCTION" ERROR
+    autoTable(doc, {
+      startY: finalY + 2,
+      head: [['Date', 'Particulars', 'Amount']],
+      body: rows,
+      theme: 'grid',
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold' },
+      columnStyles: {
+        0: { cellWidth: 25 },
+        2: { halign: 'right' }
+      },
+      didDrawPage: (data) => {
+        finalY = data.cursor.y;
+      }
+    });
+
+    // Section Balance
+    doc.setFontSize(9);
+    doc.text(`Group Balance: ${section.balance.amount} ${section.balance.type}`, pageWidth - 14, finalY + 7, { align: "right" });
+    finalY += 15;
+  });
+
+  // Final Summary (from backend summary object)
+  if (reportSummary) {
+    if (finalY > 250) doc.addPage();
+    doc.line(14, finalY, pageWidth - 14, finalY);
+    doc.text(`Net Balance: ${reportSummary.net_balance}`, pageWidth - 14, finalY + 10, { align: "right" });
+  }
+
+  window.open(doc.output("bloburl"), "_blank");
+};
   return (
     <Box sx={{ bgcolor: "#eef1f5", minHeight: "100vh" }}>
       

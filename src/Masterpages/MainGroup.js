@@ -42,6 +42,24 @@ function Maingroup() {
     fetchMaingroups();
   }, []);
 
+   const [activeCompany, setActiveCompany] = useState(null);
+    
+   useEffect(() => {
+      const selected = localStorage.getItem("SelectedCompany");
+      if (selected) {
+        try {
+          const parsedCompany = JSON.parse(selected);
+          setActiveCompany(parsedCompany);
+          
+          // Load data immediately
+        
+          fetchMaingroups();
+        } catch (e) {
+          console.error("Error parsing company data", e);
+        }
+      }
+    }, []); 
+
   const [MainGroupName, setMainGroupName] = useState("");
   const [maingroups, setMaingroups] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -78,9 +96,7 @@ function Maingroup() {
     }
   };
 
-  useEffect(() => {
-    fetchMaingroups();
-  }, []);
+ 
 
   const resetForm = () => {
     setMainGroupName("");

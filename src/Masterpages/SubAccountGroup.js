@@ -45,6 +45,26 @@ function SubAccountGroup() {
     fetchSubaccounts();
   }, []);
 
+  const [activeCompany, setActiveCompany] = useState(null);
+      
+     useEffect(() => {
+        const selected = localStorage.getItem("SelectedCompany");
+        if (selected) {
+          try {
+            const parsedCompany = JSON.parse(selected);
+            setActiveCompany(parsedCompany);
+            
+            // Load data immediately
+          
+            fetchSubaccounts();
+            fetchaccgroups()
+          } catch (e) {
+            console.error("Error parsing company data", e);
+          }
+        }
+      }, []); 
+  
+
   const [SubGroupCode, setSubGroupCode] = useState("");
   const [SubGroupName, setSubGroupName] = useState("");
   const [subaccs, setSubaccs] = useState([]);
@@ -74,10 +94,7 @@ function SubAccountGroup() {
       }
     }
   };
-  useEffect(() => {
-    fetchSubaccounts();
-    fetchaccgroups();
-  }, []);
+  
 
   const fetchSubaccounts = async () => {
     try {

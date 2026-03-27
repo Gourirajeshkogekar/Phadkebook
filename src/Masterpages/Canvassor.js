@@ -39,9 +39,25 @@ function Canvassor() {
       toast.error("Year is not set.");
     }
 
-    fetchcanvassors();
+    // fetchcanvassors();
   }, []);
 
+   const [activeCompany, setActiveCompany] = useState(null);
+        
+       useEffect(() => {
+          const selected = localStorage.getItem("SelectedCompany");
+          if (selected) {
+            try {
+              const parsedCompany = JSON.parse(selected);
+              setActiveCompany(parsedCompany);
+              
+              // Load data immediately
+             fetchcanvassors()
+            } catch (e) {
+              console.error("Error parsing company data", e);
+            }
+          }
+        }, []); 
   const [CanvassorName, setCanvassorName] = useState("");
   const [canvassors, setCanvassors] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -70,24 +86,16 @@ function Canvassor() {
   const fetchcanvassors = async () => {
     try {
       const response = await axios.get(
-        "https://publication.microtechsolutions.net.in/php/get/getCanvassorMaster.php"
+        `https://publication.microtechsolutions.net.in/php/get/getCanvassorMaster.php`
       );
 
-      // sort by Id (assuming higher Id = newer)
-      const sortedData = [...response.data].sort(
-        (a, b) => a.Id - b.Id // ASC
-        // (b.Id - a.Id)        // DESC (latest first)
-      );
-
-      setCanvassors(sortedData);
+      setCanvassors(response.data);
     } catch (error) {
-      toast.error("Error fetching canvassors");
+      // toast.error("Error fetching Canvassors:", error);
     }
   };
 
-  useEffect(() => {
-    fetchcanvassors();
-  }, []);
+  
 
   const resetForm = () => {
     setCanvassorName("");
@@ -122,9 +130,11 @@ function Canvassor() {
     const formData = new URLSearchParams();
     formData.append("Table", "CanvassorMaster");
     formData.append("Id", deleteId);
+        formData.append("CompanyId", activeCompany.Id);
+
 
     fetch(
-      "https://publication.microtechsolutions.co.in/php/delete/delrecord.php",
+      "https://publication.microtechsolutions.net.in/php/delete/delrecord.php",
       {
         method: "POST",
         headers: {
@@ -170,6 +180,7 @@ function Canvassor() {
       CanvassorName: CanvassorName,
       CreatedBy: userId,
       // UpdatedBy: userId,
+      CompanyId: activeCompany.Id
     };
 
     const url = isEditing
@@ -179,6 +190,7 @@ function Canvassor() {
     if (isEditing) {
       data.Id = id;
       data.UpdatedBy = userId;
+      data.CompanyId = activeCompany.Id
     }
 
     try {

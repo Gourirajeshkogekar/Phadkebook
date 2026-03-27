@@ -24,7 +24,7 @@ import BookMedium from "./Masterpages/BookMedium";
 import Standard from "./Masterpages/Standard";
 import College from "./Masterpages/College";
 import University from "./Masterpages/University";
-import Discount from "./Masterpages/Discount";
+ 
 import Commission from "./Masterpages/Commission";
 import AssignConvassor from "./Masterpages/AssignConvassor";
 import User from "./Masterpages/User";
@@ -373,7 +373,7 @@ function App() {
 
             <Route path="/masters/university" element={<University />} />
             {/* <Route path="/masters/discount" element={<Discount />} /> */}
-            <Route path="/masters/discount" element={<Commission />} />
+            <Route path="/masters/commission"  element={<Commission/>} />
 
             <Route path="/masters/canvassor" element={<Canvassor />} />
 

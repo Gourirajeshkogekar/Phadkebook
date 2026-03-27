@@ -1,3 +1,6 @@
+
+
+
 import { useState, useEffect,useRef } from "react";
 import {
   Box, Paper, Typography, Grid, RadioGroup,
@@ -12,6 +15,8 @@ import KeyboardDoubleArrowRightIcon from "@mui/icons-material/KeyboardDoubleArro
 import KeyboardDoubleArrowLeftIcon from "@mui/icons-material/KeyboardDoubleArrowLeft";
 import PrintIcon from "@mui/icons-material/Print";
 import CloseIcon from "@mui/icons-material/Close";
+import autoTable from "jspdf-autotable";
+import dayjs from "dayjs";
 
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -31,6 +36,7 @@ export default function StockBook() {
   const [selectedItems, setSelectedItems] = useState([]); 
   const [selectedLeft, setSelectedLeft] = useState(null);
   const [selectedRight, setSelectedRight] = useState(null);
+  const [activeCompany, setActiveCompany] = useState(null);
 
   const fetchGroups = async () => {
     try {
@@ -59,25 +65,57 @@ export default function StockBook() {
     setSelectedRight(null);
   };
 
+  
+useEffect(() => {
+  const selected = localStorage.getItem("SelectedCompany");
+
+  if (selected) {
+    try {
+      const parsedCompany = JSON.parse(selected);
+      setActiveCompany(parsedCompany);
+    } catch (e) {
+      console.error("Company parse error", e);
+    }
+  }
+}, []);
+
+
   const handleBookSearch = async () => {
     if (!bookSearch.trim()) return;
     try {
       const res = await axios.get(`https://publication.microtechsolutions.net.in/php/Bookcodeget.php?BookCode=${bookSearch}`);
       const data = res.data;
-      const book = Array.isArray(data) ? data[0] : data;
+     const book = Array.isArray(data) ? data[0] : data;
 
-      if (book && book.BookName) {
-        if (!selectedItems.includes(book.BookName)) {
-          setSelectedItems(prev => [...prev, book.BookName]);
-        }
-        setBookSearch("");
-      } else {
-        alert("Book Code not found");
-      }
-    } catch (err) {
-      console.error("Book Search Error:", err);
-    }
+if (book && book.BookName) {
+  const newItem = {
+    name: book.BookName,
+    code: book.BookCode || book.BookId || book.Code || book.Book_Code
   };
+
+  console.log("BOOK OBJECT:", newItem); // 🔥 DEBUG
+
+  if (!newItem.code) {
+    alert("Book Code missing from API");
+    return;
+  }
+
+  const exists = selectedItems.find(x => x.code === newItem.code);
+
+  if (!exists) {
+    setSelectedItems(prev => [...prev, newItem]);
+  }
+
+  setBookSearch("");
+
+    } else {
+      alert("Book Code not found");
+    }
+
+  } catch (err) {
+    console.error("Book Search Error:", err);
+  }
+};
 
   /* ===== TRANSFER LOGIC ===== */
   const moveOneRight = () => {
@@ -93,12 +131,18 @@ export default function StockBook() {
     setAvailableGroups([]);
   };
 
-  const moveOneLeft = () => {
-    if (!selectedRight) return;
-    if (mode === "group") setAvailableGroups(prev => [...prev, selectedRight]);
+ const moveOneLeft = () => {
+  if (!selectedRight) return;
+
+  if (mode === "group") {
+    setAvailableGroups(prev => [...prev, selectedRight]);
     setSelectedItems(prev => prev.filter(x => x !== selectedRight));
-    setSelectedRight(null);
-  };
+  } else {
+    setSelectedItems(prev => prev.filter(x => x.code !== selectedRight.code));
+  }
+
+  setSelectedRight(null);
+};
 
   const moveAllLeft = () => {
     if (selectedItems.length === 0) return;
@@ -110,31 +154,130 @@ export default function StockBook() {
   const reportRef = useRef(null);
   
     const [printing, setPrinting] = useState(false);
+// ✅ ADD THIS STATE (top with others)
+const [stockData, setStockData] = useState([]);
 
- const handlePrint = async () => {
-  if (!reportRef.current) return;
+/* ================= PRINT ================= */
+const formatDate = (date) => {
+  if (!date) return "";
+  const [year, month, day] = date.split("-");
+  return `${day}-${month}-${year}`;
+};
+const handlePrint = async () => {
+  if (selectedItems.length === 0) {
+    alert("Please select at least one Book or Group");
+    return;
+  }
+
   setPrinting(true);
 
   try {
-    // Wait for data and rendering
-    await new Promise((resolve) => setTimeout(resolve, 1500)); 
+    const params = {
+      fromdate: formatDate(startDate),
+      todate: formatDate(endDate),
 
-    const element = reportRef.current;
-    const canvas = await html2canvas(element, {
-      scale: 2,
-      useCORS: true,
-      logging: false,
-      windowWidth: 800, // Match the Box width in StockDayBookPrint
+      bookCodewise:
+        mode === "code"
+          ? selectedItems.map(x => x.code).join(",")
+          : false,
+
+      bookGroupwise:
+        mode === "group"
+          ? selectedItems.join(",")
+          : false,
+
+      showSummary: showSummary,
+    };
+
+    const res = await axios.get(
+      `https://publication.microtechsolutions.net.in/php/get/getStockDayBook.php?CompanyId=${activeCompany.Id}`,
+      { params }
+    );
+
+    const apiData = res.data?.data || [];
+
+    if (apiData.length === 0) {
+      alert("No data found");
+      return;
+    }
+
+    const doc = new jsPDF();
+
+    let balance = 0;
+
+    const tableData = apiData.map(row => {
+      const inward = parseFloat(row.Inward || 0);
+      const outward = parseFloat(row.Outward || 0);
+
+      balance = balance + inward - outward;
+
+      return [
+        dayjs(row.Date).format("DD-MM-YYYY"),
+        row["Ref. no."] || "-",
+        row.Party || "-",
+        row.Particulars || "-",
+        inward,
+        outward,
+        balance,
+      ];
     });
 
-    const imgData = canvas.toDataURL("image/png");
-    const pdf = new jsPDF("p", "mm", "a4");
-    
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+    autoTable(doc, {
+      margin: { top: 30 },
 
-    pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
-    window.open(pdf.output("bloburl"), "_blank");
+      head: [["Date", "Ref No", "Party", "Particulars", "Inward", "Outward", "Balance"]],
+      body: tableData,
+
+      styles: {
+        fontSize: 9,
+      },
+
+      headStyles: {
+        fillColor: [220, 220, 220],
+        textColor: 0,
+      },
+
+      columnStyles: {
+        4: { halign: "right" },
+        5: { halign: "right" },
+        6: { halign: "right" },
+      },
+
+      // ✅ HEADER EVERY PAGE
+      didDrawPage: () => {
+        doc.setFontSize(14);
+       doc.text(
+  activeCompany?.CompanyName || "PHADKE BOOK HOUSE",
+  105,
+  10,
+  { align: "center" }
+);
+
+doc.setFontSize(10);
+doc.text(
+  activeCompany?.Address1 || "",
+  105,
+  15,
+  { align: "center" }
+);
+doc.setFontSize(11);
+doc.text("Stock Book", 105, 20, { align: "center" });
+
+doc.text(
+  `From ${dayjs(startDate).format("DD-MM-YYYY")} To ${dayjs(endDate).format("DD-MM-YYYY")}`,
+  105,
+  26,
+  { align: "center" }
+);
+
+        const pageNumber = doc.internal.getNumberOfPages();
+        doc.setFontSize(9);
+        doc.text(`Page ${pageNumber}`, 200, 10, { align: "right" });
+      },
+    });
+
+    window.open(doc.output("bloburl"), "_blank");
+
   } catch (error) {
     console.error("PDF Error:", error);
   } finally {
@@ -187,13 +330,7 @@ padding:4,
      <Typography 
              variant="h6" 
              fontWeight={700} 
-             sx={{ 
-               mb: 1, 
-               textAlign: "center", 
-               color: "#333",
-               textTransform: "uppercase",
-               letterSpacing: 1
-             }}
+            sx={{ variant:'h6', textAlign:'center', fontWeight: 700, color: '#1a237e', mb:1}}
            >
              Stock Book
            </Typography>
@@ -293,7 +430,7 @@ padding:4,
                   <List dense>
                     {selectedItems.map((item, idx) => (
                       <ListItemButton key={`right-${idx}`} selected={selectedRight === item} onClick={() => setSelectedRight(item)}>
-                        <ListItemText primary={item} />
+                     <ListItemText primary={typeof item === "string" ? item : item.name} />
                       </ListItemButton>
                     ))}
                   </List>
@@ -341,14 +478,96 @@ padding:4,
     >
       <div ref={reportRef}>
         <StockBookPrint 
-          filters={{ 
-            startDate, 
-            endDate, 
-          
-          }} 
-        />
+  data={stockData}   // ✅ ADD THIS
+  filters={{ startDate, endDate }} 
+/>
+
       </div>
     </Box>
   </Box>
 )
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

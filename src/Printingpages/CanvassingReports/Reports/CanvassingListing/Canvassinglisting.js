@@ -153,17 +153,7 @@ pdf.setFontSize(6);
       pdf.setLineWidth(0.3);
       pdf.line(10, 24, 200, 24); 
       
-      // /**
-      //  * CALCULATION LOGIC (Starting from 10mm left padding):
-      //  * Standard: 10% (~19mm) -> Starts @ 11
-      //  * Book Name: 20% (~38mm) -> Starts @ 30
-      //  * College: 20% (~38mm) -> Starts @ 68
-      //  * Professor: 15% (~28mm) -> Starts @ 106
-      //  * Date: 10% (~19mm) -> Starts @ 135
-      //  * Chln: 8% (~15mm) -> Starts @ 154
-      //  * Copies: 7% (~13mm) -> Starts @ 172 (Center @ 178)
-      //  * Feeding: 10% (~19mm) -> Starts @ 185 (Center @ 194)
-      //  */
+       
       
       pdf.text("Standard", 8, 28);
       pdf.text("Book Name", 27, 28);

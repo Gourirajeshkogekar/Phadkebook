@@ -452,19 +452,41 @@ const footerImpact = safeFooter.reduce((sum, row) => {
         accountOptionsFromMaster.map((a) => [String(a.value), a]),
       );
 
-      // 2) fetch recent challans (only need AccountId from challans)
-      const challansResp = await axios.get(
-        "https://publication.microtechsolutions.net.in/php/gettable.php?Table=SellsChallanHeader",
-      );
-      const challans = challansResp.data || [];
+      // // 2) fetch recent challans (only need AccountId from challans)
+      // const challansResp = await axios.get(
+      //   "https://publication.microtechsolutions.net.in/php/gettable.php?Table=SellsChallanHeader",
+      // );
+      // const challans = challansResp.data || [];
 
-      // find unique account ids used in challans
-      const challanAccountIds = Array.from(
-        new Set(challans.map((c) => String(c.AccountId)).filter(Boolean)),
-      );
+      // // find unique account ids used in challans
+      // const challanAccountIds = Array.from(
+      //   new Set(challans.map((c) => String(c.AccountId)).filter(Boolean)),
+      // );
+
+
+      // 2) Fetch challans
+    const challansResp = await axios.get(
+      "https://publication.microtechsolutions.net.in/php/gettable.php?Table=SellsChallanHeader",
+    );
+    const challans = challansResp.data || [];
+
+    // --- NEW FILTER LOGIC ---
+    // Only consider accounts that have at least one challan where IsInvoice is NOT 1
+    const activeChallanAccountIds = Array.from(
+      new Set(
+        challans
+          .filter((c) => {
+            // Check if IsInvoice is 0 or null (not converted yet)
+            // Note: handles both string "1" and number 1
+            return String(c.IsInvoice) !== "1"; 
+          })
+          .map((c) => String(c.AccountId))
+          .filter(Boolean)
+      ),
+    );
 
       // 3) for any challan AccountId not present in master, try to fetch Account by Id
-      const missingIds = challanAccountIds.filter((id) => !accountMap.has(id));
+      const missingIds = activeChallanAccountIds.filter((id) => !accountMap.has(id));
 
       if (missingIds.length > 0) {
         // fetch each missing account's details (parallel)
@@ -504,14 +526,14 @@ const footerImpact = safeFooter.reduce((sum, row) => {
       const normalAccounts = [];
 
       // place challan accounts first in same order they appear
-      challanAccountIds.forEach((id) => {
+      activeChallanAccountIds.forEach((id) => {
         const acc = accountMap.get(String(id));
         if (acc) priorityAccounts.push(acc);
       });
 
       // add remaining accounts (avoid duplicates)
       allAccounts.forEach((acc) => {
-        if (!challanAccountIds.includes(String(acc.value))) {
+        if (!activeChallanAccountIds.includes(String(acc.value))) {
           normalAccounts.push(acc);
         }
       });
@@ -520,7 +542,7 @@ const footerImpact = safeFooter.reduce((sum, row) => {
       // Only include accounts present in Challans
       const mergedOptions = [...priorityAccounts, ...normalAccounts]
         // show only challan accounts
-        .filter((acc) => challanAccountIds.includes(String(acc.value)))
+        .filter((acc) => activeChallanAccountIds.includes(String(acc.value)))
         // remove accounts which already have invoices
         .filter((acc) => !invoiceheaders.includes(String(acc.value)));
 
@@ -1252,6 +1274,7 @@ const updateFooterRow = (index, field, value) => {
 CanvassorId:CanvassorId,
 Remarks: Remarks,
       Total: Total,
+      IsInvoice: 1,
       CreatedBy: !isEditing ? userId : undefined,
       UpdatedBy: isEditing ? userId : undefined,
       // ...(!isEditing ? { CreatedBy: userId } : { UpdatedBy: userId }),

@@ -41,6 +41,24 @@ function PartyCategory() {
 
     fetchPartycategories();
   }, []);
+
+
+   const [activeCompany, setActiveCompany] = useState(null);
+             
+            useEffect(() => {
+               const selected = localStorage.getItem("SelectedCompany");
+               if (selected) {
+                 try {
+                   const parsedCompany = JSON.parse(selected);
+                   setActiveCompany(parsedCompany);
+                   
+                   // Load data immediately
+   fetchPartycategories()
+                   } catch (e) {
+                   console.error("Error parsing company data", e);
+                 }
+               }
+             }, []); 
   const [PartyCategory, setPartyCategory] = useState("");
   const [partycategories, setPartycategories] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -69,17 +87,14 @@ function PartyCategory() {
   const fetchPartycategories = async () => {
     try {
       const response = await axios.get(
-        "https://publication.microtechsolutions.net.in/php/PartyCategoryget.php"
+     `https://publication.microtechsolutions.net.in/php/PartyCategoryget.php`
       );
-      setPartycategories(response.data);
+      setPartycategories(response.data.data);
     } catch (error) {
       // toast.error("Error fetching Partycategories:", error);
     }
   };
 
-  useEffect(() => {
-    fetchPartycategories();
-  }, []);
 
   const resetForm = () => {
     setPartyCategory("");
@@ -116,6 +131,8 @@ function PartyCategory() {
 
     const urlencoded = new URLSearchParams();
     urlencoded.append("Id", deleteId);
+        urlencoded.append("CompanyId", activeCompany.Id);
+
 
     const requestOptions = {
       method: "POST",
@@ -164,6 +181,7 @@ function PartyCategory() {
       PartyCategory: PartyCategory,
       CreatedBy: userId,
       // UpdatedBy: userId,
+      CompanyId: activeCompany.Id
     };
 
     const url = isEditing
@@ -173,6 +191,7 @@ function PartyCategory() {
     if (isEditing) {
       data.Id = id;
       data.UpdatedBy = userId;
+      data.CompanyId = activeCompany.Id;
     }
 
     try {

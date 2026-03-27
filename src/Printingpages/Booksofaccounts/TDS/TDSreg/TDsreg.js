@@ -1,84 +1,331 @@
+// import React, { useEffect, useState, useRef } from "react";
+// import axios from "axios";
+// import {
+//   Box, Paper, Typography, TextField, RadioGroup, FormControlLabel,
+//   Radio, Button, Container, Grid, Autocomplete, Stack
+// } from "@mui/material";
+// import PrintIcon from "@mui/icons-material/Print";
+// import CloseIcon from "@mui/icons-material/Close";
+// import { useReactToPrint } from "react-to-print"; // Recommendation: use this for better print quality
+// import TDSPrintTemplate from "./TdsPrintTemplate"; // We will create this next
+// import html2canvas from "html2canvas";
+// import jsPDF from "jspdf";
+
+
+
+
+// export default function TDSRegister() {
+//   const reportRef = useRef();
+//   const [parties, setParties] = useState([]);
+//   const [selectedParty, setSelectedParty] = useState(null);
+//   const [summaryMode, setSummaryMode] = useState("no");
+  
+//   const [dates, setDates] = useState({
+//     start: new Date(new Date().getFullYear(), 3, 1).toISOString().split('T')[0],
+//     end: new Date(new Date().getFullYear() + 1, 2, 31).toISOString().split('T')[0]
+//   });
+
+//   useEffect(() => {
+//     axios.get("https://publication.microtechsolutions.net.in/php/Accountget.php")
+//       .then(res => setParties(res.data || []));
+//   }, []);
+
+
+
+//   const [printing, setPrinting] = useState(false);
+
+
+
+//  const handlePrint = async () => {
+//        if (!reportRef.current) return;
+//        setPrinting(true);
+   
+//        try {
+    
+//          // Small delay to allow the hidden component to render the dynamic data
+//          await new Promise((resolve) => setTimeout(resolve, 500));
+   
+//          const element = reportRef.current;
+//          const canvas = await html2canvas(element, {
+//            scale: 2,
+//            useCORS: true,
+//            logging: false,
+//          });
+   
+//          const imgData = canvas.toDataURL("image/png");
+//          const pdf = new jsPDF("p", "mm", "a4");
+         
+//          // A4 dimensions: 210mm x 297mm
+//          pdf.addImage(imgData, "PNG", 0, 0, 210, 297);
+//          window.open(pdf.output("bloburl"), "_blank");
+//        } catch (error) {
+//          console.error("PDF Generation Error:", error);
+//        } finally {
+//          setPrinting(false);
+//        }
+//      };
+
+//   return (
+//     <Container maxWidth="md" sx={{ py: 4 }}>
+//       <Typography variant="h5" fontWeight={700} mb={3} color="primary" textAlign="center">
+//         TDS Register 
+//       </Typography>
+
+//       <Paper elevation={3} sx={{ p: 4, borderRadius: 2 }}>
+//         <Grid container spacing={4}>
+//           {/* LEFT SIDE: PERIOD & SUMMARY */}
+//           <Grid item xs={12} md={6}>
+//             <Typography variant="subtitle2" fontWeight={700} gutterBottom>
+//               REPORT PERIOD
+//             </Typography>
+//             <Stack direction="row" spacing={2} sx={{ mt: 1, mb: 4 }}>
+//               <TextField
+//                 label="From Date"
+//                 type="date"
+//                 size="small"
+//                 fullWidth
+//                 InputLabelProps={{ shrink: true }}
+//                 value={dates.start}
+//                 onChange={(e) => setDates({ ...dates, start: e.target.value })}
+//               />
+//               <TextField
+//                 label="To Date"
+//                 type="date"
+//                 size="small"
+//                 fullWidth
+//                 InputLabelProps={{ shrink: true }}
+//                 value={dates.end}
+//                 onChange={(e) => setDates({ ...dates, end: e.target.value })}
+//               />
+//             </Stack>
+
+//             <Typography variant="subtitle2" fontWeight={700} gutterBottom>
+//               SUMMARY OPTIONS
+//             </Typography>
+//             <RadioGroup
+//               row
+//               value={summaryMode}
+//               onChange={(e) => setSummaryMode(e.target.value)}
+//             >
+//               <FormControlLabel value="yes" control={<Radio />} label="Show Summary" />
+//               <FormControlLabel value="no" control={<Radio />} label="Detailed View" />
+//             </RadioGroup>
+//           </Grid>
+
+//           {/* RIGHT SIDE: PARTY SELECTION & ACTIONS */}
+//           <Grid item xs={12} md={6}>
+//             <Typography variant="subtitle2" fontWeight={700} gutterBottom>
+//               SELECT PARTY (Searchable)
+//             </Typography>
+//             <Autocomplete
+//               options={parties}
+//               getOptionLabel={(option) => option.AccountName || ""}
+//               value={selectedParty}
+//               onChange={(event, newValue) => setSelectedParty(newValue)}
+//               renderInput={(params) => (
+//                 <TextField {...params}   size="small" fullWidth />
+//               )}
+//               sx={{ mt: 1, mb: 4 }}
+//             />
+
+//             <Stack direction="row" spacing={2} sx={{ mt: 4 }}>
+//               <Button
+//                 variant="contained"
+//                 fullWidth
+//                 startIcon={<PrintIcon />}
+//                 onClick={handlePrint}
+//                 sx={{ bgcolor: "#1a237e", height: 45 }}
+//               >
+//                 GENERATE PRINT
+//               </Button>
+//               <Button
+//                 variant="outlined"
+//                 fullWidth
+//                 color="error"
+//                 startIcon={<CloseIcon />}
+//                 sx={{ height: 45 }}
+//               >
+//                 CLOSE
+//               </Button>
+//             </Stack>
+//           </Grid>
+//         </Grid>
+//       </Paper>
+
+//       {/* Hidden Print Section */}
+//       <Box sx={{ display: "none", displayPrint: "block" }}>
+//         <TDSPrintTemplate 
+//            ref={reportRef} 
+//            data={{ dates, selectedParty, summaryMode }} 
+//         />
+//       </Box>
+//     </Container>
+//   );
+// }
+
+
+
+
 import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import {
-  Box, Paper, Typography, TextField, RadioGroup, FormControlLabel,
-  Radio, Button, Container, Grid, Autocomplete, Stack
+  Box,
+  Paper,
+  Typography,
+  TextField,
+  RadioGroup,
+  FormControlLabel,
+  Radio,
+  Button,
+  Container,
+  Grid,
+  Autocomplete,
+  Stack
 } from "@mui/material";
+
 import PrintIcon from "@mui/icons-material/Print";
 import CloseIcon from "@mui/icons-material/Close";
-import { useReactToPrint } from "react-to-print"; // Recommendation: use this for better print quality
-import TDSPrintTemplate from "./TdsPrintTemplate"; // We will create this next
+
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 
-
-
+import TDSPrintTemplate from "./TdsPrintTemplate";
 
 export default function TDSRegister() {
+
   const reportRef = useRef();
+
   const [parties, setParties] = useState([]);
   const [selectedParty, setSelectedParty] = useState(null);
   const [summaryMode, setSummaryMode] = useState("no");
-  
-  const [dates, setDates] = useState({
-    start: new Date(new Date().getFullYear(), 3, 1).toISOString().split('T')[0],
-    end: new Date(new Date().getFullYear() + 1, 2, 31).toISOString().split('T')[0]
-  });
 
-  useEffect(() => {
-    axios.get("https://publication.microtechsolutions.net.in/php/Accountget.php")
-      .then(res => setParties(res.data || []));
-  }, []);
-
-
-
+  const [rows, setRows] = useState([]);
   const [printing, setPrinting] = useState(false);
 
+  const getFinancialYear = () => {
 
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = today.getMonth() + 1;
 
- const handlePrint = async () => {
-       if (!reportRef.current) return;
-       setPrinting(true);
-   
-       try {
-    
-         // Small delay to allow the hidden component to render the dynamic data
-         await new Promise((resolve) => setTimeout(resolve, 500));
-   
-         const element = reportRef.current;
-         const canvas = await html2canvas(element, {
-           scale: 2,
-           useCORS: true,
-           logging: false,
-         });
-   
-         const imgData = canvas.toDataURL("image/png");
-         const pdf = new jsPDF("p", "mm", "a4");
-         
-         // A4 dimensions: 210mm x 297mm
-         pdf.addImage(imgData, "PNG", 0, 0, 210, 297);
-         window.open(pdf.output("bloburl"), "_blank");
-       } catch (error) {
-         console.error("PDF Generation Error:", error);
-       } finally {
-         setPrinting(false);
-       }
-     };
+    let startYear = year;
+    let endYear = year + 1;
+
+    if (month < 4) {
+      startYear = year - 1;
+      endYear = year;
+    }
+
+    return {
+      start: `${startYear}-04-01`,
+      end: `${endYear}-03-31`
+    };
+  };
+
+  const [dates, setDates] = useState(getFinancialYear());
+
+  useEffect(() => {
+
+    axios
+      .get("https://publication.microtechsolutions.net.in/php/Accountget.php")
+      .then(res => setParties(res.data || []));
+
+  }, []);
+
+  const fetchTDS = async () => {
+
+    const res = await axios.get(
+      "https://publication.microtechsolutions.net.in/php/get/getTDSRegister.php",
+      {
+        params: {
+          fromdate: dates.start,
+          todate: dates.end,
+          showBooks: summaryMode,
+          party: selectedParty?.AccountName || "ALL"
+        }
+      }
+    );
+
+    return res.data || [];
+  };
+
+  const handlePrint = async () => {
+
+    setPrinting(true);
+
+    const data = await fetchTDS();
+    setRows(data);
+
+    await new Promise(r => setTimeout(r, 1000));
+
+    const element = reportRef.current;
+
+    const canvas = await html2canvas(element, {
+      scale: 2,
+      useCORS: true
+    });
+
+    const imgData = canvas.toDataURL("image/png");
+
+    const pdf = new jsPDF("p", "mm", "a4");
+
+    const pageWidth = 210;
+    const pageHeight = 297;
+
+    const imgWidth = pageWidth;
+    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+    let heightLeft = imgHeight;
+    let position = 0;
+
+    pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+
+    heightLeft -= pageHeight;
+
+    while (heightLeft > 0) {
+
+      position = heightLeft - imgHeight;
+
+      pdf.addPage();
+
+      pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+
+      heightLeft -= pageHeight;
+
+    }
+
+    window.open(pdf.output("bloburl"), "_blank");
+
+    setPrinting(false);
+
+  };
 
   return (
+
     <Container maxWidth="md" sx={{ py: 4 }}>
-      <Typography variant="h5" fontWeight={700} mb={3} color="primary" textAlign="center">
-        TDS Register 
+
+      <Typography
+        variant="h5"
+        fontWeight={700}
+        mb={3}
+        color="primary"
+        textAlign="center"
+      >
+        TDS Register
       </Typography>
 
       <Paper elevation={3} sx={{ p: 4, borderRadius: 2 }}>
+
         <Grid container spacing={4}>
-          {/* LEFT SIDE: PERIOD & SUMMARY */}
+
           <Grid item xs={12} md={6}>
-            <Typography variant="subtitle2" fontWeight={700} gutterBottom>
+
+            <Typography variant="subtitle2" fontWeight={700}>
               REPORT PERIOD
             </Typography>
+
             <Stack direction="row" spacing={2} sx={{ mt: 1, mb: 4 }}>
+
               <TextField
                 label="From Date"
                 type="date"
@@ -86,8 +333,11 @@ export default function TDSRegister() {
                 fullWidth
                 InputLabelProps={{ shrink: true }}
                 value={dates.start}
-                onChange={(e) => setDates({ ...dates, start: e.target.value })}
+                onChange={(e) =>
+                  setDates({ ...dates, start: e.target.value })
+                }
               />
+
               <TextField
                 label="To Date"
                 type="date"
@@ -95,70 +345,96 @@ export default function TDSRegister() {
                 fullWidth
                 InputLabelProps={{ shrink: true }}
                 value={dates.end}
-                onChange={(e) => setDates({ ...dates, end: e.target.value })}
+                onChange={(e) =>
+                  setDates({ ...dates, end: e.target.value })
+                }
               />
+
             </Stack>
 
-            <Typography variant="subtitle2" fontWeight={700} gutterBottom>
-              SUMMARY OPTIONS
-            </Typography>
             <RadioGroup
               row
               value={summaryMode}
               onChange={(e) => setSummaryMode(e.target.value)}
             >
-              <FormControlLabel value="yes" control={<Radio />} label="Show Summary" />
-              <FormControlLabel value="no" control={<Radio />} label="Detailed View" />
+
+              <FormControlLabel
+                value="yes"
+                control={<Radio />}
+                label="Show Summary"
+              />
+
+              <FormControlLabel
+                value="no"
+                control={<Radio />}
+                label="Detailed View"
+              />
+
             </RadioGroup>
+
           </Grid>
 
-          {/* RIGHT SIDE: PARTY SELECTION & ACTIONS */}
           <Grid item xs={12} md={6}>
-            <Typography variant="subtitle2" fontWeight={700} gutterBottom>
-              SELECT PARTY (Searchable)
+
+            <Typography variant="subtitle2" fontWeight={700}>
+              SELECT PARTY
             </Typography>
+
             <Autocomplete
               options={parties}
               getOptionLabel={(option) => option.AccountName || ""}
               value={selectedParty}
-              onChange={(event, newValue) => setSelectedParty(newValue)}
+              onChange={(e, v) => setSelectedParty(v)}
               renderInput={(params) => (
-                <TextField {...params}   size="small" fullWidth />
+                <TextField {...params} size="small" />
               )}
               sx={{ mt: 1, mb: 4 }}
             />
 
             <Stack direction="row" spacing={2} sx={{ mt: 4 }}>
+
               <Button
                 variant="contained"
                 fullWidth
                 startIcon={<PrintIcon />}
                 onClick={handlePrint}
+                disabled={printing}
                 sx={{ bgcolor: "#1a237e", height: 45 }}
               >
-                GENERATE PRINT
+                {printing ? "Generating..." : "GENERATE PRINT"}
               </Button>
+
               <Button
                 variant="outlined"
-                fullWidth
                 color="error"
                 startIcon={<CloseIcon />}
-                sx={{ height: 45 }}
+                fullWidth
               >
                 CLOSE
               </Button>
+
             </Stack>
+
           </Grid>
+
         </Grid>
+
       </Paper>
 
-      {/* Hidden Print Section */}
-      <Box sx={{ display: "none", displayPrint: "block" }}>
-        <TDSPrintTemplate 
-           ref={reportRef} 
-           data={{ dates, selectedParty, summaryMode }} 
+      <Box sx={{ position: "absolute", top: -10000, left: -10000 }}>
+
+        <TDSPrintTemplate
+          ref={reportRef}
+          data={{
+            dates,
+            rows
+          }}
         />
+
       </Box>
+
     </Container>
+
   );
+
 }

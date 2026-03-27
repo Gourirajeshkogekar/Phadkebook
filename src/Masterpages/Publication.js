@@ -43,6 +43,28 @@ function Publication() {
     fetchPublications();
   }, []);
 
+    const [activeCompany, setActiveCompany] = useState(null);
+               
+              useEffect(() => {
+                 const selected = localStorage.getItem("SelectedCompany");
+                 if (selected) {
+                   try {
+                     const parsedCompany = JSON.parse(selected);
+                     setActiveCompany(parsedCompany);
+                     
+                     // Load data immediately
+fetchPublications();
+    fetchAllCities();
+    fetchCountries();
+    fetchStates();      
+                     } catch (e) {
+                     console.error("Error parsing company data", e);
+                   }
+                 }
+               }, []); 
+
+                    
+
   const [PublicationName, setPublicationName] = useState("");
   const [Address, setAddress] = useState("");
   const [CityId, setCityId] = useState("");
@@ -89,17 +111,11 @@ function Publication() {
     }
   };
 
-  useEffect(() => {
-    fetchPublications();
-    fetchAllCities();
-    fetchCountries();
-    fetchStates();
-  }, []);
 
   const fetchPublications = async () => {
     try {
       const response = await axios.get(
-        "https://publication.microtechsolutions.net.in/php/Publicationget.php"
+        `https://publication.microtechsolutions.net.in/php/Publicationget.php`
       );
 
       setPublications(response.data);
@@ -294,6 +310,7 @@ function Publication() {
       ShortName: ShortName,
       OtherPublicationFlag: OtherPublicationFlag,
       CreatedBy: userId,
+      CompanyId: activeCompany.Id,
     };
 
     const url = isEditing

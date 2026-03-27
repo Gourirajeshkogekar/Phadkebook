@@ -60,8 +60,54 @@ function Accounts() {
     fetchAccounts();
   }, []);
 
-  const [pageIndex, setPageIndex] = useState(1); // Current page
-  const [totalPages, setTotalPages] = useState(1); // Total pages from backend
+
+  
+   const [pagination, setPagination] = useState({
+  pageIndex: 0, // MRT uses 0-based indexing
+  pageSize: 10,
+});
+
+
+const [activeCompany, setActiveCompany] = useState(null);
+
+// 1. INITIAL MOUNT: Load the company and static dropdowns
+useEffect(() => {
+  const selected = localStorage.getItem("SelectedCompany");
+  if (selected) {
+    try {
+      const parsed = JSON.parse(selected);
+      setActiveCompany(parsed);
+    } catch (e) {
+      console.error("Error parsing company data", e);
+    }
+  }
+
+  // Load all your dropdown data once
+  fetchGroupIds();
+  fetchCountries();
+  fetchAllCities();
+  fetchStates();
+  fetchAreas();
+  fetchTDS();
+  fetchAddresses();
+  fetchPartycategories();
+  fetchFooterForNew();
+}, []);
+
+// 2. DATA WATCHER: This is the one you asked about
+useEffect(() => {
+  // Only fetch if we actually have a Company ID
+  if (activeCompany?.Id) {
+    fetchAccounts();
+  }
+}, [pagination.pageIndex, pagination.pageSize, activeCompany?.Id]);
+
+
+
+  
+
+  const [pageIndex, setPageIndex] = useState(null); // Current page
+  const [totalPages, setTotalPages] = useState(null); // Total pages from backend
 
   const [IsSubsidiary, setIsSubsidiary] = useState(false);
   const [IsTDSApplicable, setIsTDSApplicable] = useState(false);
@@ -202,28 +248,7 @@ function Accounts() {
     }
   };
 
-  useEffect(() => {
-    fetchGroupIds();
-    fetchCountries();
-    fetchAllCities();
-    fetchStates();
-    fetchAreas();
-    fetchTDS();
-    fetchAddresses();
-    fetchPartycategories();
-    fetchFooterForNew();
-  }, []);
-
-   const [pagination, setPagination] = useState({
-  pageIndex: 0, // MRT uses 0-based indexing
-  pageSize: 10,
-});
-
-useEffect(() => {
-  fetchAccounts();
-}, [pagination.pageIndex, pagination.pageSize]); // Listen for changes here
-
-  
+ 
 
   const fetchFooterForNew = async () => {
     try {
@@ -231,10 +256,10 @@ useEffect(() => {
         "https://publication.microtechsolutions.net.in/php/get/getAccountMasterSalesInfo.php",
       );
 
-      const list = Array.isArray(res.data?.AllSalesInfo)
-        ? res.data.AllSalesInfo
-        : Array.isArray(res.data)
-          ? res.data
+      const list = Array.isArray(res.data?.data?.AllSalesInfo)
+        ? res.data.data.AllSalesInfo
+        : Array.isArray(res.data.data)
+          ? res.data.data
           : [];
 
       console.log("FINAL LIST 👉", list);
@@ -254,23 +279,32 @@ useEffect(() => {
 
   
 
- const fetchAccounts = async () => {
+ const fetchAccounts = async (forcedId) => {
+  // Priority: 1. Passed ID, 2. State ID
+  const targetCompanyId = forcedId || activeCompany?.Id;
+
+  if (!targetCompanyId) return;
+
   try {
-    // MRT uses 0-based indexing (0, 1, 2...), but your API likely uses 1-based (1, 2, 3...)
-    // So we use pagination.pageIndex + 1
     const currentPage = pagination.pageIndex + 1;
     const pageSize = pagination.pageSize;
 
     const response = await axios.get(
-      `https://publication.microtechsolutions.net.in/php/get/gettblpage.php?Table=Account&PageNo=${currentPage}&Limit=${pageSize}`
+      `https://publication.microtechsolutions.net.in/php/get/gettblpage.php`,
+      {
+        params: {
+          Table: "Account",
+          PageNo: currentPage,
+          Limit: pageSize,
+          CompanyId: targetCompanyId
+        }
+      }
     );
 
-    setAccounts(response.data.data);
-    
-    // Total pages is used to calculate rowCount in the table config
-    setTotalPages(response.data.total_pages); 
-
-    console.log("Fetched Data:", response.data);
+    if (response.data.data) {
+      setAccounts(response.data.data);
+      setTotalPages(response.data.total_pages || 1);
+    }
   } catch (error) {
     console.error("Error fetching accounts:", error);
   }
@@ -281,7 +315,7 @@ useEffect(() => {
       const response = await axios.get(
         "https://publication.microtechsolutions.net.in/php/Addressget.php",
       );
-      console.log(response.data, "Fetched addresses"); // Log to ensure data is fetched
+      console.log(response.data.data, "Fetched addresses"); // Log to ensure data is fetched
       setAddresses(response.data);
     } catch (error) {
       // toast.error("Error fetching addresses:", error);
@@ -299,7 +333,7 @@ useEffect(() => {
       const response = await axios.get(
         "https://publication.microtechsolutions.net.in/php/AccountGroupget.php",
       );
-      const accountgroupOptions = response.data.map((acc) => ({
+      const accountgroupOptions = response.data.data.map((acc) => ({
         value: acc.Id,
         label: acc.GroupName,
         code: acc.TypeCode,
@@ -402,7 +436,7 @@ useEffect(() => {
       const response = await axios.get(
         "https://publication.microtechsolutions.net.in/php/PartyCategoryget.php",
       );
-      const partyOptions = response.data.map((partycat) => ({
+      const partyOptions = response.data.data.map((partycat) => ({
         value: partycat.Id,
         label: partycat.PartyCategory,
       }));
@@ -424,45 +458,49 @@ useEffect(() => {
     setEditingIndex(-1);
   };
 
-  const fetchSalesFooterinfobyaccId = async (accountId) => {
-    try {
-      const res = await axios.get(
-        `https://publication.microtechsolutions.net.in/php/get/getAccountMasterSalesInfo.php?AccountId=${accountId}`,
+ const fetchSalesFooterinfobyaccId = async (accountId) => {
+  try {
+    const res = await axios.get(
+      `https://publication.microtechsolutions.net.in/php/get/getAccountMasterSalesInfo.php?AccountId=${accountId}`,
+    );
+
+    // FIX: Access res.data.data
+    const allSales = res.data?.data?.AllSalesInfo || [];
+    const accounts = res.data?.data?.Accounts || [];
+
+    // Find the account data using Number comparison to be safe
+    const accountData = accounts.find(
+      (acc) => Number(acc.AccountId) === Number(accountId),
+    );
+
+    const accountSales = accountData?.SalesInfo || [];
+
+    const mergedRows = allSales.map((masterRow) => {
+      // Use find to get matching particulars from the account-specific sales
+      const matched = accountSales.find(
+        (accRow) =>
+          accRow.Particulars?.trim() === masterRow.Particulars?.trim(),
       );
 
-      const allSales = res.data?.AllSalesInfo || [];
-      const accounts = res.data?.Accounts || [];
+      return {
+        SalesInfoId: matched?.SalesInfoId ?? null,
+        AccountId: accountData?.AccountId || accountId, // Fallback to passed accountId
+        Particulars: masterRow.Particulars,
+        Amount: matched?.Amount ?? 0,
+        Percentage: matched?.Percentage ?? 0,
+        IsApplicable: matched ? (matched.IsApplicable === true || matched.IsApplicable === 1) : false,
+        Active: masterRow.Active,
+      };
+    });
 
-      const accountData = accounts.find(
-        (acc) => Number(acc.AccountId) === Number(accountId),
-      );
+    setFooterRows(mergedRows);
+    setOpenFooter(true);
+  } catch (error) {
+    console.error("Error fetching sales footer info:", error);
+    setFooterRows([]);
+  }
+};
 
-      const accountSales = accountData?.SalesInfo || [];
-
-      const mergedRows = allSales.map((masterRow) => {
-        const matched = accountSales.find(
-          (accRow) =>
-            accRow.Particulars?.trim() === masterRow.Particulars?.trim(),
-        );
-
-        return {
-          SalesInfoId: matched?.SalesInfoId ?? null,
-          AccountId: accountData?.AccountId,
-          Particulars: masterRow.Particulars,
-          Amount: matched?.Amount ?? 0,
-          Percentage: matched?.Percentage ?? 0,
-          IsApplicable: matched?.IsApplicable ?? false,
-          Active: masterRow.Active,
-        };
-      });
-
-      setFooterRows(mergedRows);
-      setOpenFooter(true);
-    } catch (error) {
-      console.error("Error fetching sales footer info:", error);
-      setFooterRows([]);
-    }
-  };
 
   const handleEdit = (row) => {
     const account = accounts[row.index];
@@ -479,13 +517,17 @@ useEffect(() => {
 
     console.log("Current addresses type:", typeof addresses);
 console.log("Current addresses value:", addresses);
+// 1. Ensure we are looking at the array inside the 'data' property
+  const addressList = addresses.data  || (Array.isArray(addresses) ? addresses : []);
 
-const address = (addresses && addresses.find) 
-  ? addresses.find((addr) => addr.AccountId === account.Id) 
-  : null;
-  
-    // const address = addresses.find((addr) => addr.AccountId === account.Id);
-    // console.log(address, "adddress");
+  // 2. Find the address by matching AccountId
+  // Use == or Number() to ensure type mismatch (string vs number) doesn't break it
+  const address = addressList?.find((addr) => Number(addr.AccountId) === Number(account.Id));
+
+  console.log("Searching for Account ID:", account.Id);
+  console.log("Found address object:", address);
+
+
 
     // If address is not found, set default values for address fields
     if (address) {
@@ -676,6 +718,7 @@ const address = (addresses && addresses.find)
     setAccountCode("");
     setAccountName("");
     setGroupId("");
+    setPartyCategory("")
     setOpeningBalance("");
     setDrORCr("");
     setTypeCode("");
@@ -775,7 +818,7 @@ const address = (addresses && addresses.find)
     try {
       const accountData = {
         ...(isEditing
-          ? { Id: AccountId, UpdatedBy: userId }
+          ? { Id: AccountId, UpdatedBy: userId , CompanyId: activeCompany.Id}
           : { CreatedBy: userId }),
         // AccountCode: AccountCode,
         AccountName: AccountName,
@@ -786,6 +829,7 @@ const address = (addresses && addresses.find)
         TypeCode: TypeCode,
         IsSystem: IsSystem ?? false,
         Depriciation: Depriciation,
+        CompanyId : activeCompany.Id
         // CreatedBy: userId,
       };
 
@@ -809,7 +853,7 @@ const address = (addresses && addresses.find)
       // Step 4: Prepare address data (either from the state or empty for new records)
       const addressData = {
         ...(isEditing
-          ? { Id: addressid, AccountId: accoId, UpdatedBy: userId }
+          ? { Id: addressid, AccountId: accoId, UpdatedBy: userId, CompanyId: activeCompany.Id }
           : { AccountId: accoId, CreatedBy: userId }),
 
         Address1: Address1,
@@ -831,6 +875,7 @@ const address = (addresses && addresses.find)
         IsTDSApplicable: IsTDSApplicable ?? false,
         IsFBT: IsFBT ?? false,
         IsFreeze: IsFreeze ?? false,
+        CompanyId: activeCompany.Id
         // CreatedBy: userId,
         // UpdatedBy: userId,
       };
@@ -877,6 +922,7 @@ const address = (addresses && addresses.find)
             Percentage: Number(row.Percentage),
             IsApplicable: row.IsApplicable ? 1 : 0,
             UpdatedBy: userId,
+            CompanyId: activeCompany.Id
           };
         }
 
@@ -892,6 +938,7 @@ const address = (addresses && addresses.find)
             Percentage: Number(row.Percentage),
             IsApplicable: 1,
             CreatedBy: userId,
+            CompanyId: activeCompany.Id
           };
         } else {
           continue;
@@ -935,7 +982,8 @@ const address = (addresses && addresses.find)
     myHeaders.append("Content-Type", "application/x-www-form-urlencoded");
 
     const urlencoded = new URLSearchParams();
-    urlencoded.append("Id", deleteId);
+    urlencoded.append("Id", deleteId,);
+    urlencoded.append("CompanyId", activeCompany.Id);
 
     const requestOptions = {
       method: "POST",
@@ -1415,139 +1463,12 @@ const address = (addresses && addresses.find)
                       </div>
                     </div>
 
-                    {/* <div className="account-form" style={{ marginTop: "30px" }}>
-                      <div>
-                        <label className="account-label">Is Subsidiary</label>
-                        <div>
-                          <input
-                            type="checkbox"
-                            id="IsSubsidiary"
-                            name="IsSubsidiary"
-                            checked={IsSubsidiary}
-                            onChange={(e) => setIsSubsidiary(e.target.checked)}
-                            ref={subsidiartRef}
-                            onKeyDown={(e) => handleKeyDown(e, tdsappRef)}
-                          />
-                        </div>
-                        <div>
-                          {errors.IsSubsidiary && (
-                            <b className="error-text">{errors.IsSubsidiary}</b>
-                          )}
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="account-label">Is FBT</label>
-                        <input
-                          type="checkbox"
-                          id="IsFBT"
-                          name="IsFBT"
-                          checked={IsFBT}
-                          onChange={(e) => setIsFBT(e.target.checked)}
-                          ref={fbtRef}
-                          onKeyDown={(e) => handleKeyDown(e, freezeRef)}
-                        />
-
-                        <div>
-                          {errors.IsFBT && (
-                            <b className="error-text">{errors.IsFBT}</b>
-                          )}
-                        </div>
-                      </div>
-                      <div style={{ marginTop: "10px" }}>
-                        <label className="account-label">Is Freeze</label>
-                        <input
-                          type="checkbox"
-                          id="ISFreeze"
-                          name="ISFreeze"
-                          checked={IsFreeze}
-                          onChange={(e) => setIsFreeze(e.target.checked)}
-                          ref={freezeRef}
-                          onKeyDown={(e) => handleKeyDown(e, systemRef)}
-                        />
-
-                        <div>
-                          {errors.ISFreeze && (
-                            <b className="error-text">{errors.ISFreeze}</b>
-                          )}
-                        </div>
-                      </div>
-                      <div style={{ marginTop: "10px" }}>
-                        <label className="account-label">Is System</label>
-                        <input
-                          type="checkbox"
-                          id="IsSystem"
-                          name="IsSystem"
-                          checked={IsSystem}
-                          onChange={(e) => setIsSystem(e.target.checked)}
-                          ref={systemRef}
-                          onKeyDown={(e) => handleKeyDown(e, address1Ref)}
-                        />
-
-                        <div>
-                          {errors.IsSystem && (
-                            <b className="error-text">{errors.IsSystem}</b>
-                          )}
-                        </div>
-                      </div>
-
-                      <div>
-                        <label
-                          className="account-label"
-                          style={{ marginTop: "30px" }}>
-                          Is TDS Applicable
-                        </label>
-                        <div>
-                          <input
-                            type="checkbox"
-                            id="IsTDSApplicable"
-                            name="IsTDSApplicable"
-                            checked={IsTDSApplicable}
-                            onChange={(e) =>
-                              setIsTDSApplicable(e.target.checked)
-                            }
-                            ref={tdsappRef}
-                            onKeyDown={(e) => handleKeyDown(e, fbtRef)}
-                            style={{ marginTop: "10px" }}
-                          />
-                        </div>
-
-                        <div>
-                          {errors.IsTDSApplicable && (
-                            <b className="error-text">
-                              {errors.IsTDSApplicable}
-                            </b>
-                          )}
-                        </div>
-                      </div>
-                    </div> */}
+                  
 
                   <div
                       className="acccheckbox-grid"
                       style={{ marginTop: "30px" }}>
-                       {/*  <div className="acccheckbox-item">
-                        <label className="account-label">Is Subsidiary</label>
-                        <input
-                          type="checkbox"
-                          checked={IsSubsidiary}
-                          onChange={(e) => setIsSubsidiary(e.target.checked)}
-                          ref={subsidiartRef}
-                          onKeyDown={(e) => handleKeyDown(e, tdsappRef)}
-                        />
-                     
-                      </div>
-
-                      <div className="acccheckbox-item">
-                        <label className="account-label">Is FBT</label>
-                        <input
-                          type="checkbox"
-                          checked={IsFBT}
-                          onChange={(e) => setIsFBT(e.target.checked)}
-                          ref={fbtRef}
-                          onKeyDown={(e) => handleKeyDown(e, freezeRef)}
-                        />
-                     
-                      </div> */}
+                      
 
                       <div className="acccheckbox-item">
                         <label className="account-label">Is Freeze</label>
@@ -1594,60 +1515,7 @@ const address = (addresses && addresses.find)
                       </div>
                     </div>
 
-                    {/* Assign Canvassor Section 
-                    <Box className="account-form" sx={{ mt: 4 }}>
-                      <Typography
-                        variant="subtitle1"
-                        fontWeight="bold"
-                        color="#3c7291"
-                        gutterBottom>
-                        Assign Options
-                      </Typography>
-
-                      <FormControlLabel
-                        control={
-                          <Checkbox
-                            id="isAssigned"
-                            name="isAssigned"
-                            checked={isAssigned}
-                            onChange={(e) => setIsAssigned(e.target.checked)}
-                            inputRef={isassignedRef}
-                            onKeyDown={(e) => handleKeyDown(e, canvassorRef)}
-                          />
-                        }
-                        label="Assign Canvassor"
-                        sx={{ ml: 1 }}
-                      />
-                    </Box>
-
-                    {isAssigned && (
-                      <Box className="account-form" sx={{ mt: 3 }}>
-                        <Typography
-                          variant="subtitle1"
-                          fontWeight="bold"
-                          color="#3c7291"
-                          gutterBottom>
-                          Canvassor
-                        </Typography>
-
-                        <TextField
-                          id="Canvassor"
-                          name="Canvassor"
-                          label="Canvassor Name"
-                          placeholder="Enter Canvassor Name"
-                          variant="outlined"
-                          size="small"
-                          fullWidth
-                          value={Canvassor}
-                          onChange={(e) => setCanvassor(e.target.value)}
-                          inputRef={canvassorRef}
-                          onKeyDown={(e) => handleKeyDown(e, subsidiartRef)}
-                          error={!!errors.Canvassor}
-                          helperText={errors.Canvassor}
-                          sx={{ mt: 1, width: "250px" }}
-                        />
-                      </Box>
-                    )} */}
+                   
                   </Grid>
 
                   {/* Right Section */}
@@ -1705,112 +1573,7 @@ const address = (addresses && addresses.find)
                         )} */}
                       </div>
                     </div>
-                    {/* <label
-                      style={{
-                        color: "teal",
-                        marginBottom: "30px",
-                        fontWeight: "600",
-                      }}>
-                      Click on the{" "}
-                      <label style={{ color: "red" }}>Address</label> label to
-                      show the address fields and add an address.
-                    </label> */}
-                    {/* {isAddressVisible && (
-                      <div className="address-fields">
-                        <div>
-                          <Tooltip
-                            title={
-                              <span
-                                style={{
-                                  fontSize: "14px",
-                                  fontWeight: "bold",
-                                }}>
-                                {Address1}
-                              </span>
-                            }
-                            arrow>
-                            <input
-                              type="text"
-                              id="Address1"
-                              name="Address1"
-                              value={Address1}
-                              onChange={(e) => setAddress1(e.target.value)}
-                              maxLength={100}
-                              ref={address1Ref}
-                              onKeyDown={(e) => handleKeyDown(e, address2Ref)}
-                              style={{ marginRight: "10px" }}
-                              className="account-control"
-                              placeholder="Enter Address Line 1"
-                            />
-                          </Tooltip>
-                          {errors.Address1 && (
-                            <b className="error-text">{errors.Address1}</b>
-                          )}
-                        </div>
-                        <div>
-                          <Tooltip
-                            title={
-                              <span
-                                style={{
-                                  fontSize: "14px",
-                                  fontWeight: "bold",
-                                }}>
-                                {Address2}
-                              </span>
-                            }
-                            arrow>
-                            <input
-                              type="text"
-                              id="Address2"
-                              name="Address2"
-                              value={Address2}
-                              onChange={(e) => setAddress2(e.target.value)}
-                              maxLength={100}
-                              ref={address2Ref}
-                              onKeyDown={(e) => handleKeyDown(e, address3Ref)}
-                              style={{ marginRight: "10px" }}
-                              className="account-control"
-                              placeholder="Enter Address Line 2"
-                            />
-                          </Tooltip>
-                          <div>
-                            {errors.Address2 && (
-                              <b className="error-text">{errors.Address2}</b>
-                            )}
-                          </div>
-                        </div>
-                        <div>
-                          <Tooltip
-                            title={
-                              <span
-                                style={{
-                                  fontSize: "14px",
-                                  fontWeight: "bold",
-                                }}>
-                                {Address3}
-                              </span>
-                            }
-                            arrow>
-                            <input
-                              type="text"
-                              id="Address3"
-                              name="Address3"
-                              value={Address3}
-                              onChange={(e) => setAddress3(e.target.value)}
-                              maxLength={100}
-                              ref={address3Ref}
-                              onKeyDown={(e) => handleKeyDown(e, countryRef)}
-                              style={{ marginRight: "10px" }}
-                              className="account-control"
-                              placeholder="Enter Address Line 3"
-                            />
-                          </Tooltip>
-                          {errors.Address3 && (
-                            <b className="error-text">{errors.Address3}</b>
-                          )}
-                        </div>
-                      </div>
-                    )} */}
+                   
                     <div className="account-form" style={{ marginTop: "15px" }}>
                       <div>
                         <label className="account-label">
@@ -1839,11 +1602,6 @@ const address = (addresses && addresses.find)
     }}
   />
 
-                          {/* <div>
-                            {errors.CountryId && (
-                              <b className="error-text">{errors.CountryId}</b>
-                            )}
-                          </div> */}
                         </div>
                       </div>
 

@@ -1,3 +1,9 @@
+
+
+
+
+
+
 import React, { useState, useEffect,useRef } from "react";
 import {
   Box, Paper, Typography, Grid, TextField, RadioGroup,
@@ -9,18 +15,18 @@ import PrintIcon from "@mui/icons-material/Print";
 import CloseIcon from "@mui/icons-material/Close";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
+import axios from "axios"; // ✅ ADDED
+import dayjs from "dayjs";
+
+import autoTable from "jspdf-autotable";
 import StockDayBookPrint from "./StockdaybookPrint";
 
 
 const TRANSACTION_TITLES = [
-  
    "Sales Challan", "Sales Invoice", "Sales Return-CN",
   "Purchase Return-DN", "Book Purchase", "Paper Purchase", "Inward Challan",
   "Canvassor Details", "Paper Outward", "Paper Received from Binder", "Misprint"
-
 ];
-
-
 
 export default function StockDayBook() {
   const navigate = useNavigate();
@@ -38,6 +44,10 @@ export default function StockDayBook() {
   const [selectedTypes, setSelectedTypes] = useState({});
   const [loading, setLoading] = useState(true);
 
+  // ✅ ADDED
+  const [printData, setPrintData] = useState([]);
+  const [activeCompany, setActiveCompany] = useState(null);
+
   useEffect(() => {
     fetch("https://publication.microtechsolutions.net.in/php/Accountget.php")
       .then(res => res.json())
@@ -47,6 +57,18 @@ export default function StockDayBook() {
       })
       .catch(err => { console.error(err); setLoading(false); });
   }, []);
+
+  useEffect(() => {
+  const selected = localStorage.getItem("SelectedCompany");
+
+  if (selected) {
+    try {
+      setActiveCompany(JSON.parse(selected));
+    } catch (e) {
+      console.error("Company parse error", e);
+    }
+  }
+}, []);
 
   const handleBookKeyDown = async (e) => {
     if (e.key === "Enter" && bookSearch) {
@@ -59,38 +81,171 @@ export default function StockDayBook() {
   };
 
   const reportRef = useRef(null);
-
   const [printing, setPrinting] = useState(false);
 
-// In StockDayBook.js
-const handlePrint = async () => {
-  if (!reportRef.current) return;
-  setPrinting(true);
-
+  // ✅ UPDATED ONLY THIS FUNCTION
+  const handlePrint = async () => {
   try {
-    // Wait for data and rendering
-    await new Promise((resolve) => setTimeout(resolve, 1500)); 
+    const res = await axios.get(
+      "https://publication.microtechsolutions.net.in/php/get/getStockDayBook.php",
+      {
+        params: {
+          fromdate: startDate,
+          todate: endDate,
+        }
+      }
+    );
 
-    const element = reportRef.current;
-    const canvas = await html2canvas(element, {
-      scale: 2,
-      useCORS: true,
-      logging: false,
-      windowWidth: 800, // Match the Box width in StockDayBookPrint
+    const data = res.data.data || [];
+
+    // ✅ GROUP SAME AS YOUR UI
+    const grouped = {};
+    data.forEach((row) => {
+      const date = row.Date;
+      const party = row.Party;
+
+      if (!grouped[date]) grouped[date] = {};
+      if (!grouped[date][party]) grouped[date][party] = [];
+
+      grouped[date][party].push(row);
     });
 
-    const imgData = canvas.toDataURL("image/png");
-    const pdf = new jsPDF("p", "mm", "a4");
-    
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+    const doc = new jsPDF();
 
-    pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
-    window.open(pdf.output("bloburl"), "_blank");
+    // ✅ HEADER
+    doc.setFontSize(14);
+    doc.text(activeCompany?.CompanyName || "Company Name", 105, 10, { align: "center" });
+
+    doc.setFontSize(10);
+    doc.text(activeCompany?.Address1 || "", 105, 15, { align: "center" });
+    doc.text("Stock Day Book", 105, 20, { align: "center" });
+
+    doc.text(
+      `From ${dayjs(startDate).format("DD-MM-YY")} To ${dayjs(endDate).format("DD-MM-YY")}`,
+      105,
+      25,
+      { align: "center" }
+    );
+
+    let finalRows = [];
+    
+Object.keys(grouped).forEach((date, index) => {
+
+  // ✅ STEP 1: ADD SPACE BETWEEN DATE GROUPS
+  if (index !== 0) {
+    finalRows.push([
+      {
+        content: "",
+        colSpan: 6,
+        styles: {
+          minCellHeight: 6
+        }
+      }
+    ]);
+  }
+
+  // ✅ STEP 2: DATE ROW (CENTER + BORDER)
+  finalRows.push([
+    {
+      content: dayjs(date).format("DD-MM-YY"),
+      colSpan: 6,
+      styles: {
+        halign: "center",
+        fontStyle: "bold",
+        textColor: [0, 0, 0],
+        lineWidth: { top: 0.5, bottom: 0.5 }
+      }
+    }
+  ]);
+
+  // ✅ STEP 3: PARTY LOOP
+  Object.keys(grouped[date]).forEach((party) => {
+
+    // PARTY HEADER
+    finalRows.push([
+      {
+        content: party,
+        colSpan: 6,
+        styles: {
+          halign: "left",
+          fontStyle: "bold",
+          cellPadding: { left: 12 } // 👈 INDENT LIKE UI
+        }
+      }
+    ]);
+
+    // ✅ STEP 4: DATA ROWS
+    grouped[date][party].forEach((row) => {
+      finalRows.push([
+        row["Ref. no."],
+        dayjs(row.Date).format("DD-MM-YY"),
+        row["Name of the Party"],
+        row.Particulars,
+        row.Inward,
+        row.Outward
+      ]);
+    });
+
+  });
+
+});
+
+    // ✅ TABLE
+   autoTable(doc, {
+  startY: 30,
+
+  head: [[
+    "Ref No",
+    "Date",
+    "Name of Party",
+    "Particulars",
+    "Inward",
+    "Outward"
+  ]],
+
+  body: finalRows,
+
+  styles: {
+    fontSize: 8,
+    cellPadding: 2,
+    textColor: [0, 0, 0]
+  },
+
+  headStyles: {
+    fillColor: [255, 255, 255],
+    textColor: [0, 0, 0],
+    fontStyle: "bold",
+    lineWidth: { top: 0.5, bottom: 0.5 }
+  },
+
+  columnStyles: {
+    0: { halign: "center" },
+    1: { halign: "center" },
+    2: { halign: "left" },
+    3: { halign: "left" },
+    4: { halign: "right" },
+    5: { halign: "right" }
+  },
+
+  didParseCell: function (data) {
+    const row = data.row.raw;
+
+    // ✅ DATE or PARTY ROW
+    if (row?.[0]?.colSpan === 6) {
+      data.cell.styles.fontStyle = "bold";
+
+      // DATE ROW → center
+      if (data.cell.styles.halign === "center") {
+        data.cell.styles.lineWidth = { top: 0.5, bottom: 0.5 };
+      }
+    }
+  }
+});
+
+    doc.save("StockDayBook.pdf");
+
   } catch (error) {
-    console.error("PDF Error:", error);
-  } finally {
-    setPrinting(false);
+    console.error(error);
   }
 };
 
@@ -179,7 +334,7 @@ const handlePrint = async () => {
             </Box>
           </Box>
 
-          {/* BOOK SELECTION & BUTTONS */}
+          {/* BOOK SELECTION */}
           <Grid container spacing={2} alignItems="flex-end">
             <Grid item xs={9}>
               <Box sx={{ border: "1px solid #ccc", p: 1, borderRadius: 1, position: 'relative' }}>
@@ -195,17 +350,17 @@ const handlePrint = async () => {
                 />
                 <Box sx={{ height: 70, overflow: "auto", border: "1px solid #eee" }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px' }}>
-                    <thead style={{ position: 'sticky', top: 0, backgroundColor: '#f5f5f5' }}>
+                    <thead>
                       <tr>
-                        <th style={{ textAlign: 'left', padding: '4px' }}>Code</th>
-                        <th style={{ textAlign: 'left', padding: '4px' }}>Name</th>
+                        <th>Code</th>
+                        <th>Name</th>
                       </tr>
                     </thead>
                     <tbody>
                       {books.map((b, i) => (
-                        <tr key={i} style={{ borderBottom: '1px solid #eee' }}>
-                          <td style={{ padding: '2px 4px' }}>{b.BookCode || b.code}</td>
-                          <td style={{ padding: '2px 4px' }}>{b.BookName || b.name}</td>
+                        <tr key={i}>
+                          <td>{b.BookCode}</td>
+                          <td>{b.BookName}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -213,44 +368,29 @@ const handlePrint = async () => {
                 </Box>
               </Box>
             </Grid>
-           
           </Grid>
 
-           <Grid item xs={3}>
-              <Box   sx={{display:'flex',justifyContent:'center',  gap:1, mt:1}}>
-                <Button variant="contained" startIcon={<PrintIcon />} size="small"  sx={{ bgcolor: "#2e7d32", fontSize: '0.75rem' }} onClick={handlePrint}>Print</Button>
-                <Button variant="outlined" color="error" startIcon={<CloseIcon />} size="small"  sx={{ fontSize: '0.75rem' }} onClick={() => navigate(-1)}>Close</Button>
-              </Box>
-            </Grid>
+          {/* BUTTONS */}
+          <Grid item xs={3}>
+            <Box sx={{display:'flex',justifyContent:'center',gap:1,mt:1}}>
+              <Button variant="contained" startIcon={<PrintIcon />} onClick={handlePrint}>Print</Button>
+              <Button variant="outlined" color="error" onClick={()=>navigate(-1)}>Close</Button>
+            </Box>
+          </Grid>
+
         </Paper>
       </Box>
 
-     {/* HIDDEN PRINT AREA - Now positioned behind and invisible instead of off-screen */}
-<Box 
-  sx={{ 
-    position: "fixed", 
-    zIndex: -1, 
-    top: 0, 
-    left: 0, 
-    opacity: 0, 
-    pointerEvents: "none" 
-  }}
->
-  <div ref={reportRef}>
-    <StockDayBookPrint 
-      filters={{ 
-        startDate, 
-        endDate, 
-        partyMode, 
-        selectedParty, 
-        transactionMode, 
-        typeSelection, 
-        selectedTypes, 
-        books 
-      }} 
-    />
-  </div>
-</Box>
+      {/* PRINT AREA */}
+      <Box sx={{ position:"fixed", zIndex:-1, opacity:0 }}>
+        <div ref={reportRef}>
+         <StockDayBookPrint 
+  data={printData} 
+  filters={{ startDate, endDate }} 
+  company={activeCompany}
+/>
+        </div>
+      </Box>
     </Box>
   );
 }

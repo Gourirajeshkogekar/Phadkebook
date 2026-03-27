@@ -68,6 +68,43 @@ function Book() {
     fetchAllBooks();
   }, []);
 
+
+    const [pageIndex, setPageIndex] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+
+
+
+const [activeCompany, setActiveCompany] = useState(null);
+    
+   useEffect(() => {
+      const selected = localStorage.getItem("SelectedCompany");
+      if (selected) {
+        try {
+          const parsedCompany = JSON.parse(selected);
+          setActiveCompany(parsedCompany);
+          
+          // Load data immediately
+         fetchAllBooks();
+    fetchBookgroups();
+    fetchStandards();
+    fetchPublications();
+    fetchUniversities();
+    fetchmediums();
+    fetchTitlepresses();
+    fetchPapersize();
+    fetchPresses();
+    fetchAuthors()
+        } catch (e) {
+          console.error("Error parsing company data", e);
+        }
+      }
+    }, [pageIndex]); 
+
+
+
+ 
+
+
   useEffect(() => {
     // Load Google Transliteration API
     const loadGoogleTransliteration = () => {
@@ -98,8 +135,7 @@ function Book() {
     }
   }, []);
 
-  const [pageIndex, setPageIndex] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+
 
   const [BookCode, setBookCode] = useState("");
   const [BookName, setBookName] = useState("");
@@ -128,7 +164,6 @@ function Book() {
   const [FillingDate, setFillingDate] = useState(() =>
     dayjs().format("YYYY-MM-DD")
   );
-  console.log("FillingDate state:", FillingDate); // should be like '2025-08-02'
 
   const [TitlePages, setTitlePages] = useState("");
   const [TitlePressId, setTitlePressId] = useState("");
@@ -294,21 +329,10 @@ const handleAddPrintOrder = () => {
     }
   };
 
-  useEffect(() => {
-    fetchAllBooks();
-    fetchBookgroups();
-    fetchStandards();
-    fetchPublications();
-    fetchUniversities();
-    fetchmediums();
-    fetchTitlepresses();
-    fetchPapersize();
-    fetchPresses();
-  }, []);
-
+ 
   const [authorOptions, setAuthorOptions] = useState([]);
 
-  useEffect(() => {
+
     const fetchAuthors = async () => {
       try {
         const res = await axios.get(
@@ -326,20 +350,17 @@ const handleAddPrintOrder = () => {
       }
     };
 
-    fetchAuthors();
-  }, []);
+  
 
-  useEffect(() => {
-    fetchAllBooks();
-    console.log("this function is called");
-  }, [pageIndex]); // Fetch data when page changes
+
+
 
   const fetchAllBooks = async () => {
     try {
       const response = await axios.get(
-        `https://publication.microtechsolutions.net.in/php/getbookbypg.php?PageNo=${pageIndex}`
+        `https://publication.microtechsolutions.net.in/php/getbookbypg.php?PageNo=${pageIndex} }`
+
       );
-      // setSellschallans(response.data);
       console.log(response.data, "response of Book");
 
       setBooks(response.data.data);
@@ -352,7 +373,7 @@ const handleAddPrintOrder = () => {
   const fetchPrintorders = async (bookId) => {
     try {
       const res = await axios.get(
-        `https://publication.microtechsolutions.net.in/php/get/getPrintorder.php?BookId=${bookId}`
+        `https://publication.microtechsolutions.net.in/php/get/getPrintorder.php?BookId=${bookId} `
       );
 
       console.log("RAW PrintOrders:", res.data); // 🔥 DEBUG
@@ -441,7 +462,7 @@ setPrintOrders([
         "https://publication.microtechsolutions.net.in/php/BookGroupget.php"
       );
 
-      const bookgroupOptions = response.data
+      const bookgroupOptions = response.data.data
         .filter((group) => group.Active === 1)
         .map((group) => ({
           value: group.Id,
@@ -459,7 +480,7 @@ setPrintOrders([
         "https://publication.microtechsolutions.net.in/php/Standardget.php"
       );
 
-      const bookstandardOptions = response.data
+      const bookstandardOptions = response.data.data
         .filter((std) => String(std.Active) === "1")
         .map((std) => ({
           value: std.Id,
@@ -494,7 +515,7 @@ setPrintOrders([
       const response = await axios.get(
         "https://publication.microtechsolutions.net.in/php/Universityget.php"
       );
-      const universityOptions = response.data
+      const universityOptions = response.data.data
         .filter((uni) => String(uni.Active) === "1")
         .map((uni) => ({
           value: uni.Id,
@@ -510,7 +531,7 @@ setPrintOrders([
       const response = await axios.get(
         "https://publication.microtechsolutions.net.in/php/BookMediumget.php"
       );
-      const bookmediumOptions = response.data
+      const bookmediumOptions = response.data.data
         .filter((med) => String(med.Active) === "1")
 
         .map((med) => ({
@@ -544,7 +565,7 @@ setPrintOrders([
       const response = await axios.get(
         "https://publication.microtechsolutions.net.in/php/PaperSizeget.php"
       );
-      const papersizeOptions = response.data
+      const papersizeOptions = response.data.data
         .filter((paper) => String(paper.Active) === "1")
 
         .map((paper) => ({
@@ -828,6 +849,7 @@ setPrintOrders([
       CreationDate: formatDate(CreationDate),
       CurrentEditionDate: formatDate(CurrentEditionDate),
       CreatedBy: !isEditing ? userId : null,
+      CompanyId : activeCompany.Id
     };
 
     if (isEditing) {
@@ -877,8 +899,12 @@ setPrintOrders([
         if (isEditing) {
           poBody.append("PrintOrderId", Number(row.Id)); // 🔥 MUST exist
           poBody.append("UpdatedBy", Number(userId));
+                    poBody.append("CompanyId", Number(activeCompany.Id));
+
         } else {
           poBody.append("CreatedBy", Number(userId));
+                    poBody.append("CompanyId", Number(activeCompany.Id));
+
         }
 
         const url = isEditing
@@ -910,8 +936,12 @@ setPrintOrders([
         if (isEditing && r.Id && !isNaN(Number(r.Id))) {
           royaltyBody.append("RoyaltyId", Number(r.Id)); // ✅ r.Id NOT r.RoyaltyId
           royaltyBody.append("UpdatedBy", Number(userId));
+                            royaltyBody.append("CompanyId", Number(activeCompany.Id));
+
         } else {
           royaltyBody.append("CreatedBy", Number(userId));
+              royaltyBody.append("CompanyId", Number(activeCompany.Id));
+
         }
 
         const url =
@@ -949,6 +979,8 @@ setPrintOrders([
 
     const urlencoded = new URLSearchParams();
     urlencoded.append("Id", deleteId);
+        urlencoded.append("CompanyId", activeCompany.Id)
+
 
     const requestOptions = {
       method: "POST",
@@ -977,17 +1009,7 @@ setPrintOrders([
 
   const navigate = useNavigate();
 
-  const handlePrint = (row) => {
-    console.log(row); // Check what properties are available on the row object
-    const book = books[row.index]; // Ensure that row.index exists
-    console.log(book, "selected row of book");
-
-    if (book) {
-      navigate("/masters/book/bookprint", { state: { bookData: book } });
-    } else {
-      console.error("Book not found!");
-    }
-  };
+   
 
   const columns = useMemo(
     () => [
@@ -1244,7 +1266,7 @@ setPrintOrders([
                           menu: (base) => ({
                             ...base,
                             zIndex: 100,
-                            width: "200px",
+                            width: "250px",
                           }),
                         }}
                         placeholder="Select  Group"
@@ -1279,7 +1301,7 @@ setPrintOrders([
                             borderRadius: "4px",
                           }),
                           menu: (base) => ({
-                            ...base,
+                            ...base, width: "250px",
                             zIndex: 100,
                           }),
                         }}
@@ -1315,7 +1337,7 @@ setPrintOrders([
                             marginBottom: "5px",
                           }),
                           menu: (base) => ({
-                            ...base,
+                            ...base, width: "250px",
                             zIndex: 100,
                           }),
                         }}
@@ -1363,6 +1385,7 @@ setPrintOrders([
                           }),
                           menu: (base) => ({
                             ...base,
+                             width: "250px",
                             zIndex: 100,
                           }),
                         }}
@@ -1398,7 +1421,7 @@ setPrintOrders([
                             marginBottom: "5px",
                           }),
                           menu: (base) => ({
-                            ...base,
+                            ...base, width: "250px",
                             zIndex: 100,
                           }),
                         }}
@@ -1594,20 +1617,28 @@ onChange={handlePagesChange} // Using the new handler here
                         ref={papersizeRef}
                         onKeyDown={(e) => handleKeyDown(e, pressRef)}
                         options={papersizeOptions}
-                        styles={{
-                          control: (base) => ({
-                            ...base,
-                            width: "250px",
-                            marginTop: "10px",
-                            borderRadius: "4px",
-                            border: "1px solid rgb(223, 222, 222)",
-                            marginBottom: "5px",
-                          }),
-                          menu: (base) => ({
-                            ...base,
-                            zIndex: 100,
-                          }),
-                        }}
+                      styles={{
+  control: (base) => ({
+    ...base,
+    width: "250px", // Keep your width
+    marginTop: "10px",
+    borderRadius: "4px",
+    border: "1px solid rgb(223, 222, 222)",
+    marginBottom: "5px",
+  }),
+  menu: (base) => ({
+    ...base,
+    width: "250px", // Force the menu to match the input width
+    zIndex: 100,
+  }),
+  option: (base) => ({
+    ...base,
+    whiteSpace: "nowrap",      // Prevent text from wrapping to a second line
+    overflow: "hidden",        // Hide the extra text
+    textOverflow: "ellipsis",  // Add "..." if the text is too long
+    fontSize: "14px",          // Optional: slightly smaller font helps
+  }),
+}}
                         placeholder="Select papersize "
                       />
                     </div>
@@ -1641,6 +1672,7 @@ onChange={handlePagesChange} // Using the new handler here
                           }),
                           menu: (base) => ({
                             ...base,
+                             width: "250px",
                             zIndex: 100,
                           }),
                         }}

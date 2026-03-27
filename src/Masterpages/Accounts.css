@@ -9,7 +9,7 @@
 
 .acctable-container{
   /* background-color: #3c7291; */
-    height: 400px;
+    height: 350px;
     overflow-y: auto;
     overflow-x: auto;
 }

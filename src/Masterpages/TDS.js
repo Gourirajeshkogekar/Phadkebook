@@ -19,6 +19,9 @@ import "react-toastify/dist/ReactToastify.css";
 import moment from "moment";
 import { RiDeleteBin5Line } from "react-icons/ri";
 import { Tooltip, TextField, Autocomplete } from "@mui/material";
+  const getTodayDate = () => new Date().toISOString().split('T')[0];
+
+
 
 function TDS() {
   const [userId, setUserId] = useState("");
@@ -44,6 +47,28 @@ function TDS() {
     fetchTDSMasters();
   }, []);
 
+   const [activeCompany, setActiveCompany] = useState(null);
+         
+        
+
+useEffect(() => {
+  const selected = localStorage.getItem("SelectedCompany");
+  if (selected) {
+    try {
+      const parsedCompany = JSON.parse(selected);
+      setActiveCompany(parsedCompany);
+      
+       fetchTDSMasters();
+      fetchAccounts(parsedCompany.Id); 
+    } catch (e) {
+      console.error("Error parsing company data", e);
+    }
+  } else {
+    toast.error("Please select a company first.");
+  }
+}, []); // Run only on mount
+
+
   const [TDSHead, setTDSHead] = useState("");
   const [Section, setSection] = useState("");
   const [Heading, setHeading] = useState("");
@@ -60,8 +85,8 @@ function TDS() {
     HigherEducationPercentageSellsAccountId,
     setHigherEducationPercentageSellsAccountId,
   ] = useState(null);
-  const [Effectivedate, setEffectivedate] = useState(null);
 
+const [Effectivedate, setEffectivedate] = useState(getTodayDate());
   const [TDSCode, setTDSCode] = useState("");
   const [NetPercentage, setNetPercentage] = useState("");
   const [tdses, setTdses] = useState([]);
@@ -117,7 +142,7 @@ function TDS() {
     setEducationSellsPercentage("");
     setHigherEducationSellsPercentage("");
     setHigherEducationPercentageSellsAccountId("");
-    setEffectivedate("");
+setEffectivedate(getTodayDate());
     setTDSCode("");
     setNetPercentage("");
   };
@@ -131,8 +156,8 @@ function TDS() {
 
   const handleEdit = (row) => {
     const tds = tdses[row.index];
-    console.log(tds, "tds"); // For debugging
-    setTDSHead(tds.TDSHead || ""); // Ensure the property is defined
+    console.log(tds, "tds"); 
+    setTDSHead(tds.TDSHead || ""); 
     setSection(tds.Section || "");
     setHeading(tds.Heading || "");
     setTDSPercentage(tds.TDSPercentage || "");
@@ -167,43 +192,12 @@ function TDS() {
     setId(tds.Id || "");
   };
 
-// const handleEdit = (row) => {
-//   const tds = tdses[row.index];
-  
-//   setTDSHead(tds.TDSHead || "");
-//   setSection(tds.Section || "");
-//   setHeading(tds.Heading || "");
-//   setTDSPercentage(tds.TDSPercentage || "");
-//   setTDSAccountId(tds.TDSAccountId || "");
-//   setSurchargePercentage(tds.SurchargePercentage || "");
-//   setSurchargeAccountId(tds.SurchargeAccountId || "");
-//   setEducationSellsPercentage(tds.EducationSellsPercentage || "");
-//   setEducationSellsAccountId(tds.EducationSellsAccountId || "");
-//   setHigherEducationSellsPercentage(tds.HigherEducationSellsPercentage || "");
-//   setHigherEducationPercentageSellsAccountId(tds.HigherEducationPercentageSellsAccountId || "");
 
-//   // Fix: Safe Date Extraction
-//   if (tds.Effectivedate && typeof tds.Effectivedate.date === 'string') {
-//     const datePart = tds.Effectivedate.date.split(" ")[0]; // Gets YYYY-MM-DD
-//     setEffectivedate(datePart);
-//   } else if (typeof tds.Effectivedate === 'string') {
-//     setEffectivedate(tds.Effectivedate.split(" ")[0]);
-//   } else {
-//     setEffectivedate(""); // Fallback for null dates
-//   }
-
-//   setTDSCode(tds.TDSCode || "");
-//   setNetPercentage(tds.NetPercentage || "");
-//   setEditingIndex(row.index);
-//   setIsModalOpen(true);
-//   setIsEditing(true);
-//   setId(tds.Id || "");
-// };
 
   const handleDelete = (index, Id) => {
     setDeleteIndex(index);
     setDeleteId(Id);
-    setIsDeleteDialogOpen(true); // Show confirmation dialog
+    setIsDeleteDialogOpen(true); 
   };
 
   const confirmDelete = () => {
@@ -212,6 +206,8 @@ function TDS() {
 
     const urlencoded = new URLSearchParams();
     urlencoded.append("Id", deleteId);
+        urlencoded.append("CompanyId", activeCompany.Id);
+
 
     const requestOptions = {
       method: "POST",
@@ -240,34 +236,38 @@ function TDS() {
   const fetchTDSMasters = async () => {
     try {
       const response = await axios.get(
-        "https://publication.microtechsolutions.net.in/php/TDSMasterget.php"
+        `https://publication.microtechsolutions.net.in/php/TDSMasterget.php`
       );
-      setTdses(response.data);
+      setTdses(response.data.data);
     } catch (error) {
       // toast.error("Error fetching TDS masters:", error);
     }
   };
 
-  const fetchAccounts = async () => {
-    try {
-      const response = await axios.get(
-        "https://publication.microtechsolutions.net.in/php/Accountget.php"
-      );
-      const accountOptions = response.data.map((acc) => ({
+ const fetchAccounts = async (companyId) => {
+  // Use the passed ID if available, otherwise fallback to state
+  const idToUse = companyId || activeCompany?.Id;
+  
+  if (!idToUse) return;
+
+  try {
+    const response = await axios.get(
+      `https://publication.microtechsolutions.net.in/php/Accountget.php?CompanyId=${idToUse}`
+    );
+    
+    if (response.data && response.data.data) {
+      const options = response.data.data.map((acc) => ({
         value: acc.Id,
         label: acc.AccountName,
       }));
-      setAccountOptions(accountOptions);
-    } catch (error) {
-      // toast.error("Error fetching Accounts:", error);
-      console.error("Error fetching Accounts:", error);
+      setAccountOptions(options);
     }
-  };
+  } catch (error) {
+    console.error("Error fetching Accounts:", error);
+  }
+};
 
-  useEffect(() => {
-    fetchTDSMasters();
-    fetchAccounts();
-  }, []);
+ 
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -293,6 +293,7 @@ function TDS() {
       TDSCode: TDSCode,
       NetPercentage: NetPercentage,
       CreatedBy: userId,
+      CompanyId : activeCompany.Id
     };
 
     const url = isEditing
@@ -302,6 +303,7 @@ function TDS() {
     if (isEditing) {
       data.Id = id;
       data.UpdatedBy = userId;
+      data.CompanyId = activeCompany.Id
     }
     try {
       await axios.post(url, data, {
@@ -424,7 +426,6 @@ function TDS() {
             onClick={() => setIsModalOpen(false)}
           />
         )}
-
         <Modal open={isModalOpen}>
           <div className="mastertds-modal" onSubmit={handleSubmit}>
             <h1
@@ -524,11 +525,11 @@ function TDS() {
                   <div>
                     <Autocomplete
                       options={accountOptions}
-                      value={
-                        accountOptions.find(
-                          (option) => option.value === TDSAccountId
-                        ) || null
-                      }
+                     value={
+    accountOptions.find(
+      (option) => option.value.toString() === TDSAccountId?.toString()
+    ) || null
+  }
                       onChange={(event, newValue) => {
                         setTDSAccountId(newValue ? newValue.value : null);
                       }}
@@ -583,10 +584,10 @@ function TDS() {
                     <Autocomplete
                       options={accountOptions}
                       value={
-                        accountOptions.find(
-                          (option) => option.value === SurchargeAccountId
-                        ) || null
-                      }
+    accountOptions.find(
+      (option) => option.value.toString() === SurchargeAccountId?.toString()
+    ) || null
+  }
                       onChange={(event, newValue) =>
                         setSurchargeAccountId(newValue ? newValue.value : null)
                       }
@@ -638,11 +639,11 @@ function TDS() {
                   <div>
                     <Autocomplete
                       options={accountOptions}
-                      value={
-                        accountOptions.find(
-                          (option) => option.value === EducationSellsAccountId
-                        ) || null
-                      }
+                     value={
+    accountOptions.find(
+      (option) => option.value.toString() === EducationSellsAccountId?.toString()
+    ) || null
+  }
                       onChange={(event, newValue) =>
                         setEducationSellsAccountId(
                           newValue ? newValue.value : null
@@ -697,12 +698,10 @@ function TDS() {
                     <Autocomplete
                       options={accountOptions}
                       value={
-                        accountOptions.find(
-                          (option) =>
-                            option.value ===
-                            HigherEducationPercentageSellsAccountId
-                        ) || null
-                      }
+    accountOptions.find(
+      (option) => option.value.toString() === HigherEducationPercentageSellsAccountId?.toString()
+    ) || null
+  }
                       onChange={(event, newValue) =>
                         setHigherEducationPercentageSellsAccountId(
                           newValue ? newValue.value : null
@@ -808,7 +807,6 @@ function TDS() {
             </div>
           </div>
         </Modal>
-
         <Dialog open={isDeleteDialogOpen} onClose={cancelDelete}>
           <DialogTitle style={{ color: "navy", fontWeight: "600" }}>
             Confirm Deletion

@@ -53,6 +53,24 @@ function LocationMaster() {
     fetchAll();
   }, []);
 
+
+  const [activeCompany, setActiveCompany] = useState(null);
+       
+      useEffect(() => {
+         const selected = localStorage.getItem("SelectedCompany");
+         if (selected) {
+           try {
+             const parsedCompany = JSON.parse(selected);
+             setActiveCompany(parsedCompany);
+             
+             // Load data immediately
+            fetchAll()
+           } catch (e) {
+             console.error("Error parsing company data", e);
+           }
+         }
+       }, []); 
+
   const [mode, setMode] = useState("state");
 
   const [stateName, setStateName] = useState("");
@@ -74,67 +92,21 @@ function LocationMaster() {
   const [deleteId, setDeleteId] = useState(null);
   const [searchText, setSearchText] = useState("");
 
-  // const fetchAll = async () => {
-  //   try {
-  //     const areaRes = await axios.get(
-  //       "https://publication.microtechsolutions.net.in/php/Areaget.php"
-  //     );
-  //     const cityRes = await axios.get(
-  //       "https://publication.microtechsolutions.net.in/php/Cityget.php"
-  //     );
-  //     const stateRes = await axios.get(
-  //       "https://publication.microtechsolutions.net.in/php/State.php"
-  //     );
-
-  //     const canvRes = await axios.get(
-  //       "https://publication.microtechsolutions.net.in/php/get/getCanvassorMaster.php"
-  //     );
-
-  //     console.log(
-  //       areaRes.data,
-  //       cityRes.data,
-  //       stateRes.data,
-  //       canvRes.data,
-  //       "All fetch data"
-  //     );
-
-  //     const states = stateRes.data;
-  //     const cities = cityRes.data;
-  //     const canvassors = canvRes.data;
-  //     const mappedAreas = areaRes.data.map((a) => {
-  //       const city = cities.find((c) => c.Id == a.CityId);
-  //       const state = states.find(
-  //         (s) => s.Id == (city?.StateCode || city?.StateId)
-  //       );
-  //       return {
-  //         ...a,
-  //         CityName: city?.CityName || "—",
-  //         StateName: state?.StateName || "—",
-  //       };
-  //     });
-
-  //     setAreas(mappedAreas);
-  //     setStates(states);
-  //     setCities(cities);
-  //     setCanvassors(canvassors);
-  //   } catch (err) {
-  //     console.log(err);
-  //   }
-  // };
+ 
 
   const fetchAll = async () => {
     try {
       const areaRes = await axios.get(
-        "https://publication.microtechsolutions.net.in/php/Areaget.php"
+        `https://publication.microtechsolutions.net.in/php/Areaget.php`
       );
       const cityRes = await axios.get(
-        "https://publication.microtechsolutions.net.in/php/Cityget.php"
+        `https://publication.microtechsolutions.net.in/php/Cityget.php`
       );
       const stateRes = await axios.get(
-        "https://publication.microtechsolutions.net.in/php/State.php"
+        `https://publication.microtechsolutions.net.in/php/State.php`
       );
       const canvRes = await axios.get(
-        "https://publication.microtechsolutions.net.in/php/get/getCanvassorMaster.php"
+        `https://publication.microtechsolutions.net.in/php/get/getCanvassorMaster.php`
       );
 
       // 🔹 SORT BY CREATION ORDER (Id)
@@ -179,6 +151,7 @@ function LocationMaster() {
               StateName: stateName,
               StateCode: stateCode,
               UpdatedBy: userId,
+              CompanyId:activeCompany.Id
             },
             {
               headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -188,7 +161,7 @@ function LocationMaster() {
         } else {
           await axios.post(
             "https://publication.microtechsolutions.net.in/php/Statepost.php",
-            { StateName: stateName, StateCode: stateCode, CreatedBy: userId },
+            { StateName: stateName, StateCode: stateCode, CreatedBy: userId, CompanyId:activeCompany.Id },
             {
               headers: { "Content-Type": "application/x-www-form-urlencoded" },
             }
@@ -212,6 +185,7 @@ function LocationMaster() {
               StateCode: selectedStateId,
 
               UpdatedBy: userId,
+              CompanyId: activeCompany.Id
             },
             {
               headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -227,6 +201,8 @@ function LocationMaster() {
               StateId: selectedStateId,
               StateCode: selectedStateId,
               CreatedBy: userId,
+                            CompanyId: activeCompany.Id
+
             },
             {
               headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -252,6 +228,8 @@ function LocationMaster() {
 
               CanvassorId: CanvassorId,
               UpdatedBy: userId,
+                            CompanyId: activeCompany.Id
+
             },
             {
               headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -269,6 +247,8 @@ function LocationMaster() {
               CityId: selectedCityId,
               CanvassorId: CanvassorId,
               CreatedBy: userId,
+                            CompanyId: activeCompany.Id
+
             },
             {
               headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -320,6 +300,8 @@ function LocationMaster() {
     try {
       const urlencoded = new URLSearchParams();
       urlencoded.append("Id", deleteId);
+            urlencoded.append("CompanyId", activeCompany.Id);
+
 
       let api =
         mode === "state"

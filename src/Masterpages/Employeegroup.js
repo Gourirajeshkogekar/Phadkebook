@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useRef } from "react";
+import React, { useState, useMemo, useEffect, useRef, act } from "react";
 import "./Employeegroup.css";
 import {
   MaterialReactTable,
@@ -42,6 +42,25 @@ function Employeegroup() {
     fetchEmployeegroups();
   }, []);
 
+
+ const [activeCompany, setActiveCompany] = useState(null);
+            
+           useEffect(() => {
+              const selected = localStorage.getItem("SelectedCompany");
+              if (selected) {
+                try {
+                  const parsedCompany = JSON.parse(selected);
+                  setActiveCompany(parsedCompany);
+                  
+                  // Load data immediately
+   fetchEmployeegroups();
+   
+                  } catch (e) {
+                  console.error("Error parsing company data", e);
+                }
+              }
+            }, []); 
+
   const [employeegroups, setEmployeegroups] = useState([]);
   const [CategoryCode, setCategoryCode] = useState("");
   const [CategoryName, setCategoryName] = useState("");
@@ -69,14 +88,12 @@ function Employeegroup() {
       }
     }
   };
-  useEffect(() => {
-    fetchEmployeegroups();
-  }, []);
+
 
   const fetchEmployeegroups = async () => {
     try {
       const response = await axios.get(
-        "https://publication.microtechsolutions.net.in/php/Employeegroupmasterget.php"
+        `https://publication.microtechsolutions.net.in/php/Employeegroupmasterget.php`
       );
       setEmployeegroups(response.data);
     } catch (error) {
@@ -118,6 +135,7 @@ function Employeegroup() {
 
     const urlencoded = new URLSearchParams();
     urlencoded.append("Id", deleteId);
+    urlencoded.append("CompanyId", activeCompany.Id);
 
     const requestOptions = {
       method: "POST",

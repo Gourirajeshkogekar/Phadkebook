@@ -44,6 +44,30 @@ const User = () => {
     fetchUsers();
   }, []);
 
+
+    const [activeCompany, setActiveCompany] = useState(null);
+          
+         useEffect(() => {
+            const selected = localStorage.getItem("SelectedCompany");
+            if (selected) {
+              try {
+                const parsedCompany = JSON.parse(selected);
+                setActiveCompany(parsedCompany);
+                
+                // Load data immediately
+ fetchUsers();
+    fetchCompanies();
+    fetchLevels();
+    fetchBranches();
+                } catch (e) {
+                console.error("Error parsing company data", e);
+              }
+            }
+          }, []); 
+
+              
+
+  
   const [Name, setName] = useState("");
   const [UserId, setUserid] = useState("");
   const [Password, setPassword] = useState("");
@@ -107,19 +131,14 @@ const User = () => {
     }
   };
 
-  useEffect(() => {
-    fetchUsers();
-    fetchCompanies();
-    fetchLevels();
-    fetchBranches();
-  }, []);
+
 
   const fetchUsers = async () => {
     try {
       const response = await axios.get(
-        "https://publication.microtechsolutions.net.in/php/Userget.php"
+        `https://publication.microtechsolutions.net.in/php/Userget.php`
       );
-      setUsers(response.data);
+      setUsers(response.data.data);
     } catch (error) {
       // toast.error("Error fetching users:", error);
     }
@@ -214,6 +233,7 @@ const User = () => {
 
     const urlencoded = new URLSearchParams();
     urlencoded.append("Id", deleteId);
+    urlencoded.append("CompanyId", activeCompany.Id);
 
     const requestOptions = {
       method: "POST",
@@ -335,6 +355,7 @@ const User = () => {
       AllowPayroll: AllowPayroll ? 1 : 0,
       CanChangeOnFirstLogin: CanChangeOnFirstLogin ? 1 : 0,
       CreatedBy: userId,
+      CompanyId: activeCompany.Id,
     };
 
     const url = isEditing
@@ -344,6 +365,7 @@ const User = () => {
     if (isEditing) {
       data.Id = id;
       data.UpdatedBy = userId;
+      data.CompanyId = activeCompany.Id
     }
 
     try {

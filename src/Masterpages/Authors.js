@@ -42,9 +42,35 @@ function Authors() {
 
     fetchAuthors();
   }, []);
-
-  const [pageIndex, setPageIndex] = useState(1);
+  
+const [pageIndex, setPageIndex] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+
+ const [activeCompany, setActiveCompany] = useState(null);
+          
+         useEffect(() => {
+            const selected = localStorage.getItem("SelectedCompany");
+            if (selected) {
+              try {
+                const parsedCompany = JSON.parse(selected);
+                setActiveCompany(parsedCompany);
+                
+                // Load data immediately
+ fetchAuthors();
+  fetchStates();
+    fetchAllCities();
+    fetchAreas();
+                } catch (e) {
+                console.error("Error parsing company data", e);
+              }
+            }
+          }, [pageIndex]); 
+
+
+  
+
+ 
+  
 
   const [AuthorCode, setAuthorCode] = useState("");
   const [authorName, setAuthorName] = useState("");
@@ -99,26 +125,11 @@ function Authors() {
     }
   };
 
-  useEffect(() => {
-    // fetchAuthors();
-    fetchStates();
-    fetchAllCities();
-    fetchAreas();
-  }, []);
 
-  // const fetchAuthors = async () => {
-  //   try {
-  //     const response = await axios.get("https://publication.microtechsolutions.net.in/php/Authorget.php");
-  //     setAuthors(response.data);
-  //   } catch (error) {
-  //     // toast.error("Error fetching authors:", error);
-  //   }
-  // };
 
-  useEffect(() => {
-    fetchAuthors();
-    console.log("this function is called");
-  }, [pageIndex]); // Fetch data when page changes
+  
+
+  
 
   const fetchAuthors = async () => {
     try {
@@ -241,6 +252,8 @@ function Authors() {
 
     const urlencoded = new URLSearchParams();
     urlencoded.append("Id", deleteId);
+        urlencoded.append("CompanyId", activeCompany.Id);
+
 
     const requestOptions = {
       method: "POST",
@@ -361,6 +374,7 @@ function Authors() {
       PanNo: PanNo,
       EmailId: email,
       CreatedBy: userId,
+   CompanyId: activeCompany.Id
     };
 
     // Determine the URL based on whether we're editing or adding
@@ -372,6 +386,7 @@ function Authors() {
     if (isEditing) {
       data.Id = id;
       data.UpdatedBy = userId;
+      data.CompanyId = activeCompany.Id;
     }
 
     try {

@@ -77,6 +77,28 @@ function Receiptvoucher() {
     fetchVouchers();
   }, [userId]);
 
+
+   const [activeCompany, setActiveCompany] = useState(null);
+                 
+                useEffect(() => {
+                   const selected = localStorage.getItem("SelectedCompany");
+                   if (selected) {
+                     try {
+                       const parsedCompany = JSON.parse(selected);
+                       setActiveCompany(parsedCompany);
+                       
+                       // Load data immediately
+      fetchReceipts();
+      fetchVouchers();
+      fetchVoucherdetails()
+                       } catch (e) {
+                       console.error("Error parsing company data", e);
+                     }
+                   }
+                 }, []); 
+
+
+
   useEffect(() => {
     const today = new Date();
     const formattedToday = today.toISOString().split("T")[0];
@@ -230,7 +252,7 @@ function Receiptvoucher() {
   const fetchReceipts = async () => {
     try {
       const response = await axios.get(
-        "https://publication.microtechsolutions.net.in/php/Vouchertypeget.php?VoucherType=RE",
+        `https://publication.microtechsolutions.net.in/php/Vouchertypeget.php?VoucherType=RE&CompanyId=${activeCompany.Id}`,
       );
       console.log(response.data, "receipt vouchers");
       setReceipts(response.data);
@@ -243,7 +265,7 @@ function Receiptvoucher() {
   const fetchVouchers = async () => {
   try {
     const response = await axios.get(
-      "https://publication.microtechsolutions.net.in/php/Voucherhdget.php?VoucherType=RE"
+      `https://publication.microtechsolutions.net.in/php/Voucherhdget.php?VoucherType=RE&CompanyId=${activeCompany.Id}`
     );
 
     const sortedData = [...response.data].sort((a, b) => {
@@ -261,7 +283,7 @@ function Receiptvoucher() {
   const fetchVoucherdetails = async () => {
     try {
       const response = await axios.get(
-        "https://publication.microtechsolutions.net.in/php/Voucherdetailget.php",
+        `https://publication.microtechsolutions.net.in/php/Voucherdetailget.php?CompanyId=${activeCompany.Id}`,
       );
       setReceiptdetails(response.data);
     } catch (error) {
@@ -273,9 +295,9 @@ function Receiptvoucher() {
   const fetchAccounts = async () => {
     try {
       const response = await axios.get(
-        "https://publication.microtechsolutions.net.in/php/Accountget.php",
+        `https://publication.microtechsolutions.net.in/php/Accountget.php?CompanyId=${activeCompany.Id}`,
       );
-      const accountOptions = response.data.map((acc) => ({
+      const accountOptions = response.data.data.map((acc) => ({
         value: acc.Id,
         label: acc.AccountName,
       }));
@@ -291,11 +313,11 @@ const [bankOptions, setBankOptions] = useState([])
   const fetchBanks = async () => {
     try {
       const response = await axios.get(
-        "https://publication.microtechsolutions.net.in/php/get/getbycolm.php?Table=Account&Colname=GroupId&Colvalue=10"
+        `https://publication.microtechsolutions.net.in/php/get/getbycolm.php?Table=Account&Colname=GroupId&Colvalue=10&CompanyId=${activeCompany.Id}`
       );
       
       // Map the API data to the format MUI Autocomplete needs
-      const formattedData = response.data.map((item) => ({
+      const formattedData = response.data.data.map((item) => ({
         label: item.AccountName,
         value: item.Id,
         // You can keep the whole item if you need it later
@@ -313,10 +335,8 @@ const [bankOptions, setBankOptions] = useState([])
 
 
 
-useEffect(() => {
-    
+useEffect(() => {  
     fetchCities();
-     
     fetchAreas()
   }, []);
 
@@ -328,16 +348,16 @@ useEffect(() => {
     setPartyDetails(null);
   }
 }, [PartyId]);
+
+
+
+
 const [partyInfo, setPartyInfo] = useState(null);
-
 const [partyDetails, setPartyDetails] = useState(null);
-
-
-
-  const fetchPartyInfo = async (accountId) => {
+const fetchPartyInfo = async (accountId) => {
   try {
     const response = await axios.get(
-      `https://publication.microtechsolutions.net.in/php/Addressget.php?AccountId=${accountId}`
+      `https://publication.microtechsolutions.net.in/php/Addressget.php?AccountId=${accountId}&CompanyId=${activeCompany.Id}`
     );
 
     console.log("Party API Response:", response.data);
@@ -363,9 +383,8 @@ const [partyDetails, setPartyDetails] = useState(null);
 };
 
 
-  const [cities, setCities] = useState([]);
-  const [areas, setareas] = useState([]);
-
+const [cities, setCities] = useState([]);
+const [areas, setareas] = useState([]);
 
 
 const fetchCities = async () => {
@@ -405,7 +424,6 @@ const fetchCities = async () => {
   const getCityName = (cityId) =>
     cities.find((c) => c.value === cityId)?.label || "";
 
-  
   const TOWARDS_OPTIONS = [
     { value: 1, label: "Cash Received" },
     { value: 2, label: "Cash Received – Sales Counter" },
@@ -457,7 +475,7 @@ const fetchCities = async () => {
     const voucherheader = receipts[currentRow.index];
 
     const response = await axios.get(
-      "https://publication.microtechsolutions.net.in/php/Voucherdetailget.php",
+      `https://publication.microtechsolutions.net.in/php/Voucherdetailget.php?CompanyId=${activeCompany.Id}`,
     );
     setReceiptdetails(response.data);
 
@@ -607,6 +625,7 @@ const fetchCities = async () => {
 
     const urlencoded = new URLSearchParams();
     urlencoded.append("Id", deleteId);
+    urlencoded.append("CompanyId", activeCompany.Id);
 
     const requestOptions = {
       method: "POST",
@@ -695,6 +714,7 @@ const fetchCities = async () => {
 
       CreatedBy: !isEditing ? userId : undefined,
       UpdatedBy: isEditing ? userId : undefined,
+      CompanyId: activeCompany.Id
     };
 
     try {
@@ -743,6 +763,7 @@ const fetchCities = async () => {
           ChequeDate: formattedchequedate,
           CreatedBy: !isEditing ? userId : undefined,
           UpdatedBy: isEditing ? userId : undefined,
+          CompanyId: activeCompany.Id
         },
         {
           Id: isEditing ? srn2Id : null, // ✅ real ID
@@ -762,6 +783,8 @@ const fetchCities = async () => {
           ChequeDate: formattedchequedate,
           CreatedBy: !isEditing ? userId : undefined,
           UpdatedBy: isEditing ? userId : undefined,
+                    CompanyId: activeCompany.Id
+
         },
       ];
 

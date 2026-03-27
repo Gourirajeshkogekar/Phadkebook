@@ -78,6 +78,24 @@ function Paperoutforprinting() {
 
     fetchPaperheaders();
   }, []);
+
+
+   const [activeCompany, setActiveCompany] = useState(null);
+           
+           useEffect(()=>{
+            const selected = localStorage.getItem("SelectedCompany");
+               console.log(selected, 'selected');
+              if (selected) {
+                try {
+                  const parsedCompany = JSON.parse(selected);
+                  setActiveCompany(parsedCompany);
+                } catch (e) {
+                  console.error("Error parsing company data", e);
+                }
+              }
+              },[activeCompany]);
+
+
   const [pageIndex, setPageIndex] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
@@ -191,6 +209,39 @@ function Paperoutforprinting() {
     }
   };
 
+  const fetchBookDataForRow = async (rowIndex, bookCode) => {
+  if (!bookCode) return;
+
+  try {
+    const response = await fetch(
+      `https://publication.microtechsolutions.net.in/php/Bookcodeget.php?BookCode=${bookCode}`
+    );
+    const result = await response.json();
+
+    // Check if result.data exists (based on your previous API structure) 
+    // or if it returns the array directly
+    const bookData = result.data ? result.data[0] : result[0];
+
+    if (bookData) {
+      const updatedRows = [...rows];
+      
+      // Autofetching the specific fields you requested:
+      updatedRows[rowIndex].SubName = bookData.BookName || bookData.BookNameMarathi || "";
+      updatedRows[rowIndex].BookPages = bookData.Pages || 0;
+      updatedRows[rowIndex].PressPaperBalance = bookData.PressBalance || 0; // Ensure key matches API
+      updatedRows[rowIndex].BookId = bookData.Id || "";
+      updatedRows[rowIndex].Rate = bookData.BookRate || 0;
+
+      setRows(updatedRows);
+    } else {
+      // Avoid showing error toasts while the user is still typing
+      console.log("No book found for this code yet.");
+    }
+  } catch (err) {
+    console.error("Failed to fetch Book:", err);
+  }
+};
+
   const handleAddRow = () => {
     setRows([
       ...rows,
@@ -275,7 +326,7 @@ function Paperoutforprinting() {
       const response = await axios.get(
         "https://publication.microtechsolutions.net.in/php/PaperSizeget.php",
       );
-      const paperOptions = response.data.map((paper) => ({
+      const paperOptions = response.data.data.map((paper) => ({
         value: paper.Id,
         label: paper.PaperSizeName,
         code: paper.STRSize_Code,
@@ -283,6 +334,7 @@ function Paperoutforprinting() {
         openingstock: paper.OpeningStock,
       }));
       setPaperOptions(paperOptions);
+      console.log(paperOptions, 'papers')
     } catch (error) {
       // toast.error("Error fetching Papers:", error);
     }
@@ -291,12 +343,12 @@ function Paperoutforprinting() {
   const fetchAccounts = async () => {
     try {
       const response = await axios.get(
-        "https://publication.microtechsolutions.net.in/php/Accountget.php",
+        `https://publication.microtechsolutions.net.in/php/Accountget.php?CompanyId=${activeCompany.Id}`,
       );
-      const accountOptions = response.data.map((acc) => ({
-        value: acc.Id,
-        label: acc.AccountName,
-      }));
+     const accountOptions = response.data?.data?.map((acc) => ({
+  value: acc.Id,
+  label: acc.AccountName,
+})) || [];
       setAccountOptions(accountOptions);
     } catch (error) {
       // toast.error("Error fetching Accounts:", error);
@@ -565,8 +617,8 @@ console.log(paperOutwardId, 'PaperoutId')
           Quantity: parseFloat(row.Quantity),
           Unit: row.Unit, // ✅ FIX HERE
           Papers: parseInt(row.Papers, 10),
-          CurrentStock: parseInt(row.CurrentStock, 10),
-          PartyStock: parseInt(row.PartyStock, 10),
+          CurrentStock: parseInt(row.CurrentStock || 0, 10),
+          PartyStock: parseInt(row.PartyStock || 0, 10),
           SubName: row.SubName,
           BookCode: row.BookCode,
           BookPages:row.BookPages,
@@ -921,8 +973,9 @@ console.log(paperOutwardId, 'PaperoutId')
                     <th>Papers</th>
                     <th>CurrentStock</th>
                     <th>Party Stock</th>
-                    <th  style={{ width: "400px" }}>Sub Name </th>
+                   
                    <th>Book Code</th>
+                    <th  style={{ width: "400px" }}>Book Name </th>
                     <th>Book Pages</th>
                     <th >Press Paper Balance</th>
                     <th>Book Quantity</th>
@@ -977,11 +1030,8 @@ console.log(paperOutwardId, 'PaperoutId')
                <Autocomplete
                             options={paperOptions}
                             getOptionLabel={(option) => option.label || ""}
-                            value={
-                              paperOptions.find(
-                                (p) => p.value === row.PaperId,
-                              ) || null
-                            }
+                          value={paperOptions.find((p) => Number(p.value) === Number(row.PaperId)) || null}
+  isOptionEqualToValue={(option, value) => Number(option.value) === Number(value.value)}
                             onChange={(event, newValue) => {
                               handlePaperNameChange(
                                 index,
@@ -996,27 +1046,10 @@ console.log(paperOutwardId, 'PaperoutId')
                               />
                             )}
                               sx={{ width: "100%" }}
-                            isOptionEqualToValue={(option, value) =>
-                              option.value === value.value
-                            }
+                           
                           />
                         </td>
-
-                        {/* <td>
-                          <input
-                            type="text"
-                            value={row.MillName || ""}
-                            onChange={(e) =>
-                              handleInputChange(
-                                index,
-                                "MillName",
-                                e.target.value,
-                              )
-                            }
-                            style={{ width: "100px" }}
-                            className="paperout-control"
-                          />
-                        </td> */}
+ 
 
                         <td>
                           <input
@@ -1093,7 +1126,26 @@ console.log(paperOutwardId, 'PaperoutId')
                             placeholder="Party stock"
                           />
                         </td>
-
+ <td>
+  <input
+    type="number"
+    value={row.BookCode || ""}
+    onChange={(e) => {
+      const val = e.target.value;
+      // 1. Update the row state immediately so the user sees what they type
+      handleInputChange(index, "BookCode", val);
+      
+      // 2. If the code reaches a certain length (or on blur), fetch the data
+      if (val.length >= 1) { 
+        fetchBookDataForRow(index, val);
+      }
+    }}
+    style={{ width: "100px" }}
+    className="paperout-control"
+    placeholder="Book Code"
+  />
+</td>
+                        
                             <td>
                           <input
                             type="text"
@@ -1103,20 +1155,10 @@ console.log(paperOutwardId, 'PaperoutId')
                             }
                               style={{ width: "100%" }}
                             className="paperout-control"
-                            placeholder="Sub Name"
+                            placeholder="Book Name"
                           />
-                        </td>    <td>
-                          <input
-                            type="number"
-                            value={row.BookCode || ""}
-                              onChange={(e) =>
-                              handleInputChange(index, "BookCode", e.target.value)
-                            }
-                            style={{ width: "100px" }}
-                            className="paperout-control"
-                            placeholder="Book Code"
-                          />
-                        </td>    <td>
+                        </td>  
+                           <td>
                           <input
                             type="number"
                             value={row.BookPages || ""}
@@ -1137,6 +1179,7 @@ console.log(paperOutwardId, 'PaperoutId')
                             style={{ width: "150px" }}
                             className="paperout-control"
                             placeholder="Press Paper Balance"
+                            readOnly
                           />
                         </td>    <td>
                           <input

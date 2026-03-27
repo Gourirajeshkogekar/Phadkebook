@@ -112,29 +112,50 @@ function AccountGroup() {
     { value: "O", label: "O" },
   ];
 
-  useEffect(() => {
-    fetchAccgroups();
-    fetchTds();
-    fetchmaingroups();
-  }, []);
+  const [activeCompany, setActiveCompany] = useState(null);
+  
+ useEffect(() => {
+    const selected = localStorage.getItem("SelectedCompany");
+    if (selected) {
+      try {
+        const parsedCompany = JSON.parse(selected);
+        setActiveCompany(parsedCompany);
+        
+        // Load data immediately
+        fetchAccgroups( ); // No ID needed here since it returns all
+        fetchTds();
+        fetchmaingroups();
+      } catch (e) {
+        console.error("Error parsing company data", e);
+      }
+    }
+  }, []); // 👈 Keeping this [] is what stops the infinite loop!
 
   const fetchAccgroups = async () => {
-    try {
-      const response = await axios.get(
-        "https://publication.microtechsolutions.net.in/php/AccountGroupget.php"
-      );
-      setAccountGroups(response.data);
-    } catch (error) {
-      // toast.error("Error fetching acc groups:", error);
+  try {
+    const response = await axios.get(
+      `https://publication.microtechsolutions.net.in/php/AccountGroupget.php`
+    );
+    
+    // The API returns { "status": "success", "data": [...] }
+    // MaterialReactTable expects an ARRAY, not an object.
+    if (response.data && response.data.data) {
+      setAccountGroups(response.data.data); 
+    } else {
+      setAccountGroups([]); // Fallback to empty array if data is missing
     }
-  };
-
+    
+  } catch (error) {
+    console.error("Error fetching acc groups:", error);
+    toast.error("Failed to load account groups.");
+  }
+};
   const fetchTds = async () => {
     try {
       const response = await axios.get(
         "https://publication.microtechsolutions.net.in/php/TDSMasterget.php"
       );
-      const tdsOptions = response.data.map((tds) => ({
+      const tdsOptions = response.data.data.map((tds) => ({
         value: tds.Id,
         label: tds.TDSHead,
       }));
@@ -147,7 +168,7 @@ function AccountGroup() {
   const fetchmaingroups = async () => {
     try {
       const response = await axios.get(
-        "https://publication.microtechsolutions.net.in/php/get/getMainGroup.php"
+        `https://publication.microtechsolutions.net.in/php/get/getMainGroup.php`
       );
       const mainoptions = response.data.map((main) => ({
         value: main.Id,
@@ -196,6 +217,7 @@ function AccountGroup() {
 
     const urlencoded = new URLSearchParams();
     urlencoded.append("Id", deleteId);
+    urlencoded.append("CompanyId",activeCompany.Id);
 
     const requestOptions = {
       method: "POST",
@@ -276,6 +298,7 @@ function AccountGroup() {
       IsPrintDetailsinTB: IsPrintDetailsinTB ? 1 : 0,
       IsSubsidiary: IsSubsidiary ? 1 : 0,
       CreatedBy: userId,
+      CompanyId:activeCompany.Id
     };
 
     // Determine the URL based on whether we're editing or adding
@@ -287,6 +310,7 @@ function AccountGroup() {
     if (isEditing) {
       data.Id = id;
       data.UpdatedBy = userId;
+      data.CompanyId = activeCompany.Id;
     }
 
     try {
@@ -433,177 +457,7 @@ function AccountGroup() {
               }}>
               {isEditing ? "Edit Account Group" : "Add Account Group"}
             </h2>
-            {/* <div className="accountgroup-form">
-              <div>
-                <label className="accountgroup-label">Account Group Code</label>
-
-                <div>
-                  <input
-                    type="text"
-                    value={GroupCode}
-                    readOnly
-                    className="accountgroup-control"
-                    placeholder="Auto-Incremented"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="accountgroup-label">Account Group Name</label>
-                <div>
-                  <input
-                    type="text"
-                    value={GroupName}
-                    onChange={(e) => setGroupName(e.target.value)}
-                    className="accountgroup-control"
-                    placeholder="Enter Account group Name"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="accountgroup-label">Main Group</label>
-                <div>
-                  <Select
-                    id="MainGroupId"
-                    name="MainGroupId"
-                    value={typeCodeOptions.find(
-                      (option) => option.value === MainGroupId
-                    )}
-                    onChange={(option) => {
-                      setMainGroupId(option?.value); // set selected group id
-                      setTypeCode(option?.code || ""); // ✅ set type code from selected group
-                    }}
-                    tabIndex={0}
-                    options={typeCodeOptions}
-                    styles={{
-                      control: (base) => ({
-                        ...base,
-                        width: "170px",
-                        marginTop: "10px",
-                        borderRadius: "4px",
-                        border: "1px solid rgb(223, 222, 222)",
-                        marginBottom: "5px",
-                      }),
-                    }}
-                    placeholder="Select Main Group id"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="accountgroup-label">
-                  <input
-                    type="checkbox"
-                    checked={IsTDS}
-                    onChange={(e) => setIsTds(e.target.checked)}
-                  />
-                  TDS Applicable to this group?
-                </label>
-              </div>
-
-              <div className="ag-row radio-row">
-                <div className="ag-radio-block">
-                  <label className="accountgroup-label">
-                    <input
-                      type="radio"
-                      name="accountType"
-                      value="party"
-                      checked={AccountType === "party"}
-                      onChange={() => setAccountType("party")}
-                    />
-                    Party?
-                  </label>
-
-                  <label className="accountgroup-label">
-                    <input
-                      type="radio"
-                      name="accountType"
-                      value="fixed_asset"
-                      checked={AccountType === "fixed_asset"}
-                      onChange={() => setAccountType("fixed_asset")}
-                    />
-                    Fixed Asset?
-                  </label>
-
-                  <label className="accountgroup-label">
-                    <input
-                      type="radio"
-                      name="accountType"
-                      value="cash_bank"
-                      checked={AccountType === "cash_bank"}
-                      onChange={() => setAccountType("cash_bank")}
-                    />
-                    Cash/Bank?
-                  </label>
-
-                  <label className="accountgroup-label">
-                    <input
-                      type="radio"
-                      name="accountType"
-                      value="other"
-                      checked={AccountType === "other"}
-                      onChange={() => setAccountType("other")}
-                    />
-                    Other?
-                  </label>
-                </div>
-              </div>
-
-              <div style={{ display: "flex" }}>
-                <label className="accountgroup-label">
-                  <div>
-                    <input
-                      type="checkbox"
-                      checked={IsPrintDetailsinBL}
-                      onChange={(e) => setIsPrintDetailsinBL(e.target.checked)}
-                    />
-                  </div>
-                  Print Details in Balance Sheet / P & L A/c?
-                </label>
-
-                <label className="accountgroup-label">
-                  <div>
-                    <input
-                      type="checkbox"
-                      checked={IsPrintDetailsinTB}
-                      onChange={(e) => setIsPrintDetailsinTB(e.target.checked)}
-                    />
-                  </div>
-                  Print Details in Trial Balance?
-                </label>
-
-                <label className="accountgroup-label">
-                  <input
-                    type="checkbox"
-                    checked={IsSubsidiary}
-                    onChange={(e) => setIsSubsidiary(e.target.checked)}
-                  />
-                  Subsidiary Account exists?
-                </label>
-              </div>
-
-              <div className="accgroup-btn-container">
-                <Button
-                  onClick={handleSubmit}
-                  ref={saveRef}
-                  // onKeyDown={(e) => handleKeyDown(e, accgroupnameRef)}
-                  style={{
-                    background: "#0a60bd",
-                    color: "white",
-                  }}>
-                  {editingIndex >= 0 ? "Update" : "Save"}
-                </Button>
-                <Button
-                  onClick={() => setIsModalOpen(false)}
-                  style={{
-                    background: "red",
-                    color: "white",
-                  }}>
-                  Cancel
-                </Button>
-              </div>
-            </div> */}
+           
 
             <Grid container spacing={3} sx={{ p: 2 }}>
               {/* LEFT COLUMN */}

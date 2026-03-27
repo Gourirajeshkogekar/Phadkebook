@@ -1,3 +1,6 @@
+
+
+
 import { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import html2canvas from "html2canvas";
@@ -65,66 +68,206 @@ const [selectedStandard, setSelectedStandard] = useState(null);
 
   const [bookCode, setBookCode] = useState("");
   const [bookList, setBookList] = useState([]);
+  const [reportData, setReportData] = useState([]);
+  const [selectedParty, setSelectedParty] = useState(null);
+  const [activeCompany, setActiveCompany] = useState(null);
  
   /* ================= FETCH APIs ================= */
 
+
   useEffect(() => {
-    axios.get("https://publication.microtechsolutions.net.in/php/Accountget.php")
-      .then(res => setAccounts(res.data || []));
+  const selected = localStorage.getItem("SelectedCompany");
 
-    axios.get("https://publication.microtechsolutions.net.in/php/BookGroupget.php")
-      .then(res => setGroups(res.data || []));
+  if (selected) {
+    try {
+      const parsedCompany = JSON.parse(selected);
+      setActiveCompany(parsedCompany);
+    } catch (e) {
+      console.error("Error parsing company data", e);
+    }
+  }
+}, []);   // ✅ EMPTY
 
-    axios.get("https://publication.microtechsolutions.net.in/php/Cityget.php")
-      .then(res => setCities(res.data || []));
-  }, []);
+
+console.log("Active Company 👉", activeCompany);
+
+
+
+useEffect(() => {
+  const safeArray = (res) => {
+    if (Array.isArray(res.data)) return res.data;
+    if (Array.isArray(res.data?.data)) return res.data.data;
+    return [];
+  };
+
+  // ✅ Accounts
+  axios
+    .get(`https://publication.microtechsolutions.net.in/php/Accountget.php?CompanyId=${activeCompany.Id}`)
+    .then((res) => {
+      const data = safeArray(res);
+      setAccounts(data);
+    })
+    .catch((err) => console.error("Account API Error:", err));
+
+  // ✅ Book Groups
+  axios
+    .get("https://publication.microtechsolutions.net.in/php/BookGroupget.php")
+    .then((res) => {
+      const data = safeArray(res);
+      console.log("GROUP DATA:", data);
+      setGroups(data);
+    })
+    .catch((err) => console.error("Group API Error:", err));
+
+  // ✅ Standards
+  axios
+    .get("https://publication.microtechsolutions.net.in/php/Standardget.php")
+    .then((res) => {
+      const data = safeArray(res);
+      setStandards(data);
+    })
+    .catch((err) => console.error("Standard API Error:", err));
+
+  // ✅ Cities
+  axios
+    .get("https://publication.microtechsolutions.net.in/php/Cityget.php")
+    .then((res) => {
+      const data = safeArray(res);
+      setCities(data);
+    })
+    .catch((err) => console.error("City API Error:", err));
+
+}, []);
+
+
+
 
   /* ================= BOOK SEARCH ================= */
+const handleBookSearch = async () => {
+  if (!bookCode) return;
 
-  const handleBookSearch = async () => {
-    if (!bookCode) return;
-
+  try {
     const res = await axios.get(
-      `https://publication.microtechsolutions.net.in/php/Bookcodeget.php?BookCode=${bookCode}`
+      "https://publication.microtechsolutions.net.in/php/Bookcodeget.php",
+      {
+        params: { BookCode: bookCode }
+      }
     );
 
-    setBookList(res.data || []);
-  };
+    console.log("BOOK API:", res.data);
+
+    // 🔥 HANDLE BOTH ARRAY + OBJECT
+    if (Array.isArray(res.data)) {
+      setBookList(res.data);
+    } else if (res.data) {
+      setBookList([res.data]);
+    } else {
+      setBookList([]);
+    }
+
+  } catch (error) {
+    console.error("BOOK ERROR:", error);
+    setBookList([]);
+  }
+};
 
   const handleEnter = (e) => {
     if (e.key === "Enter") handleBookSearch();
   };
+const fetchReport = async () => {
+  try {
+    const res = await axios.get(
+      "https://publication.microtechsolutions.net.in/php/get/getBookPurchaseReport.php",
+      {
+        params: {
+          startDate: startDate,
+          endDate: endDate,
+
+          partySelection:
+            partyMode === "all"
+              ? "all"
+              : selectedParty?.AccountCode ||
+                selectedParty?.AccountName ||
+                "",
+
+          partywiseBookwise: partyBookwise ? "true" : "false",
+
+          bookStandard:
+            standardMode === "all"
+              ? ""
+              : selectedStandard?.StandardName ||
+                selectedStandard?.Standard ||
+                selectedStandard?.name ||
+                "",
+
+          bookGroup:
+            groupMode === "all"
+              ? ""
+              : "selected",
+
+          areaDistrict: selectedCity || "",
+          bookCode: bookCode || "",
+        }
+      }
+    );
+
+    console.log("REPORT API:", res.data);
+
+    const data = res.data?.data || [];
+
+    setReportData(data);
+
+    return data; // 🔥 IMPORTANT
+
+  } catch (error) {
+    console.error("API ERROR:", error);
+    return [];
+  }
+};
+
 
   /* ================= PRINT FUNCTION ================= */
+const handlePrint = async () => {
+  if (partyMode === "selected" && !selectedParty) {
+    alert("Please select a party");
+    return;
+  }
 
-  const handlePrint = async () => {
-    setPrinting(true);
+  // 🔥 get data from API
+  const data = await fetchReport();
 
-    setTimeout(async () => {
-      try {
-        const element = reportRef.current;
-        if (!element) return;
+  console.log("PRINT DATA:", data);
 
-        const canvas = await html2canvas(element, {
-          scale: 2,
-          useCORS: true,
-          logging: false
-        });
+  // 🔥 check data
+  if (!data || data.length === 0) {
+    alert("No Data Found");
+    return;
+  }
 
-        const imgData = canvas.toDataURL("image/png");
-        const pdf = new jsPDF("p", "mm", "a4");
+  setPrinting(true);
 
-        pdf.addImage(imgData, "PNG", 0, 0, 210, 297);
-        window.open(pdf.output("bloburl"), "_blank");
+  // 🔥 wait for React to render updated data
+  setTimeout(async () => {
+    try {
+      const canvas = await html2canvas(reportRef.current, {
+        scale: 2,
+        useCORS: true,
+      });
 
-      } catch (error) {
-        console.error("PDF Error:", error);
-      } finally {
-        setPrinting(false);
-      }
-    }, 500);
-  };
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF("p", "mm", "a4");
 
+      pdf.addImage(imgData, "PNG", 0, 0, 210, 297);
+
+      window.open(pdf.output("bloburl"), "_blank");
+
+    } catch (error) {
+      console.error("PRINT ERROR:", error);
+    } finally {
+      setPrinting(false);
+    }
+  }, 500); // 🔥 important delay
+};
   /* ================= UI STYLE ================= */
 
   // Refined sectionBox for a tighter look
@@ -136,8 +279,8 @@ const [selectedStandard, setSelectedStandard] = useState(null);
   };
 
   return (
-    <Box sx={{ p: 1.5, bgcolor: "#f4f6f9", minHeight: "100vh" }}>
-      <Typography variant="h6" sx={{ fontSize: '1.1rem', mb: 1, fontWeight: 700, color: '#1a237e' }}>
+    <Box sx={{   bgcolor: "#f4f6f9", minHeight: "100vh" }}>
+      <Typography variant="h6" sx={{ variant:'h6', textAlign:'center', fontWeight: 700, color: '#1a237e' }}>
         Book Purchase Report
       </Typography>
 
@@ -176,6 +319,19 @@ const [selectedStandard, setSelectedStandard] = useState(null);
                 <FormControlLabel value="all" control={<Radio size="small" />} label={<Typography fontSize={12}>All Parties</Typography>} />
                 <FormControlLabel value="selected" control={<Radio size="small" />} label={<Typography fontSize={12}>Selected</Typography>} />
               </RadioGroup>
+             {partyMode === "selected" && (
+  <Autocomplete
+    size="small"
+    fullWidth
+    options={accounts || []}
+    getOptionLabel={(o) => o.AccountName || ""}
+    value={selectedParty}
+    onChange={(e, v) => setSelectedParty(v)}
+    renderInput={(params) => (
+      <TextField {...params} placeholder="Select Party" />
+    )}
+  />
+)}
               <FormControlLabel
                 control={<Checkbox size="small" checked={partyBookwise} onChange={(e) => setPartyBookwise(e.target.checked)} />}
                 label={<Typography fontSize={11}>Partywise, Bookwise?</Typography>}
@@ -342,10 +498,13 @@ const [selectedStandard, setSelectedStandard] = useState(null);
             fontSize: "12px",
             background: "#fff"
           }}
-        >
-          <div style={{ textAlign: "center", fontWeight: "bold", fontSize: "16px" }}>
-            M. V. Phadke & Co. Kolhapur
-          </div>
+        ><div style={{ textAlign: "center", fontWeight: "bold", fontSize: "16px" }}>
+  {activeCompany?.CompanyName || ""}
+</div>
+
+<div style={{ textAlign: "center", fontSize: "12px", marginTop: "3px" }}>
+  {activeCompany?.Address1 || ""}
+</div>
 
           <div style={{ textAlign: "center", marginTop: "5px" }}>
             Book Purchase Report
@@ -365,15 +524,23 @@ const [selectedStandard, setSelectedStandard] = useState(null);
                 <th>Book Name</th>
               </tr>
             </thead>
-            <tbody>
-              {bookList.map((book, index) => (
-                <tr key={index}>
-                  <td>{index + 1}</td>
-                  <td>{book.BookCode}</td>
-                  <td>{book.BookName}</td>
-                </tr>
-              ))}
-            </tbody>
+           <tbody>
+  {reportData && reportData.length > 0 ? (
+    reportData.map((item, index) => (
+      <tr key={index}>
+        <td>{item["Sr No"] || index + 1}</td>
+        <td>{item.BookCode || "-"}</td>
+        <td>{item.BookName || "-"}</td>
+      </tr>
+    ))
+  ) : (
+    <tr>
+      <td colSpan="3" style={{ textAlign: "center", padding: "10px" }}>
+        No Data Found
+      </td>
+    </tr>
+  )}
+</tbody>
           </table>
 
         </div>

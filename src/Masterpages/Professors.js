@@ -43,9 +43,35 @@ function Professors() {
 
     fetchProfessors();
   }, []);
-
-  const [pageIndex, setPageIndex] = useState(1);
+const [pageIndex, setPageIndex] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+   const [activeCompany, setActiveCompany] = useState(null);
+          
+         useEffect(() => {
+            const selected = localStorage.getItem("SelectedCompany");
+            if (selected) {
+              try {
+                const parsedCompany = JSON.parse(selected);
+                setActiveCompany(parsedCompany);
+                
+                // Load data immediately
+     fetchProfessors();
+    fetchStates();
+    fetchAllCities();
+    fetchColleges();
+    fetchAreas();
+                } catch (e) {
+                console.error("Error parsing company data", e);
+              }
+            }
+          }, [pageIndex]); 
+  
+  
+
+
+                 
+
+
 
   const [professors, setProfessors] = useState([]);
   const [ProfessorName, setProfessorName] = useState("");
@@ -112,18 +138,8 @@ function Professors() {
     }
   };
 
-  useEffect(() => {
-    // fetchProfessors();
-    fetchStates();
-    fetchAllCities();
-    fetchColleges();
-    fetchAreas();
-  }, []);
 
-  useEffect(() => {
-    fetchProfessors();
-    console.log("this function is called");
-  }, [pageIndex]); // Fetch data when page changes
+
 
   const fetchProfessors = async () => {
     try {
@@ -190,7 +206,7 @@ function Professors() {
       const response = await axios.get(
         "https://publication.microtechsolutions.net.in/php/Collegeget.php"
       );
-      const colleges = response.data.map((college) => ({
+      const colleges = response.data.data.map((college) => ({
         value: college.Id,
         label: college.CollegeName,
       }));
@@ -261,6 +277,8 @@ function Professors() {
 
     const urlencoded = new URLSearchParams();
     urlencoded.append("Id", deleteId);
+        urlencoded.append("CompanyId", activeCompany.Id);
+
 
     const requestOptions = {
       method: "POST",
@@ -331,6 +349,7 @@ function Professors() {
       StateId: StateId,
       MobileNo: MobileNo,
       CreatedBy: userId,
+      CompanyId : activeCompany.Id,
     };
     // Determine the URL based on whether we're editing or adding
     const url = isEditing
@@ -340,6 +359,7 @@ function Professors() {
     if (isEditing) {
       data.Id = id;
       data.UpdatedBy = userId;
+      data.CompanyId = activeCompany.Id;
     }
     try {
       await axios.post(url, data, {
@@ -512,19 +532,18 @@ function Professors() {
                 <label className="professor-label">College Name</label>
 
                 <Tooltip
-                  title={
-                    <span style={{ fontSize: "14px", fontWeight: "bold" }}>
-                      {colleges.find((c) => c.value === CollegeId)?.label || ""}
-                    </span>
-                  }
+                title={
+  <span style={{ fontSize: "14px", fontWeight: "bold" }}>
+    {colleges.find((c) => c.value.toString() === CollegeId?.toString())?.label || "No College Selected"}
+  </span>
+}
                   arrow>
                   <div>
                     <Autocomplete
                       options={colleges}
-                      value={
-                        colleges.find((option) => option.value === CollegeId) ||
-                        null
-                      }
+                     value={
+  colleges.find((option) => option.value.toString() === CollegeId?.toString()) || null
+}
                       onChange={(event, newValue) =>
                         setCollegeId(newValue ? newValue.value : null)
                       }
@@ -562,44 +581,45 @@ function Professors() {
                     />
                   </div>
                 </div>
+ 
 
-                <div>
-                  <label className="professor-label">Professor Category</label>
-
-                  <div className="prof-category-box">
-                    <label>
-                      <input
-                        type="radio"
-                        name="Category"
-                        value="Staff"
-                        checked={Category === "Staff"}
-                        onChange={(e) => setCategory(e.target.value)}
-                        ref={profcatRef}
-                      />{" "}
-                      Staff
-                    </label>
-                    <label>
-                      <input
-                        type="radio"
-                        name="Category"
-                        value="Professor"
-                        checked={Category === "Professor"}
-                        onChange={(e) => setCategory(e.target.value)}
-                      />{" "}
-                      Professor
-                    </label>
-                    <label>
-                      <input
-                        type="radio"
-                        name="Category"
-                        value="Other"
-                        checked={Category === "Other"}
-                        onChange={(e) => setCategory(e.target.value)}
-                      />{" "}
-                      Other
-                    </label>
-                  </div>
-                </div>
+                 <div>
+  <label className="professor-label">Professor Category</label>
+  <div className="prof-category-box">
+    <label>
+      <input
+        type="radio"
+        name="Category"
+        value="S" // Match 'S' for Staff
+        checked={Category === "S" || Category === "Staff"}
+        onChange={(e) => setCategory(e.target.value)}
+        ref={profcatRef}
+      />{" "}
+      Staff
+    </label>
+    <label>
+      <input
+        type="radio"
+        name="Category"
+        value="P" // Match 'P' for Professor
+        checked={Category === "P" || Category === "Professor"}
+        onChange={(e) => setCategory(e.target.value)}
+      />{" "}
+      Professor
+    </label>
+    <label>
+      <input
+        type="radio"
+        name="Category"
+        value="O" // Match 'O' for Other
+        checked={Category === "O" || Category === "Other"}
+        onChange={(e) => setCategory(e.target.value)}
+      />{" "}
+      Other
+    </label>
+  </div>
+</div>
+              
               </div>
               <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <div>

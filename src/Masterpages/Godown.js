@@ -44,6 +44,30 @@ function Godown() {
     fetchGodowns();
   }, []);
 
+
+  const [activeCompany, setActiveCompany] = useState(null);
+            
+           useEffect(() => {
+              const selected = localStorage.getItem("SelectedCompany");
+              if (selected) {
+                try {
+                  const parsedCompany = JSON.parse(selected);
+                  setActiveCompany(parsedCompany);
+                  
+                  // Load data immediately
+   fetchGodowns();
+   
+                  } catch (e) {
+                  console.error("Error parsing company data", e);
+                }
+              }
+            }, []); 
+  
+
+                  
+
+
+
   const [godowns, setGodowns] = useState([]);
   const [GodownName, setGodownName] = useState("");
   const [editingIndex, setEditingIndex] = useState(-1);
@@ -68,14 +92,11 @@ function Godown() {
     }
   };
 
-  useEffect(() => {
-    fetchGodowns();
-  }, []);
 
   const fetchGodowns = async () => {
     try {
       const response = await axios.get(
-        "https://publication.microtechsolutions.net.in/php/Godownget.php"
+        `https://publication.microtechsolutions.net.in/php/Godownget.php`
       );
 
       setGodowns(response.data);
@@ -115,6 +136,7 @@ function Godown() {
 
     const urlencoded = new URLSearchParams();
     urlencoded.append("Id", deleteId);
+    urlencoded.append("CompanyId", activeCompany.Id);
 
     const requestOptions = {
       method: "POST",
@@ -160,6 +182,7 @@ function Godown() {
     const data = {
       GodownName: GodownName,
       CreatedBy: userId,
+      CompanyId: activeCompany.Id,
     };
 
     const url = isEditing
@@ -169,6 +192,7 @@ function Godown() {
     if (isEditing) {
       data.Id = id;
       data.UpdatedBy = userId;
+      data.CompanyId = activeCompany.Id;
     }
 
     try {

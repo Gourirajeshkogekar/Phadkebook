@@ -42,6 +42,27 @@ function Standard() {
     fetchStandards();
   }, []);
 
+
+    const [activeCompany, setActiveCompany] = useState(null);
+    
+   useEffect(() => {
+      const selected = localStorage.getItem("SelectedCompany");
+      if (selected) {
+        try {
+          const parsedCompany = JSON.parse(selected);
+          setActiveCompany(parsedCompany);
+          
+          // Load data immediately
+        
+    fetchStandards();
+  
+        } catch (e) {
+          console.error("Error parsing company data", e);
+        }
+      }
+    }, []); 
+
+
   const [StandardName, setStandardName] = useState("");
   const [StandardCode, setStandardCode] = useState("");
   const [ShortName, setShortName] = useState("");
@@ -76,17 +97,19 @@ function Standard() {
   const fetchStandards = async () => {
     try {
       const response = await axios.get(
-        "https://publication.microtechsolutions.net.in/php/Standardget.php"
+        `https://publication.microtechsolutions.net.in/php/Standardget.php `
       );
-      setStandards(response.data);
+   if (response.data && response.data.data) {
+     setStandards(response.data.data); 
+    } else {
+      setStandards([])
+    }
     } catch (error) {
       // toast.error("Error fetching standards:", error);
     }
   };
 
-  useEffect(() => {
-    fetchStandards();
-  }, []);
+   
 
   const handleNewClick = () => {
     resetForm();
@@ -124,6 +147,7 @@ function Standard() {
 
     const urlencoded = new URLSearchParams();
     urlencoded.append("Id", deleteId);
+    urlencoded.append("CompanyId", activeCompany.Id);
 
     const requestOptions = {
       method: "POST",
@@ -180,6 +204,7 @@ function Standard() {
       StandardCode: StandardCode,
       ShortName: ShortName,
       CreatedBy: userId,
+      CompanyId :activeCompany.Id
     };
 
     const url = isEditing
@@ -189,6 +214,7 @@ function Standard() {
     if (isEditing) {
       data.Id = id;
       data.UpdatedBy = userId;
+      data.CompanyId = activeCompany.Id
     }
 
     try {

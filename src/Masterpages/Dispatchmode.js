@@ -42,6 +42,31 @@ function Dispatchmode() {
     fetchDispatchmodes();
   }, []);
 
+
+   const [activeCompany, setActiveCompany] = useState(null);
+              
+             useEffect(() => {
+                const selected = localStorage.getItem("SelectedCompany");
+                if (selected) {
+                  try {
+                    const parsedCompany = JSON.parse(selected);
+                    setActiveCompany(parsedCompany);
+                    
+                    // Load data immediately
+     fetchDispatchmodes();
+     
+                    } catch (e) {
+                    console.error("Error parsing company data", e);
+                  }
+                }
+              }, []); 
+    
+    
+
+
+
+
+
   const [DispatchModeName, setDispatchModeName] = useState("");
   const [dispatchmodes, setDispatchmodes] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -68,7 +93,7 @@ function Dispatchmode() {
   const fetchDispatchmodes = async () => {
     try {
       const response = await axios.get(
-        "https://publication.microtechsolutions.net.in/php/Dispatchmodeget.php"
+        `https://publication.microtechsolutions.net.in/php/Dispatchmodeget.php`
       );
       setDispatchmodes(response.data);
     } catch (error) {
@@ -76,9 +101,6 @@ function Dispatchmode() {
     }
   };
 
-  useEffect(() => {
-    fetchDispatchmodes();
-  }, []);
 
   const resetForm = () => {
     setDispatchModeName("");
@@ -115,6 +137,8 @@ function Dispatchmode() {
 
     const urlencoded = new URLSearchParams();
     urlencoded.append("Id", deleteId);
+        urlencoded.append("CompanyId", activeCompany.Id);
+
 
     const requestOptions = {
       method: "POST",
@@ -159,6 +183,7 @@ function Dispatchmode() {
     const data = {
       DispatchModeName: DispatchModeName,
       CreatedBy: userId,
+      CompanyId : activeCompany.Id
     };
 
     const url = isEditing
@@ -168,6 +193,7 @@ function Dispatchmode() {
     if (isEditing) {
       data.Id = id;
       data.UpdatedBy = userId;
+      data.CompanyId = activeCompany.Id;
     }
 
     try {

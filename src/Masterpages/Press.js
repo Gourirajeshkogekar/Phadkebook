@@ -42,6 +42,26 @@ function Press() {
     fetchPresses();
   }, []);
 
+   const [activeCompany, setActiveCompany] = useState(null);
+              
+             useEffect(() => {
+                const selected = localStorage.getItem("SelectedCompany");
+                if (selected) {
+                  try {
+                    const parsedCompany = JSON.parse(selected);
+                    setActiveCompany(parsedCompany);
+                    
+                    // Load data immediately
+     fetchPresses();
+     
+                    } catch (e) {
+                    console.error("Error parsing company data", e);
+                  }
+                }
+              }, []); 
+    
+    
+
   const [pressName, setPressName] = useState("");
   const [presses, setPresses] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -71,7 +91,7 @@ function Press() {
   const fetchPresses = async () => {
     try {
       const response = await axios.get(
-        "https://publication.microtechsolutions.net.in/php/PressMasterget.php"
+        `https://publication.microtechsolutions.net.in/php/PressMasterget.php`
       );
       setPresses(response.data);
     } catch (error) {
@@ -79,9 +99,6 @@ function Press() {
     }
   };
 
-  useEffect(() => {
-    fetchPresses();
-  }, []);
 
   const resetForm = () => {
     setPressName("");
@@ -118,6 +135,8 @@ function Press() {
 
     const urlencoded = new URLSearchParams();
     urlencoded.append("Id", deleteId);
+        urlencoded.append("CompanyId", activeCompany.Id);
+
 
     const requestOptions = {
       method: "POST",
@@ -165,6 +184,7 @@ function Press() {
     const data = {
       PressName: pressName,
       CreatedBy: userId,
+      CompanyId : activeCompany.Id,
     };
 
     const url = isEditing
@@ -174,6 +194,7 @@ function Press() {
     if (isEditing) {
       data.Id = id;
       data.UpdatedBy = userId;
+      data.CompanyId = activeCompany.Id;
     }
 
     try {

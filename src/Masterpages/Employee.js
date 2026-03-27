@@ -50,6 +50,35 @@ function Employee() {
   const [pageIndex, setPageIndex] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
+
+
+ const [activeCompany, setActiveCompany] = useState(null);
+            
+           useEffect(() => {
+              const selected = localStorage.getItem("SelectedCompany");
+              if (selected) {
+                try {
+                  const parsedCompany = JSON.parse(selected);
+                  setActiveCompany(parsedCompany);
+                  
+                  // Load data immediately
+   fetchEmployees();
+   fetchPublications()
+   
+                  } catch (e) {
+                  console.error("Error parsing company data", e);
+                }
+              }
+            }, [pageIndex]); 
+  
+    
+
+  
+
+
+  
+
+
   const [employees, setEmployees] = useState([]);
   const [publications, setPublications] = useState([]);
   const [EmployeeCode, setEmployeeCode] = useState("");
@@ -158,10 +187,7 @@ function Employee() {
     }
   };
 
-  useEffect(() => {
-    fetchEmployees();
-    console.log("this function is called");
-  }, [pageIndex]); // Fetch data when page changes
+ 
 
   const fetchEmployees = async () => {
     try {
@@ -178,9 +204,7 @@ function Employee() {
     }
   };
 
-  useEffect(() => {
-    fetchPublications();
-  }, []);
+
 
   const fetchPublications = async () => {
     try {
@@ -325,6 +349,7 @@ function Employee() {
 
     const urlencoded = new URLSearchParams();
     urlencoded.append("Id", deleteId);
+    urlencoded.append("CompanyId", activeCompany.Id);
 
     const requestOptions = {
       method: "POST",
@@ -564,6 +589,7 @@ function Employee() {
       UAN_No: UAN_No,
       ESI_No: ESI_No,
       CreatedBy: userId,
+      CompanyId: activeCompany.Id
     };
 
     const url = isEditing
@@ -573,6 +599,7 @@ function Employee() {
     if (isEditing) {
       data.Id = id;
       data.UpdatedBy = userId;
+      data.CompanyId = activeCompany.Id;
     }
 
     try {
